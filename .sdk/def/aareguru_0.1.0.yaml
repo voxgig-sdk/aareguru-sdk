@@ -1,0 +1,286 @@
+openapi: 3.0.1
+
+info:
+  title: Aare.guru API
+  description:
+    "Dienschte hinger aare.guru<p>Bei Requests auf die API bitte frei wählbare
+    <code>app</code> und <code>version</code> mitgeben. Z.B.: <code>...v2018/current?app=app.identifier.meine.app&version=1.42</code>.<p>Diese API ist öffentlich und darf für nicht-kommerzielle Zwecke frei benutzt werden. Sag uns bitte auf <a href='mailto:aaregurus@existenz.ch'>aaregurus@existenz.ch</a>
+    Bescheid wenn du das machst. Und setz einen Link zurück auf https://aare.guru.<p>Danke.<p>Die Erläuterung der Parameter innerhalb des Services
+    findest du auf der <a href='https://aareguru.existenz.ch#parameter'>Aare.guru-API-Startseite.</a><p>JSONP
+    erlaubt via callback-Parameter. CORS-Header auf <code>*</code> gesetzt.<p>Mit
+    viel Liebe, Christian Studer (<a href='https://bureau.existenz.ch'>Bureau
+    für digitale Existenz</a>)"
+  contact:
+    name: Aaregurus
+    url: https://aare.guru/aare-info
+    email: aaregurus@existenz.ch
+  version: "2018"
+
+servers:
+  - url: https://aareguru.existenz.ch
+    description: LIVE
+  - url: https://aareguru-test.existenz.ch
+    description: TEST
+
+tags:
+  - name: v2018
+    description: Aktuelle Dienste
+  - name: legacy
+    description: Alte Dienste, prä-2018
+  - name: stuff
+    description: Zufällige andere Dienste
+
+paths:
+  /v2018/cities:
+    get:
+      tags:
+        - v2018
+      summary: Ortsliste
+      description: Alle verfügbaren Orte in der API, inklusiver der wichtigsten Daten zur Übersicht.
+      responses:
+        200:
+          description: OK
+      parameters:
+        - $ref: "#/components/parameters/app"
+        - $ref: "#/components/parameters/version"
+        - $ref: "#/components/parameters/values"
+
+  /v2018/today:
+    get:
+      tags:
+        - v2018
+      summary: Aktuelle Aare-Temperatur und Spruch für einen Ort
+      description: Minimale Response.
+      responses:
+        200:
+          description: OK
+      parameters:
+        - $ref: "#/components/parameters/city"
+        - $ref: "#/components/parameters/app"
+        - $ref: "#/components/parameters/version"
+        - $ref: "#/components/parameters/values"
+
+  /v2018/current:
+    get:
+      tags:
+        - v2018
+      summary: Sämtliche Aare-Daten für einen Ort
+      description: Maximale Response mit aktuellen Daten, vergangenen Daten, Prognosen, Beigemüse.
+      responses:
+        200:
+          description: OK
+      parameters:
+        - $ref: "#/components/parameters/city"
+        - $ref: "#/components/parameters/app"
+        - $ref: "#/components/parameters/version"
+        - $ref: "#/components/parameters/values"
+
+  /v2018/widget:
+    get:
+      tags:
+        - v2018
+      summary: Aktuelle Aare-Daten, Spruch und anders für alle Orte auf einmal
+      description: Mittlere Response mit aktuellen Daten, Prognosen, Beigemüse für Widgets.
+      responses:
+        200:
+          description: OK
+      parameters:
+        - $ref: "#/components/parameters/app"
+        - $ref: "#/components/parameters/version"
+        - $ref: "#/components/parameters/values"
+
+  /v2018/history:
+    get:
+      tags:
+        - v2018
+      summary: Historische Aare-Daten
+      description: Historische Zeitreihen für Wassertemperatur, Abfluss und Lufttemperatur. Periode wird automatisch anhand des angeforderten Zeitraums gewählt
+      responses:
+        200:
+          description: OK
+      parameters:
+        - $ref: "#/components/parameters/city_mandatory"
+        - $ref: "#/components/parameters/startdate"
+        - $ref: "#/components/parameters/enddate"
+        - $ref: "#/components/parameters/app"
+        - $ref: "#/components/parameters/version"
+        - $ref: "#/components/parameters/values"
+
+  /currentV2:
+    get:
+      tags:
+        - legacy
+      summary: Sämtliche Aare-Daten für Bern, alte Version 2
+      description: Maximale Response mit aktuellen Daten, vergangenen Daten, Prognosen, Beigemüse. (Für die 2017er-Version der App)
+      responses:
+        200:
+          description: OK
+      parameters:
+        - $ref: "#/components/parameters/app"
+        - $ref: "#/components/parameters/version"
+
+  /current:
+    get:
+      tags:
+        - legacy
+      summary: Sämtliche Aare-Daten für Bern, noch ältere Version
+      description: Maximale Response mit aktuellen Daten, vergangenen Daten, Prognosen, Beigemüse. (Für die erste Webseite 2017)
+      responses:
+        200:
+          description: OK
+      parameters:
+        - $ref: "#/components/parameters/app"
+        - $ref: "#/components/parameters/version"
+
+  /today:
+    get:
+      tags:
+        - legacy
+      summary: Minimale Aare-Daten für Bern, alte Version
+      description: Minimale Response. (Für die 2017er-Version der App)
+      responses:
+        200:
+          description: OK
+      parameters:
+        - $ref: "#/components/parameters/app"
+        - $ref: "#/components/parameters/version"
+
+  /rawdata:
+    get:
+      tags:
+        - stuff
+      summary: Rohdaten von den internen Microservices
+      description: Direkter Zugriff zu den gecacheten Daten von den Backend-Webservices, wie z.B. <a href="https://api.existenz.ch">api.existenz.ch</a>.<p>Auch eher für internen Betrieb gedacht. Frag uns für die entsprechenden Servicenamen.
+      responses:
+        200:
+          description: OK
+      parameters:
+        - $ref: "#/components/parameters/service"
+        - $ref: "#/components/parameters/app"
+        - $ref: "#/components/parameters/version"
+
+  /logs:
+    get:
+      tags:
+        - stuff
+      summary: Interne Kommando-Logs
+      description: Auch eher für internen Betrieb gedacht. Frag uns für die entsprechenden Servicenamen.
+      responses:
+        200:
+          description: OK
+      parameters:
+        - $ref: "#/components/parameters/service"
+        - $ref: "#/components/parameters/lines"
+        - $ref: "#/components/parameters/app"
+        - $ref: "#/components/parameters/version"
+
+  /slack:
+    get:
+      tags:
+        - stuff
+      summary: Legacy custom Slack intergration, Daten für Bern
+      description: Erlaubt dir ein einfaches <a href="https://api.slack.com/legacy/custom-integrations">Custom Command in Slack</a> zu integrieren, z.B. <code>/aareguru</code>. <p>Ist allerdings von Seiten Slack deprecated.
+      responses:
+        200:
+          description: OK
+
+components:
+  parameters:
+    app:
+      name: app
+      in: query
+      description: "Optionaler App-Name."
+      schema:
+        type: string
+      example: my.app.ch
+
+    version:
+      name: version
+      in: query
+      description: "Optionale Versionsnummer für diese App."
+      schema:
+        type: string
+      example: 1.0.42
+
+    city:
+      name: city
+      in: query
+      description: "Orts-Identifikator aus der Ortsliste."
+      schema:
+        type: string
+        default: bern
+      example: bern
+
+    city_mandatory:
+      name: city
+      in: query
+      description: "Orts-Identifikator aus der Ortsliste. (Hier obligatorisch.)"
+      schema:
+        type: string
+      example: bern
+      required: true
+
+    startdate:
+      name: start
+      in: query
+      description: "Startdatum und -Zeit (UTC) in irgendeinem Format (ISO, Timestamp, yesterday, -1 day)."
+      schema:
+        type: string
+      examples:
+        Datum:
+          value: "2025-01-01"
+        Vor einem Tag:
+          value: "-1 day"
+        Zeitstempel:
+          value: 1234567890
+      required: true
+
+    enddate:
+      name: end
+      in: query
+      description: "Enddatum und -Zeit (UTC) in irgendeinem Format (ISO, Timestamp, now)."
+      schema:
+        type: string
+      examples:
+        Datum:
+          value: "2025-02-13"
+        Jetzt:
+          value: "now"
+        Zeitstempel:
+          value: 1234567891
+      required: true
+
+    service:
+      name: service
+      in: query
+      description: "Interner Servicename"
+      required: true
+      schema:
+        type: string
+      example: "v2018_bueber"
+
+    lines:
+      name: lines
+      in: query
+      description: "Anzahl Zeilen"
+      required: false
+      schema:
+        type: integer
+        default: 12
+
+    values:
+      name: values
+      in: query
+      description: "Optional kommata-separierte Wertenamen, adressiert mit gepunkteten Strings. Damit werden nur einzelne Werte (einer pro Zeile) extrahiert und die ganze Response als Text zurückgegeben."
+      required: false
+      schema:
+        type: string
+      examples:
+        none:
+          value:
+        Einzelner Wert:
+          value: aare.temperature
+          description: Einzelner Wert (Für Methode current)
+        Mehrere Werte:
+          value: aare.temperature,aare.temperature_text,sun.sunlocations.0.timeleft
+          description: Mehrere Werte (Für Methode current)

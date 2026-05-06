@@ -1,0 +1,34 @@
+# Aareguru SDK utility: prepare_auth
+
+from __future__ import annotations
+from utility.voxgig_struct import voxgig_struct as vs
+
+HEADER_AUTH = "authorization"
+OPTION_APIKEY = "apikey"
+NOT_FOUND = "__NOTFOUND__"
+
+
+def prepare_auth_util(ctx):
+    spec = ctx.spec
+    if spec is None:
+        return None, ctx.make_error("auth_no_spec",
+            "Expected context spec property to be defined.")
+
+    headers = spec.headers
+    options = ctx.client.options_map()
+
+    apikey = vs.getprop(options, OPTION_APIKEY, NOT_FOUND)
+
+    if isinstance(apikey, str) and apikey == NOT_FOUND:
+        headers.pop(HEADER_AUTH, None)
+    else:
+        auth_prefix = ""
+        ap = vs.getpath(options, "auth.prefix")
+        if isinstance(ap, str):
+            auth_prefix = ap
+        apikey_val = ""
+        if isinstance(apikey, str):
+            apikey_val = apikey
+        headers[HEADER_AUTH] = auth_prefix + " " + apikey_val
+
+    return spec, None

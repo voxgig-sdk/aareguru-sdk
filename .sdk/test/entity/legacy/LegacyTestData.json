@@ -1,0 +1,20 @@
+{
+  "existing": {
+    "legacy": {
+      "LEGACY00": {
+        "id": "LEGACY00"
+      },
+      "LEGACY01": {
+        "id": "LEGACY01"
+      },
+      "LEGACY02": {
+        "id": "LEGACY02"
+      }
+    }
+  },
+  "new": {
+    "legacy": {
+      "legacy_ref01": {}
+    }
+  }
+}

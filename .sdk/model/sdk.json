@@ -1,0 +1,930 @@
+{
+  "name": "aareguru",
+  "origin": "voxgig-sdk",
+  "def": "aareguru_0.1.0.yaml",
+  "main": {
+    "kit": {
+      "info": {
+        "contact": {
+          "email": "aaregurus@existenz.ch",
+          "name": "Aaregurus",
+          "url": "https://aare.guru/aare-info"
+        },
+        "description": "Dienschte hinger aare.guru<p>Bei Requests auf die API bitte frei wählbare <code>app</code> und <code>version</code> mitgeben. Z.B.: <code>...v2018/current?app=app.identifier.meine.app&version=1.42</code>.<p>Diese API ist öffentlich und darf für nicht-kommerzielle Zwecke frei benutzt werden. Sag uns bitte auf <a href='mailto:aaregurus@existenz.ch'>aaregurus@existenz.ch</a> Bescheid wenn du das machst. Und setz einen Link zurück auf https://aare.guru.<p>Danke.<p>Die Erläuterung der Parameter innerhalb des Services findest du auf der <a href='https://aareguru.existenz.ch#parameter'>Aare.guru-API-Startseite.</a><p>JSONP erlaubt via callback-Parameter. CORS-Header auf <code>*</code> gesetzt.<p>Mit viel Liebe, Christian Studer (<a href='https://bureau.existenz.ch'>Bureau für digitale Existenz</a>)",
+        "servers": [
+          {
+            "description": "LIVE",
+            "url": "https://aareguru.existenz.ch"
+          },
+          {
+            "description": "TEST",
+            "url": "https://aareguru-test.existenz.ch"
+          }
+        ],
+        "title": "Aare.guru API",
+        "version": "2018"
+      },
+      "config": {
+        "auth": {
+          "prefix": "Bearer"
+        },
+        "headers": {
+          "content-type": "application/json"
+        }
+      },
+      "entity": {
+        "legacy": {
+          "alias": {
+            "field": {}
+          },
+          "id": {
+            "field": "id",
+            "name": "id"
+          },
+          "name": "legacy",
+          "op": {
+            "load": {
+              "name": "load",
+              "points": [
+                {
+                  "args": {
+                    "query": [
+                      {
+                        "kind": "query",
+                        "name": "app",
+                        "orig": "app",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      },
+                      {
+                        "kind": "query",
+                        "name": "version",
+                        "orig": "version",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      }
+                    ],
+                    "params": []
+                  },
+                  "method": "GET",
+                  "orig": "/current",
+                  "parts": [
+                    "current"
+                  ],
+                  "select": {
+                    "exist": [
+                      "app",
+                      "version"
+                    ]
+                  },
+                  "transform": {
+                    "req": "`reqdata`",
+                    "res": "`body`"
+                  },
+                  "active": true
+                },
+                {
+                  "args": {
+                    "query": [
+                      {
+                        "kind": "query",
+                        "name": "app",
+                        "orig": "app",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      },
+                      {
+                        "kind": "query",
+                        "name": "version",
+                        "orig": "version",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      }
+                    ],
+                    "params": []
+                  },
+                  "method": "GET",
+                  "orig": "/currentV2",
+                  "parts": [
+                    "currentV2"
+                  ],
+                  "select": {
+                    "exist": [
+                      "app",
+                      "version"
+                    ]
+                  },
+                  "transform": {
+                    "req": "`reqdata`",
+                    "res": "`body`"
+                  },
+                  "active": true
+                },
+                {
+                  "args": {
+                    "query": [
+                      {
+                        "kind": "query",
+                        "name": "app",
+                        "orig": "app",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      },
+                      {
+                        "kind": "query",
+                        "name": "version",
+                        "orig": "version",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      }
+                    ],
+                    "params": []
+                  },
+                  "method": "GET",
+                  "orig": "/today",
+                  "parts": [
+                    "today"
+                  ],
+                  "select": {
+                    "exist": [
+                      "app",
+                      "version"
+                    ]
+                  },
+                  "transform": {
+                    "req": "`reqdata`",
+                    "res": "`body`"
+                  },
+                  "active": true
+                }
+              ],
+              "input": "data"
+            }
+          },
+          "active": true,
+          "fields": [],
+          "relations": {
+            "ancestors": []
+          }
+        },
+        "stuff": {
+          "alias": {
+            "field": {}
+          },
+          "id": {
+            "field": "id",
+            "name": "id"
+          },
+          "name": "stuff",
+          "op": {
+            "load": {
+              "name": "load",
+              "points": [
+                {
+                  "args": {
+                    "query": [
+                      {
+                        "kind": "query",
+                        "name": "app",
+                        "orig": "app",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      },
+                      {
+                        "kind": "query",
+                        "name": "line",
+                        "orig": "line",
+                        "reqd": false,
+                        "type": "`$INTEGER`"
+                      },
+                      {
+                        "kind": "query",
+                        "name": "service",
+                        "orig": "service",
+                        "reqd": true,
+                        "type": "`$STRING`"
+                      },
+                      {
+                        "kind": "query",
+                        "name": "version",
+                        "orig": "version",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      }
+                    ],
+                    "params": []
+                  },
+                  "method": "GET",
+                  "orig": "/logs",
+                  "parts": [
+                    "logs"
+                  ],
+                  "select": {
+                    "exist": [
+                      "app",
+                      "line",
+                      "service",
+                      "version"
+                    ]
+                  },
+                  "transform": {
+                    "req": "`reqdata`",
+                    "res": "`body`"
+                  },
+                  "active": true
+                },
+                {
+                  "args": {
+                    "query": [
+                      {
+                        "kind": "query",
+                        "name": "app",
+                        "orig": "app",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      },
+                      {
+                        "kind": "query",
+                        "name": "service",
+                        "orig": "service",
+                        "reqd": true,
+                        "type": "`$STRING`"
+                      },
+                      {
+                        "kind": "query",
+                        "name": "version",
+                        "orig": "version",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      }
+                    ],
+                    "params": []
+                  },
+                  "method": "GET",
+                  "orig": "/rawdata",
+                  "parts": [
+                    "rawdata"
+                  ],
+                  "select": {
+                    "exist": [
+                      "app",
+                      "service",
+                      "version"
+                    ]
+                  },
+                  "transform": {
+                    "req": "`reqdata`",
+                    "res": "`body`"
+                  },
+                  "active": true
+                },
+                {
+                  "method": "GET",
+                  "orig": "/slack",
+                  "parts": [
+                    "slack"
+                  ],
+                  "transform": {
+                    "req": "`reqdata`",
+                    "res": "`body`"
+                  },
+                  "active": true,
+                  "args": {
+                    "params": []
+                  },
+                  "select": {}
+                }
+              ],
+              "input": "data"
+            }
+          },
+          "active": true,
+          "fields": [],
+          "relations": {
+            "ancestors": []
+          }
+        },
+        "v2018": {
+          "alias": {
+            "field": {}
+          },
+          "id": {
+            "field": "id",
+            "name": "id"
+          },
+          "name": "v2018",
+          "op": {
+            "load": {
+              "name": "load",
+              "points": [
+                {
+                  "args": {
+                    "query": [
+                      {
+                        "kind": "query",
+                        "name": "app",
+                        "orig": "app",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      },
+                      {
+                        "kind": "query",
+                        "name": "city",
+                        "orig": "city",
+                        "reqd": true,
+                        "type": "`$STRING`"
+                      },
+                      {
+                        "kind": "query",
+                        "name": "end",
+                        "orig": "end",
+                        "reqd": true,
+                        "type": "`$STRING`"
+                      },
+                      {
+                        "kind": "query",
+                        "name": "start",
+                        "orig": "start",
+                        "reqd": true,
+                        "type": "`$STRING`"
+                      },
+                      {
+                        "kind": "query",
+                        "name": "value",
+                        "orig": "value",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      },
+                      {
+                        "kind": "query",
+                        "name": "version",
+                        "orig": "version",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      }
+                    ],
+                    "params": []
+                  },
+                  "method": "GET",
+                  "orig": "/v2018/history",
+                  "parts": [
+                    "v2018",
+                    "history"
+                  ],
+                  "select": {
+                    "$action": "history",
+                    "exist": [
+                      "app",
+                      "city",
+                      "end",
+                      "start",
+                      "value",
+                      "version"
+                    ]
+                  },
+                  "transform": {
+                    "req": "`reqdata`",
+                    "res": "`body`"
+                  },
+                  "active": true
+                },
+                {
+                  "args": {
+                    "query": [
+                      {
+                        "kind": "query",
+                        "name": "app",
+                        "orig": "app",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      },
+                      {
+                        "kind": "query",
+                        "name": "city",
+                        "orig": "city",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      },
+                      {
+                        "kind": "query",
+                        "name": "value",
+                        "orig": "value",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      },
+                      {
+                        "kind": "query",
+                        "name": "version",
+                        "orig": "version",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      }
+                    ],
+                    "params": []
+                  },
+                  "method": "GET",
+                  "orig": "/v2018/current",
+                  "parts": [
+                    "v2018",
+                    "current"
+                  ],
+                  "select": {
+                    "$action": "current",
+                    "exist": [
+                      "app",
+                      "city",
+                      "value",
+                      "version"
+                    ]
+                  },
+                  "transform": {
+                    "req": "`reqdata`",
+                    "res": "`body`"
+                  },
+                  "active": true
+                },
+                {
+                  "args": {
+                    "query": [
+                      {
+                        "kind": "query",
+                        "name": "app",
+                        "orig": "app",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      },
+                      {
+                        "kind": "query",
+                        "name": "city",
+                        "orig": "city",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      },
+                      {
+                        "kind": "query",
+                        "name": "value",
+                        "orig": "value",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      },
+                      {
+                        "kind": "query",
+                        "name": "version",
+                        "orig": "version",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      }
+                    ],
+                    "params": []
+                  },
+                  "method": "GET",
+                  "orig": "/v2018/today",
+                  "parts": [
+                    "v2018",
+                    "today"
+                  ],
+                  "select": {
+                    "$action": "today",
+                    "exist": [
+                      "app",
+                      "city",
+                      "value",
+                      "version"
+                    ]
+                  },
+                  "transform": {
+                    "req": "`reqdata`",
+                    "res": "`body`"
+                  },
+                  "active": true
+                },
+                {
+                  "args": {
+                    "query": [
+                      {
+                        "kind": "query",
+                        "name": "app",
+                        "orig": "app",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      },
+                      {
+                        "kind": "query",
+                        "name": "value",
+                        "orig": "value",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      },
+                      {
+                        "kind": "query",
+                        "name": "version",
+                        "orig": "version",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      }
+                    ],
+                    "params": []
+                  },
+                  "method": "GET",
+                  "orig": "/v2018/cities",
+                  "parts": [
+                    "v2018",
+                    "cities"
+                  ],
+                  "select": {
+                    "$action": "city",
+                    "exist": [
+                      "app",
+                      "value",
+                      "version"
+                    ]
+                  },
+                  "transform": {
+                    "req": "`reqdata`",
+                    "res": "`body`"
+                  },
+                  "active": true
+                },
+                {
+                  "args": {
+                    "query": [
+                      {
+                        "kind": "query",
+                        "name": "app",
+                        "orig": "app",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      },
+                      {
+                        "kind": "query",
+                        "name": "value",
+                        "orig": "value",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      },
+                      {
+                        "kind": "query",
+                        "name": "version",
+                        "orig": "version",
+                        "reqd": false,
+                        "type": "`$STRING`"
+                      }
+                    ],
+                    "params": []
+                  },
+                  "method": "GET",
+                  "orig": "/v2018/widget",
+                  "parts": [
+                    "v2018",
+                    "widget"
+                  ],
+                  "select": {
+                    "$action": "widget",
+                    "exist": [
+                      "app",
+                      "value",
+                      "version"
+                    ]
+                  },
+                  "transform": {
+                    "req": "`reqdata`",
+                    "res": "`body`"
+                  },
+                  "active": true
+                }
+              ],
+              "input": "data"
+            }
+          },
+          "active": true,
+          "fields": [],
+          "relations": {
+            "ancestors": []
+          }
+        }
+      },
+      "feature": {
+        "test": {
+          "name": "test",
+          "title": "In-memory mock transport for testing without a live server",
+          "version": "0.0.1",
+          "active": true,
+          "config": {
+            "options": {
+              "active": false
+            }
+          },
+          "hook": {
+            "PostConstruct": {
+              "active": true,
+              "await": false
+            },
+            "PostConstructEntity": {
+              "active": true,
+              "await": false
+            },
+            "SetData": {
+              "active": true,
+              "await": false
+            },
+            "GetData": {
+              "active": true,
+              "await": false
+            },
+            "SetMatch": {
+              "active": true
+            },
+            "GetMatch": {
+              "active": true,
+              "await": false
+            },
+            "PrePoint": {
+              "active": true
+            },
+            "PreSpec": {
+              "active": true,
+              "await": false
+            },
+            "PreRequest": {
+              "active": true,
+              "await": false
+            },
+            "PreResponse": {
+              "active": true,
+              "await": false
+            },
+            "PreResult": {
+              "active": true,
+              "await": false
+            },
+            "PreTarget": {
+              "active": false,
+              "await": false
+            },
+            "PostOperation": {
+              "active": false,
+              "await": false
+            }
+          },
+          "target": {
+            "ts": {
+              "deps": {}
+            },
+            "go": {
+              "deps": {}
+            },
+            "lua": {
+              "deps": {}
+            },
+            "php": {
+              "deps": {}
+            },
+            "py": {
+              "deps": {}
+            },
+            "rb": {
+              "deps": {}
+            }
+          }
+        }
+      },
+      "flow": {
+        "BasicLegacyFlow": {
+          "entity": "legacy",
+          "kind": "basic",
+          "name": "BasicLegacyFlow",
+          "step": [
+            {
+              "input": {
+                "ref": "legacy_ref01",
+                "srcdatavar": "legacy_ref01_data",
+                "suffix": "_dt0"
+              },
+              "op": "load",
+              "valid": [
+                {
+                  "apply": "TextFieldMark",
+                  "def": {
+                    "mark": "Mark01-legacy_ref01"
+                  }
+                }
+              ],
+              "active": true,
+              "match": {},
+              "data": {},
+              "spec": []
+            }
+          ],
+          "key$": "BasicLegacyFlow",
+          "active": true,
+          "param": {}
+        },
+        "BasicStuffFlow": {
+          "entity": "stuff",
+          "kind": "basic",
+          "name": "BasicStuffFlow",
+          "step": [
+            {
+              "input": {
+                "ref": "stuff_ref01",
+                "srcdatavar": "stuff_ref01_data",
+                "suffix": "_dt0"
+              },
+              "op": "load",
+              "valid": [
+                {
+                  "apply": "TextFieldMark",
+                  "def": {
+                    "mark": "Mark01-stuff_ref01"
+                  }
+                }
+              ],
+              "active": true,
+              "match": {},
+              "data": {},
+              "spec": []
+            }
+          ],
+          "key$": "BasicStuffFlow",
+          "active": true,
+          "param": {}
+        },
+        "BasicV2018Flow": {
+          "entity": "v2018",
+          "kind": "basic",
+          "name": "BasicV2018Flow",
+          "step": [
+            {
+              "input": {
+                "ref": "v2018_ref01",
+                "srcdatavar": "v2018_ref01_data",
+                "suffix": "_dt0"
+              },
+              "op": "load",
+              "valid": [
+                {
+                  "apply": "TextFieldMark",
+                  "def": {
+                    "mark": "Mark01-v2018_ref01"
+                  }
+                }
+              ],
+              "active": true,
+              "match": {},
+              "data": {},
+              "spec": []
+            }
+          ],
+          "key$": "BasicV2018Flow",
+          "active": true,
+          "param": {}
+        }
+      },
+      "target": {
+        "ts": {
+          "title": "TypeScript",
+          "ext": "ts",
+          "comment": {
+            "line": "//"
+          },
+          "module": {
+            "name": "aareguru"
+          },
+          "base": "node_modules/@voxgig/sdkgen/project/.sdk",
+          "deps": {
+            "dotenv": {
+              "active": true,
+              "version": "^17.4.2",
+              "kind": "dev"
+            },
+            "typescript": {
+              "active": true,
+              "version": "^5.9.3",
+              "kind": "dev"
+            },
+            "@types/node": {
+              "active": true,
+              "version": "^25.6.0",
+              "kind": "dev"
+            }
+          },
+          "name": "ts",
+          "active": true
+        },
+        "go": {
+          "title": "Golang",
+          "ext": "go",
+          "comment": {
+            "line": "//"
+          },
+          "module": {
+            "name": "aareguru"
+          },
+          "srcfeature": false,
+          "deps": {
+            "github.com/voxgig/struct": {
+              "active": true,
+              "version": "v0.0.0",
+              "replace": "./utility/struct",
+              "kind": "prod"
+            }
+          },
+          "name": "go",
+          "active": true
+        },
+        "lua": {
+          "title": "Lua",
+          "ext": "lua",
+          "comment": {
+            "line": "--"
+          },
+          "module": {
+            "name": "aareguru"
+          },
+          "srcfeature": false,
+          "deps": {
+            "dkjson": {
+              "active": true,
+              "version": "2.5",
+              "kind": "prod"
+            }
+          },
+          "name": "lua",
+          "active": true
+        },
+        "php": {
+          "title": "PHP",
+          "ext": "php",
+          "comment": {
+            "line": "//"
+          },
+          "module": {
+            "name": "aareguru"
+          },
+          "srcfeature": false,
+          "deps": {},
+          "name": "php",
+          "active": true
+        },
+        "py": {
+          "title": "Python",
+          "ext": "py",
+          "comment": {
+            "line": "#"
+          },
+          "module": {
+            "name": "aareguru"
+          },
+          "srcfeature": false,
+          "deps": {
+            "requests": {
+              "active": true,
+              "version": "2.33",
+              "kind": "prod"
+            }
+          },
+          "name": "py",
+          "active": true
+        },
+        "rb": {
+          "title": "Ruby",
+          "ext": "rb",
+          "comment": {
+            "line": "#"
+          },
+          "module": {
+            "name": "aareguru"
+          },
+          "srcfeature": false,
+          "deps": {
+            "voxgig-struct": {
+              "active": true,
+              "version": "0.0.10",
+              "kind": "prod"
+            },
+            "json": {
+              "active": true,
+              "version": "0",
+              "kind": "prod"
+            }
+          },
+          "name": "rb",
+          "active": true
+        }
+      },
+      "option": {}
+    },
+    "def": {
+      "desc": ""
+    },
+    "api": {
+      "guide": {},
+      "entity": {}
+    }
+  },
+  "name__orig": "aareguru",
+  "Name": "Aareguru",
+  "name_": "aareguru",
+  "name-": "aareguru",
+  "NAME": "AAREGURU"
+}

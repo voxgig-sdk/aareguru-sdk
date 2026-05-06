@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aareguru-sdk"
+version = "0.0.1"
+description = "Aareguru SDK for Python"
+license = "MIT"
+requires-python = ">=3.8"
+dependencies = [
+    "requests>=2.33",
+    "requests>=2.33",
+]
+
+[project.urls]
+Homepage = "https://github.com/voxgig/aareguru-sdk"
+
+# Explicit package list — setuptools auto-discovery refuses to pick when
+# multiple top-level dirs (core/entity/feature/utility) are present.
+[tool.setuptools.packages.find]
+include = ["core*", "entity*", "feature*", "utility*"]
