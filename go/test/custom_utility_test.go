@@ -3,7 +3,7 @@ package sdktest
 import (
 	"testing"
 
-	sdk "voxgigaaregurusdk"
+	sdk "github.com/voxgig-sdk/aareguru-sdk"
 )
 
 func TestCustomUtility(t *testing.T) {

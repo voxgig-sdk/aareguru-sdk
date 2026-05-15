@@ -1,9 +1,13 @@
 
-import { cmp, Content } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive } from '@voxgig/sdkgen'
 
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+
+  const apikeyEnvLine = isAuthActive(model)
+    ? `\n${model.NAME}_APIKEY=<your-key>`
+    : ''
 
   Content(`### Make a direct HTTP request
 
@@ -78,8 +82,7 @@ client = ${model.const.Name}SDK.new({
 Create a \`.env.local\` file at the project root:
 
 \`\`\`
-${model.NAME}_TEST_LIVE=TRUE
-${model.NAME}_APIKEY=<your-key>
+${model.NAME}_TEST_LIVE=TRUE${apikeyEnvLine}
 \`\`\`
 
 Then run:

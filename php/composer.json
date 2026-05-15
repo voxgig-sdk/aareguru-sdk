@@ -1,5 +1,5 @@
 {
-  "name": "voxgig/aareguru-sdk",
+  "name": "voxgig-sdk/aareguru",
   "description": "Aareguru SDK for PHP",
   "type": "library",
   "license": "MIT",

@@ -1,0 +1,28 @@
+# BasicV2018Flow
+
+main: kit: flow: BasicV2018Flow:
+{
+  entity: "v2018",
+  kind: "basic",
+  name: "BasicV2018Flow",
+  step: [
+    {
+      input: {
+        ref: "v2018_ref01",
+        srcdatavar: "v2018_ref01_data",
+        suffix: "_dt0"
+      }
+
+      op: "load",
+      valid: [
+        {
+          apply: "TextFieldMark",
+          def: {
+            mark: "Mark01-v2018_ref01"
+          }
+        }
+      ]
+    }
+  ],
+  "key$": "BasicV2018Flow"
+}

@@ -1,6 +1,8 @@
 package core
 
 import (
+	"fmt"
+
 	vs "github.com/voxgig/struct"
 )
 
@@ -209,17 +211,32 @@ func (sdk *AareguruSDK) Direct(fetchargs map[string]any) (map[string]any, error)
 
 	if fm, ok := fetched.(map[string]any); ok {
 		status := ToInt(vs.GetProp(fm, "status"))
+		headers := vs.GetProp(fm, "headers")
+
+		// No-body responses (204, 304) and explicit zero content-length
+		// must skip JSON parsing — calling json() on an empty body errors.
+		var contentLength string
+		if hm, ok := headers.(map[string]any); ok {
+			if cl, ok := hm["content-length"]; ok {
+				contentLength = fmt.Sprintf("%v", cl)
+			}
+		}
+		noBody := status == 204 || status == 304 || contentLength == "0"
+
 		var jsonData any
-		if jf := vs.GetProp(fm, "json"); jf != nil {
-			if f, ok := jf.(func() any); ok {
-				jsonData = f()
+		if !noBody {
+			if jf := vs.GetProp(fm, "json"); jf != nil {
+				if f, ok := jf.(func() any); ok {
+					// f() returns nil on parse error in our fetcher.
+					jsonData = f()
+				}
 			}
 		}
 
 		return map[string]any{
 			"ok":      status >= 200 && status < 300,
 			"status":  status,
-			"headers": vs.GetProp(fm, "headers"),
+			"headers": headers,
 			"data":    jsonData,
 		}, nil
 	}

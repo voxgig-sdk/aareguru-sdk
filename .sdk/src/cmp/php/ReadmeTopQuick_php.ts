@@ -1,5 +1,5 @@
 
-import { cmp, Content } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -15,13 +15,15 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
 
   const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
 
+  const apikeyArg = isAuthActive(model)
+    ? `\n    "apikey" => getenv("${model.NAME}_APIKEY"),\n`
+    : ''
+
   Content(`\`\`\`php
 <?php
 require_once '${model.const.Name.toLowerCase()}_sdk.php';
 
-$client = new ${model.const.Name}SDK([
-    "apikey" => getenv("${model.NAME}_APIKEY"),
-]);
+$client = new ${model.const.Name}SDK([${apikeyArg}]);
 
 `)
 

@@ -1,6 +1,6 @@
 # Aareguru Python SDK
 
-The Python SDK for the Aareguru API. Provides an entity-oriented interface.
+The Python SDK for the Aareguru API. Provides an entity-oriented interface following Pythonic conventions.
 
 
 ## Install

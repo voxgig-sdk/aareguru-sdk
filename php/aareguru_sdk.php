@@ -188,10 +188,24 @@ class AareguruSDK
 
         if (is_array($fetched)) {
             $status = AareguruHelpers::to_int(Struct::getprop($fetched, "status"));
+            $headers = Struct::getprop($fetched, "headers") ?? [];
+
+            // No-body responses (204, 304) and explicit zero content-length
+            // must skip JSON parsing — calling json() on an empty body errors.
+            $content_length = is_array($headers) ? ($headers["content-length"] ?? null) : null;
+            $no_body = $status === 204 || $status === 304 || (string)$content_length === "0";
+
             $json_data = null;
-            $jf = Struct::getprop($fetched, "json");
-            if (is_callable($jf)) {
-                $json_data = $jf();
+            if (!$no_body) {
+                $jf = Struct::getprop($fetched, "json");
+                if (is_callable($jf)) {
+                    try {
+                        $json_data = $jf();
+                    } catch (\Throwable $e) {
+                        // Non-JSON body — leave data null but keep status/ok.
+                        $json_data = null;
+                    }
+                }
             }
 
             return [[

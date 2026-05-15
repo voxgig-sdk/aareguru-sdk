@@ -10,39 +10,60 @@ module AareguruUtilities
     body_str = fetchdef["body"]
     headers = fetchdef["headers"] || {}
 
-    uri = URI.parse(fullurl)
-    http = Net::HTTP.new(uri.host, uri.port)
-    http.use_ssl = (uri.scheme == "https")
-
-    klass = case method_str.upcase
-            when "POST" then Net::HTTP::Post
-            when "PUT" then Net::HTTP::Put
-            when "DELETE" then Net::HTTP::Delete
-            when "PATCH" then Net::HTTP::Patch
-            else Net::HTTP::Get
-            end
-
-    request = klass.new(uri)
-    headers.each { |k, v| request[k] = v.to_s if v.is_a?(String) }
-    request.body = body_str if body_str.is_a?(String)
-
-    resp = http.request(request)
-    resp_headers = {}
-    resp.each_header { |k, v| resp_headers[k.downcase] = v }
-
-    json_body = nil
     begin
-      json_body = JSON.parse(resp.body) if resp.body && !resp.body.empty?
-    rescue JSON::ParserError
-    end
+      uri = URI.parse(fullurl)
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = (uri.scheme == "https")
 
-    return {
-      "status" => resp.code.to_i,
-      "statusText" => resp.message,
-      "headers" => resp_headers,
-      "json" => -> { json_body },
-      "body" => resp.body,
-    }, nil
+      klass = case method_str.upcase
+              when "POST" then Net::HTTP::Post
+              when "PUT" then Net::HTTP::Put
+              when "DELETE" then Net::HTTP::Delete
+              when "PATCH" then Net::HTTP::Patch
+              else Net::HTTP::Get
+              end
+
+      request = klass.new(uri)
+      has_ua = false
+      headers.each do |k, v|
+        next unless v.is_a?(String)
+        has_ua = true if k.to_s.downcase == 'user-agent'
+        request[k] = v.to_s
+      end
+      # Default User-Agent — Net::HTTP sets "Ruby" which some CDNs block.
+      # Use a Mozilla-shaped UA unless the caller already set one.
+      request['User-Agent'] = 'Mozilla/5.0 (compatible; AareguruSDK/1.0)' unless has_ua
+      request.body = body_str if body_str.is_a?(String)
+
+      resp = http.request(request)
+      resp_headers = {}
+      resp.each_header { |k, v| resp_headers[k.downcase] = v }
+
+      json_body = nil
+      begin
+        json_body = JSON.parse(resp.body) if resp.body && !resp.body.empty?
+      rescue JSON::ParserError
+      end
+
+      return {
+        "status" => resp.code.to_i,
+        "statusText" => resp.message,
+        "headers" => resp_headers,
+        "json" => -> { json_body },
+        "body" => resp.body,
+      }, nil
+    rescue StandardError => e
+      # Network-level failures (DNS, TCP, TLS, timeouts) — return a synthesized
+      # response with status 0 so callers can branch on result.ok like any
+      # other failed request, instead of seeing an unhandled exception.
+      return {
+        "status" => 0,
+        "statusText" => "#{e.class}: #{e.message}",
+        "headers" => {},
+        "json" => -> { nil },
+        "body" => nil,
+      }, nil
+    end
   }
 
   Fetcher = ->(ctx, fullurl, fetchdef) {

@@ -1,6 +1,6 @@
 # Aareguru PHP SDK
 
-The PHP SDK for the Aareguru API. Provides an entity-oriented interface.
+The PHP SDK for the Aareguru API. Provides an entity-oriented interface using PHP conventions.
 
 
 ## Install

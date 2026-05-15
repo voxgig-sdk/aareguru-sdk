@@ -1,5 +1,5 @@
 
-import { cmp, each, Content } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -13,8 +13,12 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const entityList = each(entity).filter((e: any) => e.active !== false)
 
-  const orgPrefix = (model.origin || '').replace(/-sdk$/, '').replace(/[^a-z0-9]/gi, '')
-  const gomodule = orgPrefix + model.name.replace(/[^a-z0-9]/gi, '').toLowerCase() + 'sdk'
+  // Go module path == repo path on GitHub (org from model.origin).
+  const gomodule = `github.com/${model.origin || 'voxgig-sdk'}/${model.name}-sdk`
+
+  const apikeyOptionRow = isAuthActive(model)
+    ? '| `"apikey"` | `string` | API key for authentication. |\n'
+    : ''
 
   Content(`### New${model.const.Name}SDK
 
@@ -26,8 +30,7 @@ Creates a new SDK client.
 
 | Option | Type | Description |
 | --- | --- | --- |
-| \`"apikey"\` | \`string\` | API key for authentication. |
-| \`"base"\` | \`string\` | Base URL of the API server. |
+${apikeyOptionRow}| \`"base"\` | \`string\` | Base URL of the API server. |
 | \`"prefix"\` | \`string\` | URL path prefix prepended to all requests. |
 | \`"suffix"\` | \`string\` | URL path suffix appended to all requests. |
 | \`"feature"\` | \`map[string]any\` | Feature activation flags. |

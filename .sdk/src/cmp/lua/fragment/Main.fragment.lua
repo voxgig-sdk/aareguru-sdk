@@ -206,16 +206,32 @@ function ProjectNameSDK:direct(fetchargs)
 
   if type(fetched) == "table" then
     local status = helpers.to_int(vs.getprop(fetched, "status"))
+    local headers = vs.getprop(fetched, "headers") or {}
+
+    -- No-body responses (204, 304) and explicit zero content-length
+    -- must skip JSON parsing — calling json() on an empty body errors.
+    local content_length = nil
+    if type(headers) == "table" then
+      content_length = headers["content-length"]
+    end
+    local no_body = status == 204 or status == 304 or tostring(content_length) == "0"
+
     local json_data = nil
-    local jf = vs.getprop(fetched, "json")
-    if type(jf) == "function" then
-      json_data = jf()
+    if not no_body then
+      local jf = vs.getprop(fetched, "json")
+      if type(jf) == "function" then
+        local ok, result = pcall(jf)
+        if ok then
+          json_data = result
+        end
+        -- Non-JSON body: json_data stays nil, status/headers preserved.
+      end
     end
 
     return {
       ok = status >= 200 and status < 300,
       status = status,
-      headers = vs.getprop(fetched, "headers"),
+      headers = headers,
       data = json_data,
     }, nil
   end

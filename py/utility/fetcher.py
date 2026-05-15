@@ -5,6 +5,14 @@ import json
 from utility.voxgig_struct import voxgig_struct as vs
 
 
+# Default User-Agent — many CDNs (notably Cloudflare) reject requests with
+# Python's default urllib UA ("Python-urllib/3.x"), returning 403 before
+# the request even reaches the origin. Set a Mozilla-shaped UA so the SDK
+# behaves like every other HTTP client by default. Users can still override
+# by passing a User-Agent header in fetchdef.
+_DEFAULT_USER_AGENT = "Mozilla/5.0 (compatible; AareguruSDK/1.0)"
+
+
 def _default_http_fetch(fullurl, fetchdef):
     import urllib.request
     import urllib.error
@@ -19,8 +27,13 @@ def _default_http_fetch(fullurl, fetchdef):
     data = body_str.encode("utf-8") if body_str is not None else None
 
     req = urllib.request.Request(fullurl, data=data, method=method)
+    has_ua = False
     for k, v in headers.items():
+        if k.lower() == "user-agent":
+            has_ua = True
         req.add_header(k, v)
+    if not has_ua:
+        req.add_header("User-Agent", _DEFAULT_USER_AGENT)
 
     try:
         resp = urllib.request.urlopen(req)

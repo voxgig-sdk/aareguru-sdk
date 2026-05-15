@@ -35,6 +35,22 @@ class AareguruMakeUrl
             }
         }
 
+        // Append query string from spec.query.
+        $qsep = '?';
+        $query_items = \Voxgig\Struct\Struct::items($spec->query ?? null);
+        if ($query_items) {
+            foreach ($query_items as $item) {
+                $key = $item[0];
+                $val = $item[1];
+                if ($val !== null && is_string($key)) {
+                    $val_str = is_string($val) ? $val : (string)$val;
+                    $url .= $qsep . \Voxgig\Struct\Struct::escurl($key) . '=' . \Voxgig\Struct\Struct::escurl($val_str);
+                    $qsep = '&';
+                    $resmatch[$key] = $val;
+                }
+            }
+        }
+
         $result->resmatch = $resmatch;
         return [$url, null];
     }

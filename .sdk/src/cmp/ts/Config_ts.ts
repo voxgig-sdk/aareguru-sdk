@@ -10,6 +10,7 @@ import {
   cmp,
   each,
   indent,
+  isAuthActive,
 } from '@voxgig/sdkgen'
 
 
@@ -40,12 +41,29 @@ const Config = cmp(async function Config(props: any) {
 
   const headers = getModelPath(model, `main.${KIT}.config.headers`) || {}
 
+  const authActive = isAuthActive(model)
+  let authPrefix = 'Bearer'
+  try {
+    const v = getModelPath(model, `main.${KIT}.config.auth.prefix`,
+      { only_active: false, required: false })
+    if (null != v) authPrefix = v
+  } catch (_e) { /* ignore */ }
+  const authBlock = authActive
+    ? `auth: {
+      prefix: '${authPrefix}',
+    },
+
+    `
+    : ''
+
   File({ name: 'Config.' + target.ext }, () => {
 
     Fragment({
       from: ff + 'Config.fragment.ts',
 
       replace: {
+
+        "'AUTHBLOCK'": authBlock,
 
         "'HEADERS'": indent(JSON.stringify(headers, null, 2), 4).trim(),
 

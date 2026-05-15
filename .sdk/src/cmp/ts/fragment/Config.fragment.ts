@@ -29,13 +29,9 @@ class Config {
 
 
   options = {
-    base: 'https://aareguru.existenz.ch',
+    base: '$$main.kit.info.servers.0.url$$',
 
-    auth: {
-      prefix: 'Bearer',
-    },
-
-    headers: 'HEADERS',
+    'AUTHBLOCK'headers: 'HEADERS',
 
     entity: {
       // #EntityConfigs

@@ -1,6 +1,6 @@
 # Aareguru Lua SDK
 
-The Lua SDK for the Aareguru API. Provides an entity-oriented interface.
+The Lua SDK for the Aareguru API. Provides an entity-oriented interface using Lua conventions.
 
 
 ## Install

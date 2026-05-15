@@ -37,18 +37,17 @@ function makeUrl(ctx: Context): Error | string {
   }
 
 
-  /* TODO: fix
+  // Append query string from spec.query. Entity ops populate this via
+  // PrepareQueryUtility from the operation's reqmatch; direct() callers
+  // pass it as fetchargs.query.
   let qsep = '?'
   for (let [key, val] of items(spec.query)) {
-    if (null == spec.alias[key]) {
-      if (null != val) {
-        url += qsep + escurl(key) + '=' + escurl(val)
-        qsep = '&'
-        resmatch[key] = val
-      }
+    if (null != val) {
+      url += qsep + escurl(key) + '=' + escurl(val)
+      qsep = '&'
+      resmatch[key] = val
     }
   }
-  */
 
   result.resmatch = resmatch
 

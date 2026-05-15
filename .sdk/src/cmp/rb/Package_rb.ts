@@ -18,6 +18,13 @@ const Package = cmp(async function Package(props: any) {
 
   const model: Model = ctx$.model
 
+  // Gem name is namespaced to model.origin (e.g. "voxgig-sdk"). RubyGems
+  // names can't contain "/", so the parts are hyphen-joined. The require
+  // path (`${model.name}_sdk`) is unchanged.
+  const ns = model.origin || 'voxgig-sdk'
+  const pkgBase = ns.endsWith('-sdk') ? model.name : `${model.name}-sdk`
+  const gemName = `${ns}-${pkgBase}`
+
   const versionOf = (d: { version: string; source: 'feature' | 'target' }) =>
     d.source === 'target' ? (d.version || '0.0') : d.version
 
@@ -38,12 +45,12 @@ gemspec
   // Generate gemspec
   File({ name: model.const.Name + '_sdk.gemspec' }, () => {
     Content(`Gem::Specification.new do |spec|
-  spec.name          = "${model.name}-sdk"
+  spec.name          = "${gemName}"
   spec.version       = "0.0.1"
   spec.authors       = ["Voxgig"]
   spec.summary       = "${model.const.Name} SDK for Ruby"
   spec.license       = "MIT"
-  spec.homepage      = "https://github.com/voxgig/${model.name}-sdk"
+  spec.homepage      = "https://github.com/${ns}/${model.name}-sdk"
 
   spec.files         = Dir["lib/**/*.rb", "*.rb"]
   spec.require_paths = ["."]

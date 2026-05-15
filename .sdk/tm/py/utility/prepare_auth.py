@@ -17,9 +17,18 @@ def prepare_auth_util(ctx):
     headers = spec.headers
     options = ctx.client.options_map()
 
+    # Public APIs that need no auth omit the options.auth block entirely.
+    if options.get("auth") is None:
+        headers.pop(HEADER_AUTH, None)
+        return spec, None
+
     apikey = vs.getprop(options, OPTION_APIKEY, NOT_FOUND)
 
-    if isinstance(apikey, str) and apikey == NOT_FOUND:
+    if (
+        (isinstance(apikey, str) and apikey == NOT_FOUND)
+        or apikey is None
+        or apikey == ""
+    ):
         headers.pop(HEADER_AUTH, None)
     else:
         auth_prefix = ""

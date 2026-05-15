@@ -20,8 +20,8 @@ const Test = cmp(function Test(props: any) {
   const { target } = props
 
   // Module name: concatenated lowercase
-  const orgPrefix = (model.origin || '').replace(/-sdk$/, '').replace(/[^a-z0-9]/gi, '')
-  const gomodule = orgPrefix + model.name.replace(/[^a-z0-9]/gi, '').toLowerCase() + 'sdk'
+  // Go module path == repo path on GitHub (org from model.origin).
+  const gomodule = `github.com/${model.origin || 'voxgig-sdk'}/${model.name}-sdk`
 
   Folder({ name: 'test' }, () => {
 

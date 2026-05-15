@@ -1,5 +1,5 @@
 
-import { cmp, Content } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -9,6 +9,13 @@ import {
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+
+  const authActive = isAuthActive(model)
+  const apikeyTesterCtor = authActive
+    ? `new ${model.const.Name}SDK({ apikey: '...' })`
+    : `new ${model.const.Name}SDK()`
+  const apikeyExtendField = authActive ? `\n  apikey: '...',` : ''
+  const apikeyEnvLine = authActive ? `\n${model.NAME}_APIKEY=<your-key>` : ''
 
   Content(`### Make a direct HTTP request
 
@@ -57,7 +64,7 @@ const result = await client.Planet().load({ id: 'test01' })
 You can also use the instance method:
 
 \`\`\`ts
-const client = new ${model.const.Name}SDK({ apikey: '...' })
+const client = ${apikeyTesterCtor}
 const testClient = client.tester()
 \`\`\`
 
@@ -92,8 +99,7 @@ const logger = {
   },
 }
 
-const client = new ${model.const.Name}SDK({
-  apikey: '...',
+const client = new ${model.const.Name}SDK({${apikeyExtendField}
   extend: [logger],
 })
 \`\`\`
@@ -103,8 +109,7 @@ const client = new ${model.const.Name}SDK({
 Create a \`.env.local\` file at the project root:
 
 \`\`\`
-${model.NAME}_TEST_LIVE=TRUE
-${model.NAME}_APIKEY=<your-key>
+${model.NAME}_TEST_LIVE=TRUE${apikeyEnvLine}
 \`\`\`
 
 Then run:

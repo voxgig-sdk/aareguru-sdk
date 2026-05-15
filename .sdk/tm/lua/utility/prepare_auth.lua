@@ -16,9 +16,17 @@ local function prepare_auth_util(ctx)
   local headers = spec.headers
   local options = ctx.client:options_map()
 
+  -- Public APIs that need no auth omit the options.auth block entirely.
+  if options.auth == nil then
+    headers[HEADER_AUTH] = nil
+    return spec, nil
+  end
+
   local apikey = vs.getprop(options, OPTION_APIKEY, NOT_FOUND)
 
-  if type(apikey) == "string" and apikey == NOT_FOUND then
+  if apikey == nil
+    or (type(apikey) == "string" and (apikey == NOT_FOUND or apikey == ""))
+  then
     headers[HEADER_AUTH] = nil
   else
     local auth_prefix = ""

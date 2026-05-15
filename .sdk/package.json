@@ -23,13 +23,13 @@
   "license": "$$const.License$$",
   "devDependencies": {
     "@types/node": ">=25.6",
-    "typescript": ">=6.0",
-    "@voxgig/apidef": ">=5.8",
+    "@voxgig/apidef": "^6.1.1",
     "@voxgig/model": ">=8.1",
-    "@voxgig/sdkgen": ">=0.40",
-    "@voxgig/util": ">=0.4",
+    "@voxgig/sdkgen": "^1.1.1",
     "@voxgig/struct": ">=0.1.0",
+    "@voxgig/util": ">=0.4",
+    "aontu": ">=0.44",
     "jostraca": ">=0.29",
-    "aontu": ">=0.44"
+    "typescript": ">=6.0"
   }
 }

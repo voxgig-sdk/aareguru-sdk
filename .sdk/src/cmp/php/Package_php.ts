@@ -18,10 +18,16 @@ const Package = cmp(async function Package(props: any) {
 
   const model: Model = ctx$.model
 
+  // Package namespace mirrors the npm scope (model.origin, e.g. "voxgig-sdk").
+  // If origin already ends in "-sdk" the slug stands alone; otherwise append
+  // "-sdk" (matches the TS Package generator).
+  const ns = model.origin || 'voxgig-sdk'
+  const pkgBase = ns.endsWith('-sdk') ? model.name : `${model.name}-sdk`
+
   // Generate composer.json
   File({ name: 'composer.json' }, () => {
     Content(`{
-  "name": "voxgig/${model.name}-sdk",
+  "name": "${ns}/${pkgBase}",
   "description": "${model.const.Name} SDK for PHP",
   "type": "library",
   "license": "MIT",

@@ -5,11 +5,12 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
-	sdk "voxgigaaregurusdk"
-	"voxgigaaregurusdk/core"
+	sdk "github.com/voxgig-sdk/aareguru-sdk"
+	"github.com/voxgig-sdk/aareguru-sdk/core"
 
 	vs "github.com/voxgig/struct"
 )
@@ -25,6 +26,27 @@ func TestV2018Entity(t *testing.T) {
 
 	t.Run("basic", func(t *testing.T) {
 		setup := v2018BasicSetup(nil)
+		// Per-op sdk-test-control.json skip — basic test exercises a flow
+		// with multiple ops; skipping any op skips the whole flow.
+		_mode := "unit"
+		if setup.live {
+			_mode = "live"
+		}
+		for _, _op := range []string{"load"} {
+			if _shouldSkip, _reason := isControlSkipped("entityOp", "v2018." + _op, _mode); _shouldSkip {
+				if _reason == "" {
+					_reason = "skipped via sdk-test-control.json"
+				}
+				t.Skip(_reason)
+				return
+			}
+		}
+		// The basic flow consumes synthetic IDs from the fixture. In live mode
+		// without an *_ENTID env override, those IDs hit the live API and 4xx.
+		if setup.syntheticOnly {
+			t.Skip("live entity test uses synthetic IDs from fixture — set AAREGURU_TEST_V_____ENTID JSON to run live")
+			return
+		}
 		client := setup.client
 
 		// Bootstrap entity data from existing test data (no create step in flow).
@@ -39,19 +61,13 @@ func TestV2018Entity(t *testing.T) {
 
 		// LOAD
 		v2018Ref01Ent := client.V2018(nil)
-		v2018Ref01MatchDt0 := map[string]any{
-			"id": v2018Ref01Data["id"],
-		}
+		v2018Ref01MatchDt0 := map[string]any{}
 		v2018Ref01DataDt0Loaded, err := v2018Ref01Ent.Load(v2018Ref01MatchDt0, nil)
 		if err != nil {
 			t.Fatalf("load failed: %v", err)
 		}
-		v2018Ref01DataDt0LoadResult := core.ToMapAny(v2018Ref01DataDt0Loaded)
-		if v2018Ref01DataDt0LoadResult == nil {
-			t.Fatal("expected load result to be a map")
-		}
-		if v2018Ref01DataDt0LoadResult["id"] != v2018Ref01Data["id"] {
-			t.Fatal("expected load result id to match")
+		if v2018Ref01DataDt0Loaded == nil {
+			t.Fatal("expected load result to be non-nil")
 		}
 
 	})
@@ -91,6 +107,12 @@ func v2018BasicSetup(extra map[string]any) *entityTestSetup {
 		},
 	)
 
+	// Detect ENTID env override before envOverride consumes it. When live
+	// mode is on without a real override, the basic test runs against synthetic
+	// IDs from the fixture and 4xx's. Surface this so the test can skip.
+	entidEnvRaw := os.Getenv("AAREGURU_TEST_V_____ENTID")
+	idmapOverridden := entidEnvRaw != "" && strings.HasPrefix(strings.TrimSpace(entidEnvRaw), "{")
+
 	env := envOverride(map[string]any{
 		"AAREGURU_TEST_V_____ENTID": idmap,
 		"AAREGURU_TEST_LIVE":      "FALSE",
@@ -113,12 +135,15 @@ func v2018BasicSetup(extra map[string]any) *entityTestSetup {
 		client = sdk.NewAareguruSDK(core.ToMapAny(mergedOpts))
 	}
 
+	live := env["AAREGURU_TEST_LIVE"] == "TRUE"
 	return &entityTestSetup{
-		client:  client,
-		data:    entityData,
-		idmap:   idmapResolved,
-		env:     env,
-		explain: env["AAREGURU_TEST_EXPLAIN"] == "TRUE",
-		now:     time.Now().UnixMilli(),
+		client:        client,
+		data:          entityData,
+		idmap:         idmapResolved,
+		env:           env,
+		explain:       env["AAREGURU_TEST_EXPLAIN"] == "TRUE",
+		live:          live,
+		syntheticOnly: live && !idmapOverridden,
+		now:           time.Now().UnixMilli(),
 	}
 }

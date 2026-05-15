@@ -83,4 +83,78 @@ function runner.entity_list_to_data(list)
 end
 
 
+-- Load sdk-test-control.json from this test dir; cache. Returns an
+-- empty-skip default if the file is missing or invalid.
+runner._test_control = nil
+
+function runner.load_test_control()
+  if runner._test_control ~= nil then
+    return runner._test_control
+  end
+  local this_dir = debug.getinfo(1, "S").source:match("^@(.+/)") or "./"
+  local ctrl_path = this_dir .. "sdk-test-control.json"
+  local f = io.open(ctrl_path, "r")
+  if f == nil then
+    runner._test_control = {
+      version = 1,
+      test = {
+        skip = {
+          live = { direct = {}, entityOp = {} },
+          unit = { direct = {}, entityOp = {} },
+        },
+      },
+    }
+    return runner._test_control
+  end
+  local content = f:read("*a")
+  f:close()
+  local parsed = json.decode(content)
+  if parsed == nil then
+    runner._test_control = {
+      version = 1,
+      test = {
+        skip = {
+          live = { direct = {}, entityOp = {} },
+          unit = { direct = {}, entityOp = {} },
+        },
+      },
+    }
+  else
+    runner._test_control = parsed
+  end
+  return runner._test_control
+end
+
+
+-- Check sdk-test-control.json for a skip entry. Returns (skip, reason).
+function runner.is_control_skipped(kind, name, mode)
+  local ctrl = runner.load_test_control()
+  local skip = (((ctrl.test or {}).skip or {})[mode] or {})
+  local items = skip[kind] or {}
+  for _, item in ipairs(items) do
+    if kind == "direct" and item.test == name then
+      return true, item.reason
+    end
+    if kind == "entityOp" then
+      local key = (item.entity or "") .. "." .. (item.op or "")
+      if key == name then
+        return true, item.reason
+      end
+    end
+  end
+  return false, nil
+end
+
+
+-- Per-test live pacing delay (ms); default 500.
+function runner.live_delay_ms()
+  local ctrl = runner.load_test_control()
+  local v = ((ctrl.test or {}).live or {}).delayMs
+  if type(v) == "number" and v >= 0 then
+    return v
+  end
+  return 500
+end
+
+
 return runner

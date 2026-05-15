@@ -25,6 +25,19 @@ local function default_http_fetch(fullurl, fetchdef)
     headers["content-length"] = tostring(#body_str)
   end
 
+  -- Default User-Agent — many CDNs reject requests with no UA. Set a
+  -- Mozilla-shaped UA unless the caller already set one.
+  local has_ua = false
+  for k, _ in pairs(headers) do
+    if string.lower(k) == "user-agent" then
+      has_ua = true
+      break
+    end
+  end
+  if not has_ua then
+    headers["User-Agent"] = "Mozilla/5.0 (compatible; AareguruSDK/1.0)"
+  end
+
   local response_body = {}
   local res, code, response_headers = http.request({
     url = fullurl,

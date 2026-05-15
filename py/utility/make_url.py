@@ -1,4 +1,4 @@
-# Aareguru SDK utility: make_url
+# ProjectName SDK utility: make_url
 
 from __future__ import annotations
 from utility.voxgig_struct import voxgig_struct as vs
@@ -27,6 +27,19 @@ def make_url_util(ctx):
                 val_str = val if isinstance(val, str) else str(val)
                 encoded = vs.escurl(val_str)
                 url = url.replace("{" + key + "}", encoded)
+                resmatch[key] = val
+
+    # Append query string from spec.query.
+    qsep = "?"
+    query_items = vs.items(getattr(spec, "query", None))
+    if query_items is not None:
+        for item in query_items:
+            key = item[0]
+            val = item[1]
+            if val is not None and isinstance(key, str):
+                val_str = val if isinstance(val, str) else str(val)
+                url += qsep + vs.escurl(key) + "=" + vs.escurl(val_str)
+                qsep = "&"
                 resmatch[key] = val
 
     result.resmatch = resmatch

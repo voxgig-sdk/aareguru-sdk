@@ -1,4 +1,4 @@
-module voxgigaaregurusdk
+module github.com/voxgig-sdk/aareguru-sdk
 
 go 1.20
 

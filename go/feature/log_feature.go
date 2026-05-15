@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"os"
 
-	"voxgigaaregurusdk/core"
+	"github.com/voxgig-sdk/aareguru-sdk/core"
 )
 
 type LogFeature struct {

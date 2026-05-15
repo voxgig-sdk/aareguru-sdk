@@ -12,8 +12,8 @@ const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {
   const { target, ctx$: { model } } = props
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const orgPrefix = (model.origin || '').replace(/-sdk$/, '').replace(/[^a-z0-9]/gi, '')
-  const gomodule = orgPrefix + model.name.replace(/[^a-z0-9]/gi, '').toLowerCase() + 'sdk'
+  // Go module path == repo path on GitHub (org from model.origin).
+  const gomodule = `github.com/${model.origin || 'voxgig-sdk'}/${model.name}-sdk`
 
   const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
 

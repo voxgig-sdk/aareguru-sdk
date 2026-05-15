@@ -1,7 +1,6 @@
 # Aareguru TypeScript SDK
 
-The TypeScript SDK for the Aareguru API. Provides a type-safe,
-entity-oriented interface with full async/await support.
+The TypeScript SDK for the Aareguru API. Provides a type-safe, entity-oriented interface with full async/await support.
 
 
 ## Install

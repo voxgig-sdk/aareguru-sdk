@@ -3,7 +3,7 @@ package utility
 import (
 	"reflect"
 
-	"voxgigaaregurusdk/core"
+	"github.com/voxgig-sdk/aareguru-sdk/core"
 )
 
 func featureHookUtil(ctx *core.Context, name string) {

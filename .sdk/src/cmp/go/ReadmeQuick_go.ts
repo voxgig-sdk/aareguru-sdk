@@ -1,5 +1,5 @@
 
-import { cmp, each, Content } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -12,8 +12,8 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const orgPrefix = (model.origin || '').replace(/-sdk$/, '').replace(/[^a-z0-9]/gi, '')
-  const gomodule = orgPrefix + model.name.replace(/[^a-z0-9]/gi, '').toLowerCase() + 'sdk'
+  // Go module path == repo path on GitHub (org from model.origin).
+  const gomodule = `github.com/${model.origin || 'voxgig-sdk'}/${model.name}-sdk`
 
   // Find the first published entity for examples
   const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
@@ -23,23 +23,27 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     e.active !== false && e.ancestors && e.ancestors.length > 0
   ) as any
 
+  const authActive = isAuthActive(model)
+  const goImports = authActive
+    ? `    "fmt"\n    "os"\n`
+    : `    "fmt"\n`
+  const apikeyArg = authActive
+    ? `\n        "apikey": os.Getenv("${model.NAME}_APIKEY"),\n    `
+    : ''
+
   Content(`### 1. Create a client
 
 \`\`\`go
 package main
 
 import (
-    "fmt"
-    "os"
-
+${goImports}
     sdk "${gomodule}"
     "${gomodule}/core"
 )
 
 func main() {
-    client := sdk.New${model.const.Name}SDK(map[string]any{
-        "apikey": os.Getenv("${model.NAME}_APIKEY"),
-    })
+    client := sdk.New${model.const.Name}SDK(map[string]any{${apikeyArg}})
 \`\`\`
 
 `)

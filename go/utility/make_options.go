@@ -5,7 +5,7 @@ import (
 
 	vs "github.com/voxgig/struct"
 
-	"voxgigaaregurusdk/core"
+	"github.com/voxgig-sdk/aareguru-sdk/core"
 )
 
 func makeOptionsUtil(ctx *core.Context) map[string]any {

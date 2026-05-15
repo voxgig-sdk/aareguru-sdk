@@ -38,6 +38,22 @@ local function make_url_util(ctx)
     end
   end
 
+  -- Append query string from spec.query.
+  local qsep = "?"
+  local query_items = vs.items(spec.query)
+  if query_items ~= nil then
+    for _, item in ipairs(query_items) do
+      local key = item[1]
+      local val = item[2]
+      if val ~= nil and type(key) == "string" then
+        local val_str = type(val) == "string" and val or tostring(val)
+        url = url .. qsep .. vs.escurl(key) .. "=" .. vs.escurl(val_str)
+        qsep = "&"
+        resmatch[key] = val
+      end
+    end
+  end
+
   result.resmatch = resmatch
 
   return url, nil

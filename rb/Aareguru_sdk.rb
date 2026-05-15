@@ -164,14 +164,30 @@ class AareguruSDK
 
     if fetched.is_a?(Hash)
       status = AareguruHelpers.to_int(VoxgigStruct.getprop(fetched, "status"))
+      headers = VoxgigStruct.getprop(fetched, "headers") || {}
+
+      # No-body responses (204, 304) and explicit zero content-length must
+      # skip JSON parsing — calling json() on an empty body errors.
+      content_length = headers.is_a?(Hash) ? headers["content-length"] : nil
+      no_body = status == 204 || status == 304 || content_length.to_s == "0"
+
       json_data = nil
-      jf = VoxgigStruct.getprop(fetched, "json")
-      json_data = jf.call if jf.is_a?(Proc)
+      unless no_body
+        jf = VoxgigStruct.getprop(fetched, "json")
+        if jf.is_a?(Proc)
+          begin
+            json_data = jf.call
+          rescue StandardError
+            # Non-JSON body — leave data nil, keep status/headers.
+            json_data = nil
+          end
+        end
+      end
 
       return {
         "ok" => status >= 200 && status < 300,
         "status" => status,
-        "headers" => VoxgigStruct.getprop(fetched, "headers"),
+        "headers" => headers,
         "data" => json_data,
       }, nil
     end

@@ -62,6 +62,52 @@ module AareguruTestRunner
     end
     out
   end
+
+  @test_control = nil
+
+  # Load sdk-test-control.json from this test dir; cache. Returns the
+  # empty-skip default if the file is missing or invalid.
+  def self.load_test_control
+    return @test_control unless @test_control.nil?
+    ctrl_path = File.join(File.dirname(__FILE__), 'sdk-test-control.json')
+    @test_control = begin
+      JSON.parse(File.read(ctrl_path))
+    rescue StandardError
+      {
+        'version' => 1,
+        'test' => { 'skip' => {
+          'live' => { 'direct' => [], 'entityOp' => [] },
+          'unit' => { 'direct' => [], 'entityOp' => [] },
+        }},
+      }
+    end
+    @test_control
+  end
+
+  # Check sdk-test-control.json for a skip entry. Returns [skip, reason].
+  def self.is_control_skipped(kind, name, mode)
+    ctrl = load_test_control
+    skip = (ctrl.dig('test', 'skip', mode) || {})
+    items = skip[kind] || []
+    items.each do |item|
+      if kind == 'direct' && item['test'] == name
+        return [true, item['reason']]
+      end
+      if kind == 'entityOp'
+        key = "#{item['entity']}.#{item['op']}"
+        return [true, item['reason']] if key == name
+      end
+    end
+    [false, nil]
+  end
+
+  # Per-test live pacing delay (ms); default 500.
+  def self.live_delay_ms
+    ctrl = load_test_control
+    v = ctrl.dig('test', 'live', 'delayMs')
+    return v if v.is_a?(Integer) && v >= 0
+    500
+  end
 end
 
 # Module-level aliases for test convenience.

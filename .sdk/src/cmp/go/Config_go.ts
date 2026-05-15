@@ -9,6 +9,7 @@ import {
   Line,
   cmp,
   each,
+  isAuthActive,
 } from '@voxgig/sdkgen'
 
 
@@ -37,11 +38,18 @@ const Config = cmp(async function Config(props: any) {
 
   const headers = getModelPath(model, `main.${KIT}.config.headers`) || {}
 
+  const authActive = isAuthActive(model)
   let authPrefix = ''
   try { authPrefix = getModelPath(model, `main.${KIT}.config.auth.prefix`) } catch (_e) { }
 
   let baseUrl = ''
   try { baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`) } catch (_e) { }
+
+  const authBlock = authActive
+    ? `			"auth": map[string]any{
+				"prefix": "${authPrefix}",
+			},\n`
+    : ''
 
   // Config is now in core/ package
   File({ name: 'config.' + target.ext }, () => {
@@ -67,10 +75,7 @@ const Config = cmp(async function Config(props: any) {
     Content(`		},
 		"options": map[string]any{
 			"base": "${baseUrl}",
-			"auth": map[string]any{
-				"prefix": "${authPrefix}",
-			},
-			"headers": ${formatGoMap(headers, 3)},
+${authBlock}			"headers": ${formatGoMap(headers, 3)},
 			"entity": map[string]any{
 `)
 

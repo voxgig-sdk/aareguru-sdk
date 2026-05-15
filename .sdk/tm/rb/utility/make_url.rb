@@ -26,6 +26,22 @@ module AareguruUtilities
       end
     end
 
+    # Append query string from spec.query.
+    qsep = "?"
+    query_items = VoxgigStruct.items(spec.respond_to?(:query) ? spec.query : nil)
+    if query_items
+      query_items.each do |item|
+        key = item[0]
+        val = item[1]
+        if val && key.is_a?(String)
+          val_str = val.is_a?(String) ? val : val.to_s
+          url += qsep + VoxgigStruct.escurl(key) + "=" + VoxgigStruct.escurl(val_str)
+          qsep = "&"
+          resmatch[key] = val
+        end
+      end
+    end
+
     result.resmatch = resmatch
     return url, nil
   }

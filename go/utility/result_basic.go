@@ -3,7 +3,7 @@ package utility
 import (
 	"fmt"
 
-	"voxgigaaregurusdk/core"
+	"github.com/voxgig-sdk/aareguru-sdk/core"
 )
 
 func resultBasicUtil(ctx *core.Context) *core.Result {

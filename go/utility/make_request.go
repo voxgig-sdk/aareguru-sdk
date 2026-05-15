@@ -1,6 +1,6 @@
 package utility
 
-import "voxgigaaregurusdk/core"
+import "github.com/voxgig-sdk/aareguru-sdk/core"
 
 func makeRequestUtil(ctx *core.Context) (*core.Response, error) {
 	if ctx.Out["request"] != nil {

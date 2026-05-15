@@ -86,6 +86,68 @@ class AareguruTestRunner
         }
         return $out;
     }
+
+    private static $test_control = null;
+
+    /**
+     * Load sdk-test-control.json from this test dir; cache. Returns an
+     * empty-skip default if the file is missing or invalid.
+     */
+    public static function load_test_control(): array
+    {
+        if (self::$test_control !== null) {
+            return self::$test_control;
+        }
+        $ctrl_path = __DIR__ . '/sdk-test-control.json';
+        $default = [
+            'version' => 1,
+            'test' => ['skip' => [
+                'live' => ['direct' => [], 'entityOp' => []],
+                'unit' => ['direct' => [], 'entityOp' => []],
+            ]],
+        ];
+        if (!file_exists($ctrl_path)) {
+            self::$test_control = $default;
+            return self::$test_control;
+        }
+        $content = file_get_contents($ctrl_path);
+        $parsed = json_decode($content, true);
+        self::$test_control = is_array($parsed) ? $parsed : $default;
+        return self::$test_control;
+    }
+
+    /**
+     * Check sdk-test-control.json for a skip entry. Returns [skip, reason].
+     */
+    public static function is_control_skipped(string $kind, string $name, string $mode): array
+    {
+        $ctrl = self::load_test_control();
+        $skip = $ctrl['test']['skip'][$mode] ?? [];
+        $items = $skip[$kind] ?? [];
+        foreach ($items as $item) {
+            if ($kind === 'direct' && ($item['test'] ?? null) === $name) {
+                return [true, $item['reason'] ?? null];
+            }
+            if ($kind === 'entityOp') {
+                $key = ($item['entity'] ?? '') . '.' . ($item['op'] ?? '');
+                if ($key === $name) {
+                    return [true, $item['reason'] ?? null];
+                }
+            }
+        }
+        return [false, null];
+    }
+
+    /** Per-test live pacing delay (ms); default 500. */
+    public static function live_delay_ms(): int
+    {
+        $ctrl = self::load_test_control();
+        $v = $ctrl['test']['live']['delayMs'] ?? null;
+        if (is_int($v) && $v >= 0) {
+            return $v;
+        }
+        return 500;
+    }
 }
 
 // Aliases for test convenience.

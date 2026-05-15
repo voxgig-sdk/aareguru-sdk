@@ -18,11 +18,18 @@ const Package = cmp(async function Package(props: any) {
 
   const model: Model = ctx$.model
 
+  // Rock name is namespaced to model.origin (e.g. "voxgig-sdk"). LuaRocks has
+  // no real namespaces, so the parts are hyphen-joined. The Lua module name
+  // (`${model.name}_sdk`) used by `require` is unchanged.
+  const ns = model.origin || 'voxgig-sdk'
+  const pkgBase = ns.endsWith('-sdk') ? model.name : `${model.name}-sdk`
+  const rockName = `${ns}-${pkgBase}`
+
   File({ name: model.name + '.rockspec' }, () => {
-    Content(`package = "${model.name}-sdk"
+    Content(`package = "${rockName}"
 version = "0.0-1"
 source = {
-  url = "git://github.com/voxgig/${model.name}-sdk.git"
+  url = "git://github.com/${ns}/${model.name}-sdk.git"
 }
 description = {
   summary = "${model.const.Name} SDK for Lua",

@@ -1,5 +1,5 @@
 
-import { cmp, Content } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -14,12 +14,14 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
 
+  const apikeyArg = isAuthActive(model)
+    ? `\n  apikey: process.env.${model.NAME}_APIKEY,\n`
+    : ''
+
   Content(`\`\`\`ts
 import { ${model.const.Name}SDK } from '${target.module.name}'
 
-const client = new ${model.const.Name}SDK({
-  apikey: process.env.${model.NAME}_APIKEY,
-})
+const client = new ${model.const.Name}SDK({${apikeyArg}})
 
 `)
 

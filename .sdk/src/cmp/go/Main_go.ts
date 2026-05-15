@@ -32,9 +32,13 @@ const Main = cmp(async function Main(props: any) {
   const entity: ModelEntity = getModelPath(model, `main.${KIT}.entity`)
   const feature = getModelPath(model, `main.${KIT}.feature`)
 
-  // Module name: concatenated lowercase (e.g., voxgigsolardemosdk)
-  const orgPrefix = (model.origin || '').replace(/-sdk$/, '').replace(/[^a-z0-9]/gi, '')
-  const gomodule = orgPrefix + model.name.replace(/[^a-z0-9]/gi, '').toLowerCase() + 'sdk'
+  // Go module path == the repo path on GitHub (org from model.origin),
+  // e.g. github.com/voxgig-sdk/<slug>-sdk. Used in go.mod and every import.
+  const gomodule = `github.com/${model.origin || 'voxgig-sdk'}/${model.name}-sdk`
+  // The root package name must be a plain Go identifier (can't be a path),
+  // so it stays as the concatenated-lowercase form (e.g. voxgigdogsdk).
+  const gopackage = (model.origin || 'voxgig-sdk').replace(/-sdk$/, '').replace(/[^a-z0-9]/gi, '') +
+    model.name.replace(/[^a-z0-9]/gi, '').toLowerCase() + 'sdk'
 
   Package({ target })
 
@@ -121,7 +125,7 @@ var NewBaseFeatureFunc func() Feature
   const hasEntities = Object.keys(entity || {}).length > 0
   const entityImport = hasEntities ? `\n\t"${gomodule}/entity"` : ''
   File({ name: model.name + '.' + target.ext }, () => {
-    Content(`package ${gomodule}
+    Content(`package ${gopackage}
 
 import (
 	"${gomodule}/core"${entityImport}

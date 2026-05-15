@@ -1,6 +1,6 @@
 # Aareguru Ruby SDK
 
-The Ruby SDK for the Aareguru API. Provides an entity-oriented interface.
+The Ruby SDK for the Aareguru API. Provides an entity-oriented interface using idiomatic Ruby conventions.
 
 
 ## Install

@@ -1,5 +1,5 @@
 
-import { cmp, Content } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -15,12 +15,14 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
 
   const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
 
+  const apikeyArg = isAuthActive(model)
+    ? `\n  "apikey" => ENV["${model.NAME}_APIKEY"],\n`
+    : ''
+
   Content(`\`\`\`ruby
 require_relative "${model.const.Name}_sdk"
 
-client = ${model.const.Name}SDK.new({
-  "apikey" => ENV["${model.NAME}_APIKEY"],
-})
+client = ${model.const.Name}SDK.new({${apikeyArg}})
 
 `)
 

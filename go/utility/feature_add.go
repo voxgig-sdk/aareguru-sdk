@@ -1,6 +1,6 @@
 package utility
 
-import "voxgigaaregurusdk/core"
+import "github.com/voxgig-sdk/aareguru-sdk/core"
 
 func featureAddUtil(ctx *core.Context, f core.Feature) {
 	client := ctx.Client

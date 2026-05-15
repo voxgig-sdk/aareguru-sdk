@@ -1,5 +1,5 @@
 
-import { cmp, each, Content } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -18,14 +18,16 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     e.active !== false && e.ancestors && e.ancestors.length > 0
   ) as any
 
+  const apikeyArg = isAuthActive(model)
+    ? `\n  apikey = os.getenv("${model.NAME}_APIKEY"),\n`
+    : ''
+
   Content(`### 1. Create a client
 
 \`\`\`lua
 local sdk = require("${model.name}_sdk")
 
-local client = sdk.new({
-  apikey = os.getenv("${model.NAME}_APIKEY"),
-})
+local client = sdk.new({${apikeyArg}})
 \`\`\`
 
 `)

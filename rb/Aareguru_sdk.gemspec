@@ -1,10 +1,10 @@
 Gem::Specification.new do |spec|
-  spec.name          = "aareguru-sdk"
+  spec.name          = "voxgig-sdk-aareguru"
   spec.version       = "0.0.1"
   spec.authors       = ["Voxgig"]
   spec.summary       = "Aareguru SDK for Ruby"
   spec.license       = "MIT"
-  spec.homepage      = "https://github.com/voxgig/aareguru-sdk"
+  spec.homepage      = "https://github.com/voxgig-sdk/aareguru-sdk"
 
   spec.files         = Dir["lib/**/*.rb", "*.rb"]
   spec.require_paths = ["."]

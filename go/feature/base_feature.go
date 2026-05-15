@@ -1,7 +1,7 @@
 package feature
 
 import (
-	"voxgigaaregurusdk/core"
+	"github.com/voxgig-sdk/aareguru-sdk/core"
 )
 
 type BaseFeature struct {

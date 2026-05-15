@@ -1,5 +1,5 @@
 
-import { cmp, each, Content } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -18,15 +18,18 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     e.active !== false && e.ancestors && e.ancestors.length > 0
   ) as any
 
+  const authActive = isAuthActive(model)
+  const apikeyImport = authActive ? `import os\n` : ''
+  const apikeyArg = authActive
+    ? `\n    "apikey": os.environ.get("${model.NAME}_APIKEY"),\n`
+    : ''
+
   Content(`### 1. Create a client
 
 \`\`\`python
-import os
-from ${model.const.Name.toLowerCase()}_sdk import ${model.const.Name}SDK
+${apikeyImport}from ${model.const.Name.toLowerCase()}_sdk import ${model.const.Name}SDK
 
-client = ${model.const.Name}SDK({
-    "apikey": os.environ.get("${model.NAME}_APIKEY"),
-})
+client = ${model.const.Name}SDK({${apikeyArg}})
 \`\`\`
 
 `)

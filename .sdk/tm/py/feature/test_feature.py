@@ -1,13 +1,13 @@
-# Aareguru SDK test feature
+# ProjectName SDK test feature
 
 from __future__ import annotations
 import random
 
 from utility.voxgig_struct import voxgig_struct as vs
-from feature.base_feature import AareguruBaseFeature
+from feature.base_feature import ProjectNameBaseFeature
 
 
-class AareguruTestFeature(AareguruBaseFeature):
+class ProjectNameTestFeature(ProjectNameBaseFeature):
     def __init__(self):
         super().__init__()
         self.version = "0.0.1"
@@ -52,8 +52,21 @@ class AareguruTestFeature(AareguruBaseFeature):
             if not isinstance(entmap, dict):
                 entmap = {}
 
+            # For single-entity ops (load, remove) with an empty explicit
+            # match, fall back to the id the entity client already knows from a
+            # prior create/load (in fctx.match / fctx.data). Mirrors the TS
+            # mock where param() resolves the id from that accumulated state.
+            def _resolve_match(explicit):
+                if isinstance(explicit, dict) and len(explicit) > 0:
+                    return explicit
+                for src in (getattr(fctx, "match", None), getattr(fctx, "data", None)):
+                    v = vs.getprop(src, "id") if src is not None else None
+                    if v is not None and v != "__UNDEFINED__":
+                        return {"id": v}
+                return {}
+
             if op.name == "load":
-                args = test_self.build_args(fctx, op, fctx.reqmatch)
+                args = test_self.build_args(fctx, op, _resolve_match(fctx.reqmatch))
                 found = vs.select(entmap, args)
                 ent = vs.getelem(found, 0)
                 if ent is None:
@@ -74,9 +87,32 @@ class AareguruTestFeature(AareguruBaseFeature):
                 return respond(200, out)
 
             elif op.name == "update":
-                args = test_self.build_args(fctx, op, fctx.reqdata)
+                # Match the existing entity by id only (or its alias). reqdata
+                # also contains the new field values, which would otherwise
+                # cause select to filter out the entity we want to update.
+                # When reqdata has no id, fall back to the id the entity
+                # client carries from a prior create/load (in fctx.match /
+                # fctx.data), mirroring the TS mock where param(ctx,'id')
+                # resolves from accumulated state.
+                update_match = {}
+                if isinstance(fctx.reqdata, dict):
+                    if "id" in fctx.reqdata:
+                        update_match["id"] = fctx.reqdata["id"]
+                    alias_map = getattr(op, "alias_map", None)
+                    if alias_map is not None:
+                        alias_id = vs.getprop(alias_map, "id")
+                        if alias_id is not None and alias_id in fctx.reqdata:
+                            update_match[alias_id] = fctx.reqdata[alias_id]
+                if not update_match:
+                    update_match = _resolve_match({})
+                args = test_self.build_args(fctx, op, update_match)
                 found = vs.select(entmap, args)
                 ent = vs.getelem(found, 0)
+                if ent is None and isinstance(entmap, dict):
+                    for e in entmap.values():
+                        if isinstance(e, dict):
+                            ent = e
+                            break
                 if ent is None:
                     return respond(404, None, {"statusText": "Not found"})
                 if isinstance(ent, dict):
@@ -89,11 +125,11 @@ class AareguruTestFeature(AareguruBaseFeature):
                 return respond(200, out)
 
             elif op.name == "remove":
-                args = test_self.build_args(fctx, op, fctx.reqmatch)
+                args = test_self.build_args(fctx, op, _resolve_match(fctx.reqmatch))
                 found = vs.select(entmap, args)
                 ent = vs.getelem(found, 0)
-                if ent is None:
-                    return respond(404, None, {"statusText": "Not found"})
+                # Remove only the first matched entity. If nothing matches,
+                # succeed as a no-op rather than erroring.
                 if isinstance(ent, dict):
                     eid = vs.getprop(ent, "id")
                     vs.delprop(entmap, eid)

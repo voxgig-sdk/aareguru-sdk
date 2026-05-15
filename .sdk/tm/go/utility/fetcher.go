@@ -27,12 +27,22 @@ func defaultHTTPFetch(fullurl string, fetchdef map[string]any) (map[string]any, 
 		return nil, err
 	}
 
+	hasUA := false
 	if headers, ok := fetchdef["headers"].(map[string]any); ok {
 		for k, v := range headers {
 			if sv, ok := v.(string); ok {
+				if strings.EqualFold(k, "user-agent") {
+					hasUA = true
+				}
 				req.Header.Set(k, sv)
 			}
 		}
+	}
+	// Default User-Agent — Go's net/http defaults to "Go-http-client/1.1"
+	// which some CDNs block. Use a Mozilla-shaped UA unless the caller
+	// already set one.
+	if !hasUA {
+		req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; AareguruSDK/1.0)")
 	}
 
 	resp, err := http.DefaultClient.Do(req)

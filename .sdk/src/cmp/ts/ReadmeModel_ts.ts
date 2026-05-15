@@ -1,5 +1,5 @@
 
-import { cmp, each, Content } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -13,13 +13,18 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const entityList = each(entity).filter((e: any) => e.active !== false)
 
+  const authActive = isAuthActive(model)
+  const apikeyOptionType = authActive ? `\n  apikey?: string` : ''
+  const apikeyOptionRow = authActive
+    ? '| `apikey` | `string` | API key for authentication. |\n'
+    : ''
+
   Content(`### ${model.const.Name}SDK
 
 #### Constructor
 
 \`\`\`ts
-new ${model.const.Name}SDK(options?: {
-  apikey?: string
+new ${model.const.Name}SDK(options?: {${apikeyOptionType}
   base?: string
   prefix?: string
   suffix?: string
@@ -30,8 +35,7 @@ new ${model.const.Name}SDK(options?: {
 
 | Option | Type | Description |
 | --- | --- | --- |
-| \`apikey\` | \`string\` | API key for authentication. |
-| \`base\` | \`string\` | Base URL of the API server. |
+${apikeyOptionRow}| \`base\` | \`string\` | Base URL of the API server. |
 | \`prefix\` | \`string\` | URL path prefix prepended to all requests. |
 | \`suffix\` | \`string\` | URL path suffix appended to all requests. |
 | \`feature\` | \`object\` | Feature activation flags (e.g. \`{ test: { active: true } }\`). |

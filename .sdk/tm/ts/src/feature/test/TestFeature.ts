@@ -124,13 +124,12 @@ class TestFeature extends BaseFeature {
         const args = self.buildArgs(ctx, op, ctx.reqmatch)
         const found = select(entmap, args)
         const ent = getelem(found, 0)
-        if (null == ent) {
-          return respond(404, undefined, { statusText: S_NOT_FOUND })
-        }
-        else {
+        // Remove only the first matched entity. If nothing matches,
+        // succeed as a no-op rather than erroring.
+        if (null != ent) {
           delprop(entmap, getprop(ent, 'id'))
-          return respond(200)
         }
+        return respond(200)
       }
       else if ('create' === op.name) {
         const args = self.buildArgs(ctx, op, ctx.reqdata)

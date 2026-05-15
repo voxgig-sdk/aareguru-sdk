@@ -1,5 +1,5 @@
 
-import { cmp, each, Content } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -13,6 +13,10 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const entityList = each(entity).filter((e: any) => e.active !== false)
 
+  const apikeyOptionRow = isAuthActive(model)
+    ? '| `apikey` | `String` | API key for authentication. |\n'
+    : ''
+
   Content(`### ${model.const.Name}SDK
 
 \`\`\`ruby
@@ -24,8 +28,7 @@ Creates a new SDK client.
 
 | Option | Type | Description |
 | --- | --- | --- |
-| \`apikey\` | \`String\` | API key for authentication. |
-| \`base\` | \`String\` | Base URL of the API server. |
+${apikeyOptionRow}| \`base\` | \`String\` | Base URL of the API server. |
 | \`prefix\` | \`String\` | URL path prefix prepended to all requests. |
 | \`suffix\` | \`String\` | URL path suffix appended to all requests. |
 | \`feature\` | \`Hash\` | Feature activation flags. |

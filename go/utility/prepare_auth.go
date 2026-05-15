@@ -3,7 +3,7 @@ package utility
 import (
 	vs "github.com/voxgig/struct"
 
-	"voxgigaaregurusdk/core"
+	"github.com/voxgig-sdk/aareguru-sdk/core"
 )
 
 const headerAuth = "authorization"
@@ -20,9 +20,23 @@ func prepareAuthUtil(ctx *core.Context) (*core.Spec, error) {
 	headers := spec.Headers
 	options := ctx.Client.OptionsMap()
 
+	// Public APIs that need no auth omit the options.auth block entirely.
+	if options["auth"] == nil {
+		delete(headers, headerAuth)
+		return spec, nil
+	}
+
 	apikey := vs.GetProp(options, optionApikey, notFound)
 
-	if apikeyStr, ok := apikey.(string); ok && apikeyStr == notFound {
+	skip := false
+	if apikey == nil {
+		skip = true
+	} else if apikeyStr, ok := apikey.(string); ok &&
+		(apikeyStr == notFound || apikeyStr == "") {
+		skip = true
+	}
+
+	if skip {
 		delete(headers, headerAuth)
 	} else {
 		authPrefix := ""

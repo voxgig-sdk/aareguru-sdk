@@ -11,9 +11,16 @@ module AareguruUtilities
 
     headers = spec.headers
     options = ctx.client.options_map
+
+    # Public APIs that need no auth omit the options.auth block entirely.
+    if options["auth"].nil?
+      headers.delete(HEADER_AUTH)
+      return spec, nil
+    end
+
     apikey = VoxgigStruct.getprop(options, OPTION_APIKEY, NOT_FOUND)
 
-    if apikey.is_a?(String) && apikey == NOT_FOUND
+    if apikey.nil? || (apikey.is_a?(String) && (apikey == NOT_FOUND || apikey == ""))
       headers.delete(HEADER_AUTH)
     else
       auth_prefix = VoxgigStruct.getpath(options, "auth.prefix") || ""

@@ -12,7 +12,7 @@ import (
 	"sync"
 	"testing"
 
-	sdk "voxgigaaregurusdk"
+	sdk "github.com/voxgig-sdk/aareguru-sdk"
 
 	vs "github.com/voxgig/struct"
 )
@@ -71,12 +71,112 @@ func envOverride(m map[string]any) map[string]any {
 }
 
 type entityTestSetup struct {
-	client  *sdk.AareguruSDK
-	data    map[string]any
-	idmap   map[string]any
-	env     map[string]any
-	explain bool
-	now     int64
+	client         *sdk.AareguruSDK
+	data           map[string]any
+	idmap          map[string]any
+	env            map[string]any
+	explain        bool
+	live           bool
+	syntheticOnly  bool
+	now            int64
+}
+
+var (
+	cachedTestControl     map[string]any
+	cachedTestControlOnce sync.Once
+)
+
+// loadTestControl reads sdk-test-control.json from this test dir; caches
+// after first read. Returns an empty-skip default if the file is missing
+// or invalid so tests never crash on a bad config.
+func loadTestControl() map[string]any {
+	cachedTestControlOnce.Do(func() {
+		_, filename, _, _ := runtime.Caller(0)
+		dir := filepath.Dir(filename)
+		ctrlPath := filepath.Join(dir, "sdk-test-control.json")
+		def := map[string]any{
+			"version": 1,
+			"test": map[string]any{"skip": map[string]any{
+				"live": map[string]any{"direct": []any{}, "entityOp": []any{}},
+				"unit": map[string]any{"direct": []any{}, "entityOp": []any{}},
+			}},
+		}
+		data, err := os.ReadFile(ctrlPath)
+		if err != nil {
+			cachedTestControl = def
+			return
+		}
+		var parsed map[string]any
+		if err := json.Unmarshal(data, &parsed); err != nil {
+			cachedTestControl = def
+			return
+		}
+		cachedTestControl = parsed
+	})
+	return cachedTestControl
+}
+
+// isControlSkipped checks sdk-test-control.json for a skip entry.
+// Returns (skip, reason).
+func isControlSkipped(kind, name, mode string) (bool, string) {
+	ctrl := loadTestControl()
+	test, _ := ctrl["test"].(map[string]any)
+	if test == nil {
+		return false, ""
+	}
+	skip, _ := test["skip"].(map[string]any)
+	if skip == nil {
+		return false, ""
+	}
+	modeMap, _ := skip[mode].(map[string]any)
+	if modeMap == nil {
+		return false, ""
+	}
+	items, _ := modeMap[kind].([]any)
+	for _, raw := range items {
+		item, _ := raw.(map[string]any)
+		if item == nil {
+			continue
+		}
+		reason, _ := item["reason"].(string)
+		if kind == "direct" {
+			if t, _ := item["test"].(string); t == name {
+				return true, reason
+			}
+		}
+		if kind == "entityOp" {
+			ent, _ := item["entity"].(string)
+			op, _ := item["op"].(string)
+			if ent+"."+op == name {
+				return true, reason
+			}
+		}
+	}
+	return false, ""
+}
+
+// liveDelayMs returns the configured per-test live delay in ms; default 500.
+func liveDelayMs() int {
+	ctrl := loadTestControl()
+	test, _ := ctrl["test"].(map[string]any)
+	if test == nil {
+		return 500
+	}
+	live, _ := test["live"].(map[string]any)
+	if live == nil {
+		return 500
+	}
+	switch v := live["delayMs"].(type) {
+	case float64:
+		if v >= 0 {
+			return int(v)
+		}
+	case int:
+		if v >= 0 {
+			return v
+		}
+	}
+	return 500
 }
 
 var cachedTestSpec map[string]any

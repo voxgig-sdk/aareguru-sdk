@@ -62,6 +62,54 @@ class AareguruTestRunner:
 
         return m
 
+    _test_control = None
+
+    @staticmethod
+    def load_test_control():
+        """Load sdk-test-control.json from this test dir; cache after first read.
+        Returns a dict with the empty-skip default if the file is missing or invalid
+        so tests never crash on a bad config.
+        """
+        if AareguruTestRunner._test_control is not None:
+            return AareguruTestRunner._test_control
+        ctrl_path = os.path.join(os.path.dirname(__file__), "sdk-test-control.json")
+        try:
+            with open(ctrl_path, "r") as f:
+                AareguruTestRunner._test_control = json.load(f)
+        except (FileNotFoundError, IOError, ValueError):
+            AareguruTestRunner._test_control = {
+                "version": 1,
+                "test": {"skip": {
+                    "live": {"direct": [], "entityOp": []},
+                    "unit": {"direct": [], "entityOp": []},
+                }},
+            }
+        return AareguruTestRunner._test_control
+
+    @staticmethod
+    def is_control_skipped(kind, name, mode):
+        """Check sdk-test-control.json for a skip entry. Returns (skip, reason)."""
+        ctrl = AareguruTestRunner.load_test_control()
+        skip = ctrl.get("test", {}).get("skip", {}).get(mode, {}) or {}
+        items = skip.get(kind, []) or []
+        for item in items:
+            if kind == "direct" and item.get("test") == name:
+                return True, item.get("reason")
+            if kind == "entityOp":
+                key = (item.get("entity") or "") + "." + (item.get("op") or "")
+                if key == name:
+                    return True, item.get("reason")
+        return False, None
+
+    @staticmethod
+    def live_delay_ms():
+        """Per-test live pacing delay (ms); default 500."""
+        ctrl = AareguruTestRunner.load_test_control()
+        v = ctrl.get("test", {}).get("live", {}).get("delayMs")
+        if isinstance(v, int) and v >= 0:
+            return v
+        return 500
+
     @staticmethod
     def entity_list_to_data(lst):
         out = []
@@ -88,3 +136,15 @@ def env_override(m):
 
 def entity_list_to_data(lst):
     return AareguruTestRunner.entity_list_to_data(lst)
+
+
+def is_control_skipped(kind, name, mode):
+    return AareguruTestRunner.is_control_skipped(kind, name, mode)
+
+
+def load_test_control():
+    return AareguruTestRunner.load_test_control()
+
+
+def live_delay_ms():
+    return AareguruTestRunner.live_delay_ms()

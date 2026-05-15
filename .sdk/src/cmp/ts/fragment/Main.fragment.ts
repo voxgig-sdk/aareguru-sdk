@@ -162,7 +162,27 @@ class ProjectNameSDK {
       }
 
       const status = fetched.status
-      const json = 'function' === typeof fetched.json ? await fetched.json() : fetched.json
+
+      // No body responses (204 No Content, 304 Not Modified) and explicit
+      // zero content-length must skip JSON parsing — fetched.json() would
+      // throw `Unexpected end of JSON input` on an empty body.
+      const headers = fetched.headers
+      const contentLength = headers && 'function' === typeof headers.get
+        ? headers.get('content-length')
+        : (headers || {})['content-length']
+      const noBody = 204 === status || 304 === status || '0' === String(contentLength)
+
+      let json: any = undefined
+      if (!noBody) {
+        try {
+          json = 'function' === typeof fetched.json ? await fetched.json() : fetched.json
+        }
+        catch (parseErr) {
+          // Body wasn't valid JSON — surface the raw response rather than
+          // throwing. data stays undefined; callers can inspect status/headers.
+          json = undefined
+        }
+      }
 
       return {
         ok: status >= 200 && status < 300,

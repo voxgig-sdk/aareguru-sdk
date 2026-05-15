@@ -1,7 +1,7 @@
-package = "aareguru-sdk"
+package = "voxgig-sdk-aareguru"
 version = "0.0-1"
 source = {
-  url = "git://github.com/voxgig/aareguru-sdk.git"
+  url = "git://github.com/voxgig-sdk/aareguru-sdk.git"
 }
 description = {
   summary = "Aareguru SDK for Lua",

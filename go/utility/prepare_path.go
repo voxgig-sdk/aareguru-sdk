@@ -3,7 +3,7 @@ package utility
 import (
 	vs "github.com/voxgig/struct"
 
-	"voxgigaaregurusdk/core"
+	"github.com/voxgig-sdk/aareguru-sdk/core"
 )
 
 func preparePathUtil(ctx *core.Context) string {

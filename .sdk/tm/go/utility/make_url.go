@@ -35,6 +35,18 @@ func makeUrlUtil(ctx *core.Context) (string, error) {
 		}
 	}
 
+	// Append query string from spec.Query.
+	qsep := "?"
+	for _, item := range vs.Items(spec.Query) {
+		key, _ := item[0].(string)
+		val := item[1]
+		if val != nil {
+			url += qsep + vs.EscUrl(key) + "=" + vs.EscUrl(vs.Stringify(val))
+			qsep = "&"
+			resmatch[key] = val
+		}
+	}
+
 	result.Resmatch = resmatch
 
 	return url, nil

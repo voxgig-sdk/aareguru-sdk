@@ -73,21 +73,24 @@ class Config {
               "args": {
                 "query": [
                   {
+                    "example": "my.app.ch",
                     "kind": "query",
                     "name": "app",
                     "orig": "app",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   },
                   {
+                    "example": "1.0.42",
                     "kind": "query",
                     "name": "version",
                     "orig": "version",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   }
-                ],
-                "params": []
+                ]
               },
               "method": "GET",
               "orig": "/current",
@@ -111,21 +114,24 @@ class Config {
               "args": {
                 "query": [
                   {
+                    "example": "my.app.ch",
                     "kind": "query",
                     "name": "app",
                     "orig": "app",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   },
                   {
+                    "example": "1.0.42",
                     "kind": "query",
                     "name": "version",
                     "orig": "version",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   }
-                ],
-                "params": []
+                ]
               },
               "method": "GET",
               "orig": "/currentV2",
@@ -149,21 +155,24 @@ class Config {
               "args": {
                 "query": [
                   {
+                    "example": "my.app.ch",
                     "kind": "query",
                     "name": "app",
                     "orig": "app",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   },
                   {
+                    "example": "1.0.42",
                     "kind": "query",
                     "name": "version",
                     "orig": "version",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   }
-                ],
-                "params": []
+                ]
               },
               "method": "GET",
               "orig": "/today",
@@ -203,35 +212,42 @@ class Config {
               "args": {
                 "query": [
                   {
+                    "example": "my.app.ch",
                     "kind": "query",
                     "name": "app",
                     "orig": "app",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   },
                   {
+                    "example": 12,
                     "kind": "query",
                     "name": "line",
                     "orig": "line",
                     "reqd": false,
-                    "type": "`$INTEGER`"
+                    "type": "`$INTEGER`",
+                    "active": true
                   },
                   {
+                    "example": "v2018_bueber",
                     "kind": "query",
                     "name": "service",
                     "orig": "service",
                     "reqd": true,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   },
                   {
+                    "example": "1.0.42",
                     "kind": "query",
                     "name": "version",
                     "orig": "version",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   }
-                ],
-                "params": []
+                ]
               },
               "method": "GET",
               "orig": "/logs",
@@ -257,28 +273,33 @@ class Config {
               "args": {
                 "query": [
                   {
+                    "example": "my.app.ch",
                     "kind": "query",
                     "name": "app",
                     "orig": "app",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   },
                   {
+                    "example": "v2018_bueber",
                     "kind": "query",
                     "name": "service",
                     "orig": "service",
                     "reqd": true,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   },
                   {
+                    "example": "1.0.42",
                     "kind": "query",
                     "name": "version",
                     "orig": "version",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   }
-                ],
-                "params": []
+                ]
               },
               "method": "GET",
               "orig": "/rawdata",
@@ -310,9 +331,7 @@ class Config {
                 "res": "`body`"
               },
               "active": true,
-              "args": {
-                "params": []
-              },
+              "args": {},
               "select": {},
               "index$": 2
             }
@@ -336,49 +355,60 @@ class Config {
               "args": {
                 "query": [
                   {
+                    "example": "my.app.ch",
                     "kind": "query",
                     "name": "app",
                     "orig": "app",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   },
                   {
+                    "example": "bern",
                     "kind": "query",
                     "name": "city",
                     "orig": "city",
                     "reqd": true,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   },
                   {
+                    "example": "2025-02-13",
                     "kind": "query",
                     "name": "end",
                     "orig": "end",
                     "reqd": true,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   },
                   {
+                    "example": "2025-01-01",
                     "kind": "query",
                     "name": "start",
                     "orig": "start",
                     "reqd": true,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   },
                   {
+                    "example": null,
                     "kind": "query",
                     "name": "value",
                     "orig": "value",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   },
                   {
+                    "example": "1.0.42",
                     "kind": "query",
                     "name": "version",
                     "orig": "version",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   }
-                ],
-                "params": []
+                ]
               },
               "method": "GET",
               "orig": "/v2018/history",
@@ -408,35 +438,42 @@ class Config {
               "args": {
                 "query": [
                   {
+                    "example": "my.app.ch",
                     "kind": "query",
                     "name": "app",
                     "orig": "app",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   },
                   {
+                    "example": "bern",
                     "kind": "query",
                     "name": "city",
                     "orig": "city",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   },
                   {
+                    "example": null,
                     "kind": "query",
                     "name": "value",
                     "orig": "value",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   },
                   {
+                    "example": "1.0.42",
                     "kind": "query",
                     "name": "version",
                     "orig": "version",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   }
-                ],
-                "params": []
+                ]
               },
               "method": "GET",
               "orig": "/v2018/current",
@@ -464,35 +501,42 @@ class Config {
               "args": {
                 "query": [
                   {
+                    "example": "my.app.ch",
                     "kind": "query",
                     "name": "app",
                     "orig": "app",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   },
                   {
+                    "example": "bern",
                     "kind": "query",
                     "name": "city",
                     "orig": "city",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   },
                   {
+                    "example": null,
                     "kind": "query",
                     "name": "value",
                     "orig": "value",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   },
                   {
+                    "example": "1.0.42",
                     "kind": "query",
                     "name": "version",
                     "orig": "version",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   }
-                ],
-                "params": []
+                ]
               },
               "method": "GET",
               "orig": "/v2018/today",
@@ -520,28 +564,33 @@ class Config {
               "args": {
                 "query": [
                   {
+                    "example": "my.app.ch",
                     "kind": "query",
                     "name": "app",
                     "orig": "app",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   },
                   {
+                    "example": null,
                     "kind": "query",
                     "name": "value",
                     "orig": "value",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   },
                   {
+                    "example": "1.0.42",
                     "kind": "query",
                     "name": "version",
                     "orig": "version",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   }
-                ],
-                "params": []
+                ]
               },
               "method": "GET",
               "orig": "/v2018/cities",
@@ -568,28 +617,33 @@ class Config {
               "args": {
                 "query": [
                   {
+                    "example": "my.app.ch",
                     "kind": "query",
                     "name": "app",
                     "orig": "app",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   },
                   {
+                    "example": null,
                     "kind": "query",
                     "name": "value",
                     "orig": "value",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   },
                   {
+                    "example": "1.0.42",
                     "kind": "query",
                     "name": "version",
                     "orig": "version",
                     "reqd": false,
-                    "type": "`$STRING`"
+                    "type": "`$STRING`",
+                    "active": true
                   }
-                ],
-                "params": []
+                ]
               },
               "method": "GET",
               "orig": "/v2018/widget",

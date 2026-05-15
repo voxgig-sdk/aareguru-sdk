@@ -7,7 +7,12 @@ import {
 
 import {
   KIT,
+  Model,
+  ModelEntity,
+  ModelEntityFlow,
+  ModelEntityFlowStep,
   getModelPath,
+  nom,
 } from '@voxgig/apidef'
 
 
@@ -18,34 +23,43 @@ import {
   each,
   buildIdNames,
   getMatchEntries,
+  isAuthActive,
 } from '@voxgig/sdkgen'
 
 
-type OpGen = (ctx: GenCtx, step: any, index: any) => void
-
+// See TestEntity_ts.ts for the GenCtx/OpGen contract.
 type GenCtx = {
-  model: any
-  entity: any
-  flow: any
+  model: Model
+  entity: ModelEntity
+  flow: ModelEntityFlow
   PROJUPPER: string
 }
+
+type OpGen = (ctx: GenCtx, step: ModelEntityFlowStep, index: number) => void
 
 
 const TestEntity = cmp(function TestEntity(props: any) {
   const ctx$ = props.ctx$
-  const model = ctx$.model
+  const model: Model = ctx$.model
 
   const target = props.target
-  const entity = props.entity
+  const entity: ModelEntity = props.entity
 
-  const basicflow = getModelPath(model, `main.${KIT}.flow.Basic${entity.Name}Flow`)
-  const dobasic = basicflow && true === basicflow.active
-
-  if (!dobasic) {
+  const basicflow: ModelEntityFlow | undefined =
+    getModelPath(model, `main.${KIT}.flow.Basic${nom(entity, 'Name')}Flow`)
+  if (null == basicflow || true !== basicflow.active) {
     return
   }
 
-  const PROJUPPER = model.const.Name.toUpperCase().replace(/[^A-Z_]/g, '_')
+  const PROJUPPER = nom(model.const, 'Name').toUpperCase().replace(/[^A-Z_]/g, '_')
+
+  const authActive = isAuthActive(model)
+  const apikeyEnvEntry = authActive
+    ? `\n    ["${PROJUPPER}_APIKEY"] = "NONE",`
+    : ''
+  const apikeyLiveField = authActive
+    ? `\n        apikey = env["${PROJUPPER}_APIKEY"],`
+    : ''
 
   const idnames = buildIdNames(entity, basicflow)
   const idnamesStr = idnames.map(n => `"${n}"`).join(', ')
@@ -80,6 +94,21 @@ describe("${entity.Name}Entity", function()
 
   it("should run basic flow", function()
     local setup = ${entity.name}_basic_setup(nil)
+    -- Per-op sdk-test-control.json skip.
+    local _live = setup.live or false
+    for _, _op in ipairs({${(Array.from(new Set((allSteps as any[]).map((s: any) => s.op).filter(Boolean)))).map(o => `"${o}"`).join(', ')}}) do
+      local _should_skip, _reason = runner.is_control_skipped("entityOp", "${entity.name}." .. _op, _live and "live" or "unit")
+      if _should_skip then
+        pending(_reason or "skipped via sdk-test-control.json")
+        return
+      end
+    end
+    -- The basic flow consumes synthetic IDs from the fixture. In live mode
+    -- without an *_ENTID env override, those IDs hit the live API and 4xx.
+    if setup.synthetic_only then
+      pending("live entity test uses synthetic IDs from fixture — set ${PROJUPPER}_TEST_${entity.name.toUpperCase().replace(/[^A-Z_]/g, '_')}_ENTID JSON to run live")
+      return
+    end
     local client = setup.client
 
 `)
@@ -147,11 +176,16 @@ end)
 
 `)
 
-    Content(`  local env = runner.env_override({
+    Content(`  -- Detect ENTID env override before envOverride consumes it. When live
+  -- mode is on without a real override, the basic test runs against synthetic
+  -- IDs from the fixture and 4xx's. Surface this so the test can skip.
+  local entid_env_raw = os.getenv("${PROJUPPER}_TEST_${entity.name.toUpperCase().replace(/[^A-Z_]/g, '_')}_ENTID")
+  local idmap_overridden = entid_env_raw ~= nil and entid_env_raw:match("^%s*{") ~= nil
+
+  local env = runner.env_override({
     ["${PROJUPPER}_TEST_${entity.name.toUpperCase().replace(/[^A-Z_]/g, '_')}_ENTID"] = idmap,
     ["${PROJUPPER}_TEST_LIVE"] = "FALSE",
-    ["${PROJUPPER}_TEST_EXPLAIN"] = "FALSE",
-    ["${PROJUPPER}_APIKEY"] = "NONE",
+    ["${PROJUPPER}_TEST_EXPLAIN"] = "FALSE",${apikeyEnvEntry}
   })
 
   local idmap_resolved = helpers.to_map(
@@ -172,20 +206,22 @@ end)
     Content(`
   if env["${PROJUPPER}_TEST_LIVE"] == "TRUE" then
     local merged_opts = vs.merge({
-      {
-        apikey = env["${PROJUPPER}_APIKEY"],
+      {${apikeyLiveField}
       },
       extra or {},
     })
     client = sdk.new(helpers.to_map(merged_opts))
   end
 
+  local live = env["${PROJUPPER}_TEST_LIVE"] == "TRUE"
   return {
     client = client,
     data = entity_data,
     idmap = idmap_resolved,
     env = env,
     explain = env["${PROJUPPER}_TEST_EXPLAIN"] == "TRUE",
+    live = live,
+    synthetic_only = live and not idmap_overridden,
     now = os.time() * 1000,
   }
 end
@@ -196,9 +232,9 @@ end
 
 const generateCreate: OpGen = (ctx, step, index) => {
   const { entity, flow } = ctx
-  const ref = step.input?.ref ?? entity.name + '_ref01'
-  const entvar = step.input?.entvar ?? ref + '_ent'
-  const datavar = step.input?.datavar ?? (ref + '_data' + (step.input?.suffix ?? ''))
+  const ref = step.input.ref ?? entity.name + '_ref01'
+  const entvar = step.input.entvar ?? ref + '_ent'
+  const datavar = step.input.datavar ?? (ref + '_data' + (step.input.suffix ?? ''))
 
   const priorSteps = Object.values(flow.step).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
@@ -206,8 +242,8 @@ const generateCreate: OpGen = (ctx, step, index) => {
 
   const hasDatvar = priorSteps.some((s: any) => {
     if ('create' === s.op) {
-      const priorRef = s.input?.ref ?? entity.name + '_ref01'
-      const priorDatvar = s.input?.datavar ?? (priorRef + '_data' + (s.input?.suffix ?? ''))
+      const priorRef = s.input.ref ?? entity.name + '_ref01'
+      const priorDatvar = s.input.datavar ?? (priorRef + '_data' + (s.input.suffix ?? ''))
       return priorDatvar === datavar
     }
     return false
@@ -241,17 +277,20 @@ const generateCreate: OpGen = (ctx, step, index) => {
     assert.is_nil(err)
     ${datavar} = helpers.to_map(${datavar}_result)
     assert.is_not_nil(${datavar})
-    assert.is_not_nil(${datavar}["id"])
 `)
+  if (null != ctx.entity.id) {
+    Content(`    assert.is_not_nil(${datavar}["id"])
+`)
+  }
 }
 
 
 const generateList: OpGen = (ctx, step, index) => {
   const { entity, flow } = ctx
-  const ref = step.input?.ref ?? entity.name + '_ref01'
-  const entvar = step.input?.entvar ?? ref + '_ent'
-  const matchvar = step.input?.matchvar ?? (ref + '_match' + (step.input?.suffix ?? ''))
-  const listvar = step.input?.listvar ?? (ref + '_list' + (step.input?.suffix ?? ''))
+  const ref = step.input.ref ?? entity.name + '_ref01'
+  const entvar = step.input.entvar ?? ref + '_ent'
+  const matchvar = step.input.matchvar ?? (ref + '_match' + (step.input.suffix ?? ''))
+  const listvar = step.input.listvar ?? (ref + '_list' + (step.input.suffix ?? ''))
 
   const priorSteps = Object.values(flow.step).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
@@ -291,7 +330,7 @@ const generateList: OpGen = (ctx, step, index) => {
     for (const validator of step.valid) {
       const validRef = validator.def?.ref
       const hasRefData = validRef && allSteps.some((s: any) => 'create' === s.op &&
-        ((s.input?.ref ?? entity.name + '_ref01') === validRef))
+        ((s.input.ref ?? entity.name + '_ref01') === validRef))
 
       if ('ItemExists' === validator.apply && hasRefData) {
         const refDataVar = validRef + '_data'
@@ -317,16 +356,18 @@ const generateList: OpGen = (ctx, step, index) => {
 
 const generateUpdate: OpGen = (ctx, step, index) => {
   const { entity, flow } = ctx
-  const ref = step.input?.ref ?? entity.name + '_ref01'
-  const entvar = step.input?.entvar ?? ref + '_ent'
-  const datavar = step.input?.datavar ?? (ref + '_data' + (step.input?.suffix ?? ''))
-  const resdatavar = step.input?.resdatavar ?? (ref + '_resdata' + (step.input?.suffix ?? ''))
-  const markdefvar = step.input?.markdefvar ?? (ref + '_markdef' + (step.input?.suffix ?? ''))
-  const srcdatavar = step.input?.srcdatavar ?? (ref + '_data' + (step.input?.suffix ?? ''))
+  const ref = step.input.ref ?? entity.name + '_ref01'
+  const entvar = step.input.entvar ?? ref + '_ent'
+  const datavar = step.input.datavar ?? (ref + '_data' + (step.input.suffix ?? ''))
+  const resdatavar = step.input.resdatavar ?? (ref + '_resdata' + (step.input.suffix ?? ''))
+  const markdefvar = step.input.markdefvar ?? (ref + '_markdef' + (step.input.suffix ?? ''))
+  const srcdatavar = step.input.srcdatavar ?? (ref + '_data' + (step.input.suffix ?? ''))
 
   const priorSteps = Object.values(flow.step).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
     ['create', 'list', 'load', 'update', 'remove'].includes(s.op))
+
+  const hasEntIdU = null != entity.id
 
   Content(`    -- UPDATE
 `)
@@ -335,8 +376,11 @@ const generateUpdate: OpGen = (ctx, step, index) => {
 `)
   }
   Content(`    local ${datavar}_up = {
-      id = ${srcdatavar}["id"],
 `)
+  if (hasEntIdU) {
+    Content(`      id = ${srcdatavar}["id"],
+`)
+  }
 
   if (step.data) {
     const dataEntries = Object.entries(step.data).filter(([k]: any) => k !== 'id' && !k.endsWith('$'))
@@ -351,7 +395,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
 
   if (step.spec) {
     for (const spec of step.spec) {
-      if ('TextFieldMark' === spec.apply && null != step.input?.textfield) {
+      if ('TextFieldMark' === spec.apply && null != step.input.textfield) {
         const fieldname = step.input.textfield
         const fieldvalue = spec.def?.mark ?? `Mark01-${ref}`
         Content(`
@@ -368,12 +412,15 @@ const generateUpdate: OpGen = (ctx, step, index) => {
     assert.is_nil(err)
     local ${resdatavar} = helpers.to_map(${resdatavar}_result)
     assert.is_not_nil(${resdatavar})
-    assert.are.equal(${resdatavar}["id"], ${datavar}_up["id"])
 `)
+  if (hasEntIdU) {
+    Content(`    assert.are.equal(${resdatavar}["id"], ${datavar}_up["id"])
+`)
+  }
 
   if (step.spec) {
     for (const spec of step.spec) {
-      if ('TextFieldMark' === spec.apply && null != step.input?.textfield) {
+      if ('TextFieldMark' === spec.apply && null != step.input.textfield) {
         Content(`    assert.are.equal(${resdatavar}[${markdefvar}_name], ${markdefvar}_value)
 `)
       }
@@ -384,11 +431,11 @@ const generateUpdate: OpGen = (ctx, step, index) => {
 
 const generateLoad: OpGen = (ctx, step, index) => {
   const { entity, flow } = ctx
-  const ref = step.input?.ref ?? entity.name + '_ref01'
-  const entvar = step.input?.entvar ?? ref + '_ent'
-  const matchvar = step.input?.matchvar ?? (ref + '_match' + (step.input?.suffix ?? ''))
-  const datavar = step.input?.datavar ?? (ref + '_data' + (step.input?.suffix ?? ''))
-  const srcdatavar = step.input?.srcdatavar ?? (ref + '_data' + (step.input?.suffix ?? ''))
+  const ref = step.input.ref ?? entity.name + '_ref01'
+  const entvar = step.input.entvar ?? ref + '_ent'
+  const matchvar = step.input.matchvar ?? (ref + '_match' + (step.input.suffix ?? ''))
+  const datavar = step.input.datavar ?? (ref + '_data' + (step.input.suffix ?? ''))
+  const srcdatavar = step.input.srcdatavar ?? (ref + '_data' + (step.input.suffix ?? ''))
 
   const priorSteps = Object.values(flow.step).slice(0, Number(index)) as any[]
   const hasEntVar = priorSteps.some((s: any) =>
@@ -399,12 +446,14 @@ const generateLoad: OpGen = (ctx, step, index) => {
   const hasSrcData = (!flowHasCreate && srcdatavar === (preambleRef + '_data')) ||
     priorSteps.some((s: any) => {
       if ('create' === s.op) {
-        const priorRef = s.input?.ref ?? entity.name + '_ref01'
-        const priorDatvar = s.input?.datavar ?? (priorRef + '_data' + (s.input?.suffix ?? ''))
+        const priorRef = s.input.ref ?? entity.name + '_ref01'
+        const priorDatvar = s.input.datavar ?? (priorRef + '_data' + (s.input.suffix ?? ''))
         return priorDatvar === srcdatavar
       }
       return false
     })
+
+  const hasEntId = null != entity.id
 
   Content(`    -- LOAD
 `)
@@ -412,7 +461,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
     Content(`    local ${entvar} = client:${entity.Name}(nil)
 `)
   }
-  if (!hasSrcData) {
+  if (!hasSrcData && hasEntId) {
     Content(`    local ${srcdatavar}_raw = vs.items(helpers.to_map(
       vs.getpath(setup.data, "existing.${entity.name}")))
     local ${srcdatavar} = nil
@@ -421,7 +470,8 @@ const generateLoad: OpGen = (ctx, step, index) => {
     end
 `)
   }
-  Content(`    local ${matchvar} = {
+  if (hasEntId) {
+    Content(`    local ${matchvar} = {
       id = ${srcdatavar}["id"],
     }
     local ${datavar}_loaded, err = ${entvar}:load(${matchvar}, nil)
@@ -430,15 +480,23 @@ const generateLoad: OpGen = (ctx, step, index) => {
     assert.is_not_nil(${datavar}_load_result)
     assert.are.equal(${datavar}_load_result["id"], ${srcdatavar}["id"])
 `)
+  }
+  else {
+    Content(`    local ${matchvar} = {}
+    local ${datavar}_loaded, err = ${entvar}:load(${matchvar}, nil)
+    assert.is_nil(err)
+    assert.is_not_nil(${datavar}_loaded)
+`)
+  }
 }
 
 
 const generateRemove: OpGen = (ctx, step, index) => {
   const { entity, flow } = ctx
-  const ref = step.input?.ref ?? entity.name + '_ref01'
-  const entvar = step.input?.entvar ?? ref + '_ent'
-  const matchvar = step.input?.matchvar ?? (ref + '_match' + (step.input?.suffix ?? ''))
-  const srcdatavar = step.input?.srcdatavar ?? (ref + '_data')
+  const ref = step.input.ref ?? entity.name + '_ref01'
+  const entvar = step.input.entvar ?? ref + '_ent'
+  const matchvar = step.input.matchvar ?? (ref + '_match' + (step.input.suffix ?? ''))
+  const srcdatavar = step.input.srcdatavar ?? (ref + '_data')
 
   const priorSteps = Object.values(flow.step).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
@@ -450,6 +508,7 @@ const generateRemove: OpGen = (ctx, step, index) => {
     Content(`    local ${entvar} = client:${entity.Name}(nil)
 `)
   }
+  // Always match the prior-created entity by id to avoid mock-order flakes.
   Content(`    local ${matchvar} = {
       id = ${srcdatavar}["id"],
     }

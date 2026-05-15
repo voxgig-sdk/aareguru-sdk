@@ -1,20 +1,18 @@
 # Aareguru Golang SDK
 
-The Golang SDK for the Aareguru API. Provides an entity-oriented interface
-using standard Go conventions — no generics required, data flows as
-`map[string]any`.
+The Golang SDK for the Aareguru API. Provides an entity-oriented interface using standard Go conventions — no generics required, data flows as `map[string]any`.
 
 
 ## Install
 ```bash
-go get voxgigaaregurusdk
+go get github.com/voxgig-sdk/aareguru-sdk
 ```
 
 If the module is not yet published to a registry, use a `replace` directive
 in your `go.mod` to point to a local checkout:
 
 ```bash
-go mod edit -replace voxgigaaregurusdk=../path/to/voxgigaaregurusdk
+go mod edit -replace github.com/voxgig-sdk/aareguru-sdk=../path/to/github.com/voxgig-sdk/aareguru-sdk
 ```
 
 
@@ -32,8 +30,8 @@ import (
     "fmt"
     "os"
 
-    sdk "voxgigaaregurusdk"
-    "voxgigaaregurusdk/core"
+    sdk "github.com/voxgig-sdk/aareguru-sdk"
+    "github.com/voxgig-sdk/aareguru-sdk/core"
 )
 
 func main() {
@@ -357,7 +355,7 @@ Use `core.ToMapAny()` to safely cast results and nested data.
 ### Package structure
 
 ```
-voxgigaaregurusdk/
+github.com/voxgig-sdk/aareguru-sdk/
 ├── aareguru.go        # Root package — type aliases and constructors
 ├── core/               # SDK core — client, types, pipeline
 ├── entity/             # Entity implementations
@@ -366,7 +364,7 @@ voxgigaaregurusdk/
 └── test/               # Test suites
 ```
 
-The root package (`voxgigaaregurusdk`) re-exports everything needed
+The root package (`github.com/voxgig-sdk/aareguru-sdk`) re-exports everything needed
 for normal use. Import sub-packages only when you need specific types
 like `core.ToMapAny`.
 

@@ -180,15 +180,30 @@ class AareguruSDK:
 
         if isinstance(fetched, dict):
             status = helpers.to_int(vs.getprop(fetched, "status"))
+            headers = vs.getprop(fetched, "headers") or {}
+
+            # No-body responses (204, 304) and explicit zero content-length
+            # must skip JSON parsing — calling json() on an empty body raises.
+            content_length = None
+            if isinstance(headers, dict):
+                content_length = headers.get("content-length")
+            no_body = status in (204, 304) or str(content_length) == "0"
+
             json_data = None
-            jf = vs.getprop(fetched, "json")
-            if callable(jf):
-                json_data = jf()
+            if not no_body:
+                jf = vs.getprop(fetched, "json")
+                if callable(jf):
+                    try:
+                        json_data = jf()
+                    except Exception:
+                        # Non-JSON body (e.g. text/plain, text/html). Surface
+                        # status + headers but leave data as None.
+                        json_data = None
 
             return {
                 "ok": status >= 200 and status < 300,
                 "status": status,
-                "headers": vs.getprop(fetched, "headers"),
+                "headers": headers,
                 "data": json_data,
             }, None
 
