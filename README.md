@@ -5,6 +5,20 @@
 Available for [Golang](go/) and [Lua](lua/) and [PHP](php/) and [Python](py/) and [Ruby](rb/) and [TypeScript](ts/).
 
 
+## Entities
+
+The API exposes 3 entities:
+
+| Entity | Description | API path |
+| --- | --- | --- |
+| **Legacy** |  | `/current` |
+| **Stuff** |  | `/logs` |
+| **V2018** |  | `/v2018/history` |
+
+Each entity supports the following operations where available: **load**, **list**, **create**,
+**update**, and **remove**.
+
+
 ## Architecture
 
 ### Entity-operation model
@@ -47,7 +61,7 @@ and `body`.
 ### Golang
 
 ```go
-import sdk "voxgigaaregurusdk"
+import sdk "github.com/voxgig-sdk/aareguru-sdk"
 
 client := sdk.NewAareguruSDK(map[string]any{
     "apikey": os.Getenv("AAREGURU_APIKEY"),
@@ -64,6 +78,11 @@ local client = sdk.new({
   apikey = os.getenv("AAREGURU_APIKEY"),
 })
 
+
+-- Load a specific legacy
+local legacy, err = client:Legacy(nil):load(
+  { id = "example_id" }, nil
+)
 ```
 
 ### PHP
@@ -76,6 +95,11 @@ $client = new AareguruSDK([
     "apikey" => getenv("AAREGURU_APIKEY"),
 ]);
 
+
+// Load a specific legacy
+[$legacy, $err] = $client->Legacy(null)->load(
+    ["id" => "example_id"], null
+);
 ```
 
 ### Python
@@ -88,6 +112,11 @@ client = AareguruSDK({
     "apikey": os.environ.get("AAREGURU_APIKEY"),
 })
 
+
+# Load a specific legacy
+legacy, err = client.Legacy(None).load(
+    {"id": "example_id"}, None
+)
 ```
 
 ### Ruby
@@ -99,6 +128,11 @@ client = AareguruSDK.new({
   "apikey" => ENV["AAREGURU_APIKEY"],
 })
 
+
+# Load a specific legacy
+legacy, err = client.Legacy(nil).load(
+  { "id" => "example_id" }, nil
+)
 ```
 
 ### TypeScript
@@ -122,36 +156,53 @@ in-memory mock, so tests run without a network connection.
 
 ```go
 client := sdk.TestSDK(nil, nil)
+result, err := client.Legacy(nil).Load(
+    map[string]any{"id": "test01"}, nil,
+)
 ```
 
 ### Lua
 
 ```lua
 local client = sdk.test(nil, nil)
+local result, err = client:Legacy(nil):load(
+  { id = "test01" }, nil
+)
 ```
 
 ### PHP
 
 ```php
 $client = AareguruSDK::test(null, null);
+[$result, $err] = $client->Legacy(null)->load(
+    ["id" => "test01"], null
+);
 ```
 
 ### Python
 
 ```python
 client = AareguruSDK.test(None, None)
+result, err = client.Legacy(None).load(
+    {"id": "test01"}, None
+)
 ```
 
 ### Ruby
 
 ```ruby
 client = AareguruSDK.test(nil, nil)
+result, err = client.Legacy(nil).load(
+  { "id" => "test01" }, nil
+)
 ```
 
 ### TypeScript
 
 ```ts
 const client = AareguruSDK.test()
+const result = await client.Legacy().load({ id: 'test01' })
+// result.ok === true, result.data contains mock data
 ```
 
 

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	sdk "github.com/voxgig-sdk/aareguru-sdk"
-	"github.com/voxgig-sdk/aareguru-sdk/core"
+	sdk "github.com/voxgig-sdk/aareguru-sdk/go"
+	"github.com/voxgig-sdk/aareguru-sdk/go/core"
 )
 
 func TestLegacyDirect(t *testing.T) {

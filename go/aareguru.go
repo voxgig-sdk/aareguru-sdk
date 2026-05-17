@@ -1,10 +1,10 @@
 package voxgigaaregurusdk
 
 import (
-	"github.com/voxgig-sdk/aareguru-sdk/core"
-	"github.com/voxgig-sdk/aareguru-sdk/entity"
-	"github.com/voxgig-sdk/aareguru-sdk/feature"
-	_ "github.com/voxgig-sdk/aareguru-sdk/utility"
+	"github.com/voxgig-sdk/aareguru-sdk/go/core"
+	"github.com/voxgig-sdk/aareguru-sdk/go/entity"
+	"github.com/voxgig-sdk/aareguru-sdk/go/feature"
+	_ "github.com/voxgig-sdk/aareguru-sdk/go/utility"
 )
 
 // Type aliases preserve external API.

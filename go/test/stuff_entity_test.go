@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	sdk "github.com/voxgig-sdk/aareguru-sdk"
-	"github.com/voxgig-sdk/aareguru-sdk/core"
+	sdk "github.com/voxgig-sdk/aareguru-sdk/go"
+	"github.com/voxgig-sdk/aareguru-sdk/go/core"
 
-	vs "github.com/voxgig/struct"
+	vs "github.com/voxgig-sdk/aareguru-sdk/go/utility/struct"
 )
 
 func TestStuffEntity(t *testing.T) {
