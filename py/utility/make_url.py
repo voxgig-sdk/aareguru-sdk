@@ -1,4 +1,4 @@
-# ProjectName SDK utility: make_url
+# Aareguru SDK utility: make_url
 
 from __future__ import annotations
 from utility.voxgig_struct import voxgig_struct as vs

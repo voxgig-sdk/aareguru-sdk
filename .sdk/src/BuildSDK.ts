@@ -76,6 +76,16 @@ function makeEntityTestData(_model: Model, entity: ModelEntity) {
   // with values that match what the test code sends via setup.idmap.
   const pathParams = collectEntityPathParams(entity)
 
+  const hasEntId = null != (entity as any).id
+  // Some entities don't declare a top-level `id` field but still need an
+  // `id` value in their fixture: any entity that has a non-list op (remove,
+  // update, load) will hit `data["id"]` in the generated test code. The
+  // test mock is lenient about extra/missing path params, so synthesising
+  // an `id` here keeps tests green for entities like
+  //   `/{namespace}/{key}` (no `id` in URL) or `/{resource}/{id}`
+  // alongside the simple `{id}`-only case.
+  const needsFixtureId = hasEntId || entityHasMutatingOp(entity)
+
   let i = 1
 
   refs.map((ref) => {
@@ -89,7 +99,13 @@ function makeEntityTestData(_model: Model, entity: ModelEntity) {
         ent[paramName] = paramValue
       }
     }
-    ent.id = id
+    // Inject a fixture id when the spec models one for this entity (either
+    // as a top-level field or as a path param). Read-only feeds with no id
+    // at all leave fixtures bare so test generators don't synthesise bogus
+    // id assertions.
+    if (needsFixtureId) {
+      ent.id = id
+    }
   })
 
   let id = entity.name + '_ref01'
@@ -98,6 +114,21 @@ function makeEntityTestData(_model: Model, entity: ModelEntity) {
   delete ent.id
 
   return data
+}
+
+
+// Detect whether the entity has any op other than `list` (which doesn't
+// take a per-item id). Used to decide whether the fixture needs a
+// synthesised `id` — the test code for load/update/remove ops references
+// `data["id"]` unconditionally in Python (and similarly in other strict
+// languages), so the fixture must provide one even when the URL path
+// params are named differently (e.g. `/{namespace}/{key}`).
+function entityHasMutatingOp(entity: any): boolean {
+  const ops = entity?.op || {}
+  for (const opname of Object.keys(ops)) {
+    if (opname !== 'list') return true
+  }
+  return false
 }
 
 

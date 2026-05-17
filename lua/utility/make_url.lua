@@ -1,4 +1,4 @@
--- ProjectName SDK utility: make_url
+-- Aareguru SDK utility: make_url
 
 local vs = require("utility.struct.struct")
 

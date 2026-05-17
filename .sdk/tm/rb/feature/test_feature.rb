@@ -1,9 +1,9 @@
-# ProjectName SDK test feature
+# Aareguru SDK test feature
 
 require_relative '../utility/struct/voxgig_struct'
 require_relative 'base_feature'
 
-class ProjectNameTestFeature < ProjectNameBaseFeature
+class AareguruTestFeature < AareguruBaseFeature
   def initialize
     super
     @version = "0.0.1"

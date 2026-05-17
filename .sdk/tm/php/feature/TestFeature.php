@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-// ProjectName SDK test feature
+// Aareguru SDK test feature
 
 require_once __DIR__ . '/BaseFeature.php';
 require_once __DIR__ . '/../utility/Param.php';
 
-class ProjectNameTestFeature extends ProjectNameBaseFeature
+class AareguruTestFeature extends AareguruBaseFeature
 {
     private mixed $client;
     private ?array $options;
@@ -21,7 +21,7 @@ class ProjectNameTestFeature extends ProjectNameBaseFeature
         $this->options = null;
     }
 
-    public function init(ProjectNameContext $ctx, array $options): void
+    public function init(AareguruContext $ctx, array $options): void
     {
         $this->client = $ctx->client;
         $this->options = $options;
@@ -45,7 +45,7 @@ class ProjectNameTestFeature extends ProjectNameBaseFeature
         $entity = new \stdClass();
         $entity->data = $entity_data;
 
-        $test_fetcher = function (ProjectNameContext $fctx, string $_fullurl, array $_fetchdef) use ($entity): array {
+        $test_fetcher = function (AareguruContext $fctx, string $_fullurl, array $_fetchdef) use ($entity): array {
             $respond = function (int $status, mixed $data, ?array $extra = null): array {
                 $out = [
                     'status' => $status,
@@ -209,7 +209,7 @@ class ProjectNameTestFeature extends ProjectNameBaseFeature
                 return $respond(200, null);
 
             } elseif ($op->name === 'create') {
-                $id = ProjectNameParam::call($fctx, 'id');
+                $id = AareguruParam::call($fctx, 'id');
                 if ($id === null || $id === '__UNDEFINED__') {
                     $id = sprintf('%04x%04x%04x%04x',
                         random_int(0, 0xFFFF), random_int(0, 0xFFFF),
@@ -240,7 +240,7 @@ class ProjectNameTestFeature extends ProjectNameBaseFeature
      * current operation point, emit a `$OR` clause matching the key (and
      * its alias, if any) against the supplied value.
      */
-    public function buildArgs(ProjectNameContext $ctx, $op, $args): array
+    public function buildArgs(AareguruContext $ctx, $op, $args): array
     {
         // If args is empty/missing, return an empty $AND so select() matches
         // every entry — the TS test feature relies on this for empty-match
@@ -287,7 +287,7 @@ class ProjectNameTestFeature extends ProjectNameBaseFeature
             $is_id = ($k === 'id');
             $in_reqd = in_array($k, $reqd_names, true);
             if ($is_id || $in_reqd) {
-                $v = ProjectNameParam::call($ctx, $k);
+                $v = AareguruParam::call($ctx, $k);
                 $ka = \Voxgig\Struct\Struct::getprop($alias, $k);
 
                 $qor = [[$k => $v]];
