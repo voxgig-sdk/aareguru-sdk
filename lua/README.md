@@ -31,7 +31,7 @@ loading a specific record.
 ```lua
 local sdk = require("aareguru_sdk")
 
-local client = sdk.new({})
+local client = sdk.new()
 ```
 
 ### 3. Load a legacy

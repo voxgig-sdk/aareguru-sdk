@@ -30,7 +30,7 @@ loading a specific record.
 ```python
 from aareguru_sdk import AareguruSDK
 
-client = AareguruSDK({})
+client = AareguruSDK()
 ```
 
 ### 3. Load a legacy

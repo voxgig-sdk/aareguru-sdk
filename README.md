@@ -79,7 +79,7 @@ Example: `/v2018/current?city=bern&app=com.example.swim&version=1.0.42`
 ```ts
 import { AareguruSDK } from 'aareguru'
 
-const client = new AareguruSDK({})
+const client = new AareguruSDK()
 
 // Load legacy data
 const legacy = await client.Legacy().load({})
@@ -139,7 +139,7 @@ Each entity supports the following operations where available: **load**,
 ```go
 import sdk "github.com/voxgig-sdk/aareguru-sdk/go"
 
-client := sdk.NewAareguruSDK(map[string]any{})
+client := sdk.New()
 
 // Load legacy data
 legacy, err := client.Legacy(nil).Load(map[string]any{}, nil)
@@ -151,7 +151,7 @@ fmt.Println(legacy)
 ```lua
 local sdk = require("aareguru_sdk")
 
-local client = sdk.new({})
+local client = sdk.new()
 
 
 -- Load a specific legacy
@@ -165,7 +165,7 @@ print(legacy)
 <?php
 require_once 'aareguru_sdk.php';
 
-$client = new AareguruSDK([]);
+$client = new AareguruSDK();
 
 
 // Load a specific legacy
@@ -178,7 +178,7 @@ print_r($legacy);
 ```python
 from aareguru_sdk import AareguruSDK
 
-client = AareguruSDK({})
+client = AareguruSDK()
 
 
 # Load a specific legacy
@@ -191,7 +191,7 @@ print(legacy)
 ```ruby
 require_relative "Aareguru_sdk"
 
-client = AareguruSDK.new({})
+client = AareguruSDK.new
 
 
 # Load a specific legacy
@@ -207,7 +207,7 @@ in-memory mock, so unit tests run offline.
 ### Golang
 
 ```go
-client := sdk.TestSDK(nil, nil)
+client := sdk.Test()
 result, err := client.Legacy(nil).Load(
     map[string]any{"id": "test01"}, nil,
 )

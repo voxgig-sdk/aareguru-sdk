@@ -25,7 +25,7 @@ loading a specific record.
 <?php
 require_once 'aareguru_sdk.php';
 
-$client = new AareguruSDK([]);
+$client = new AareguruSDK();
 ```
 
 ### 3. Load a legacy

@@ -20,16 +20,16 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
   const authActive = isAuthActive(model)
   const apikeyImport = authActive ? `import os\n` : ''
-  const apikeyArg = authActive
-    ? `\n    "apikey": os.environ.get("${model.NAME}_APIKEY"),\n`
-    : ''
+  const ctor = authActive
+    ? `${model.const.Name}SDK({\n    "apikey": os.environ.get("${model.NAME}_APIKEY"),\n})`
+    : `${model.const.Name}SDK()`
 
   Content(`### 1. Create a client
 
 \`\`\`python
 ${apikeyImport}from ${model.const.Name.toLowerCase()}_sdk import ${model.const.Name}SDK
 
-client = ${model.const.Name}SDK({${apikeyArg}})
+client = ${ctor}
 \`\`\`
 
 `)

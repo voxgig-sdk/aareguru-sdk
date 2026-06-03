@@ -15,15 +15,16 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
 
   const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
 
-  const apikeyArg = isAuthActive(model)
-    ? `\n    "apikey" => getenv("${model.NAME}_APIKEY"),\n`
-    : ''
+  const authActive = isAuthActive(model)
+  const ctor = authActive
+    ? `new ${model.const.Name}SDK([\n    "apikey" => getenv("${model.NAME}_APIKEY"),\n])`
+    : `new ${model.const.Name}SDK()`
 
   Content(`\`\`\`php
 <?php
 require_once '${model.const.Name.toLowerCase()}_sdk.php';
 
-$client = new ${model.const.Name}SDK([${apikeyArg}]);
+$client = ${ctor};
 
 `)
 

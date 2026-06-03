@@ -15,14 +15,15 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
 
   const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
 
-  const apikeyArg = isAuthActive(model)
-    ? `\n  "apikey" => ENV["${model.NAME}_APIKEY"],\n`
-    : ''
+  const authActive = isAuthActive(model)
+  const ctor = authActive
+    ? `${model.const.Name}SDK.new({\n  "apikey" => ENV["${model.NAME}_APIKEY"],\n})`
+    : `${model.const.Name}SDK.new`
 
   Content(`\`\`\`ruby
 require_relative "${model.const.Name}_sdk"
 
-client = ${model.const.Name}SDK.new({${apikeyArg}})
+client = ${ctor}
 
 `)
 

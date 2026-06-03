@@ -17,14 +17,15 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
 
   const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
 
-  const apikeyArg = isAuthActive(model)
-    ? `\n    "apikey": os.Getenv("${model.NAME}_APIKEY"),\n`
-    : ''
+  const authActive = isAuthActive(model)
+  const ctor = authActive
+    ? `sdk.New${model.const.Name}SDK(map[string]any{\n    "apikey": os.Getenv("${model.NAME}_APIKEY"),\n})`
+    : `sdk.New()`
 
   Content(`\`\`\`go
 import sdk "${gomodule}"
 
-client := sdk.New${model.const.Name}SDK(map[string]any{${apikeyArg}})
+client := ${ctor}
 
 `)
 

@@ -39,7 +39,7 @@ import (
 )
 
 func main() {
-    client := sdk.NewAareguruSDK(map[string]any{})
+    client := sdk.New()
 ```
 
 ### 3. Load a legacy
@@ -104,7 +104,7 @@ fmt.Println(fetchdef["headers"])
 Create a mock client for unit testing — no server required:
 
 ```go
-client := sdk.TestSDK(nil, nil)
+client := sdk.Test()
 
 result, err := client.Planet(nil).Load(
     map[string]any{"id": "test01"}, nil,

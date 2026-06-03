@@ -18,16 +18,16 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     e.active !== false && e.ancestors && e.ancestors.length > 0
   ) as any
 
-  const apikeyArg = isAuthActive(model)
-    ? `\n  "apikey" => ENV["${model.NAME}_APIKEY"],\n`
-    : ''
+  const ctor = isAuthActive(model)
+    ? `${model.const.Name}SDK.new({\n  "apikey" => ENV["${model.NAME}_APIKEY"],\n})`
+    : `${model.const.Name}SDK.new`
 
   Content(`### 1. Create a client
 
 \`\`\`ruby
 require_relative "${model.const.Name}_sdk"
 
-client = ${model.const.Name}SDK.new({${apikeyArg}})
+client = ${ctor}
 \`\`\`
 
 `)

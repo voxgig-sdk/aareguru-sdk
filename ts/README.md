@@ -22,7 +22,7 @@ loading a specific record.
 ```ts
 import { AareguruSDK } from 'aareguru'
 
-const client = new AareguruSDK({})
+const client = new AareguruSDK()
 ```
 
 ### 3. Load a legacy

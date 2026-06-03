@@ -36,7 +36,7 @@ loading a specific record.
 ```ruby
 require_relative "Aareguru_sdk"
 
-client = AareguruSDK.new({})
+client = AareguruSDK.new
 ```
 
 ### 3. Load a legacy

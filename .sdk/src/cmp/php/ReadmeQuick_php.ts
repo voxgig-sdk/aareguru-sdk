@@ -18,9 +18,9 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     e.active !== false && e.ancestors && e.ancestors.length > 0
   ) as any
 
-  const apikeyArg = isAuthActive(model)
-    ? `\n    "apikey" => getenv("${model.NAME}_APIKEY"),\n`
-    : ''
+  const ctor = isAuthActive(model)
+    ? `new ${model.const.Name}SDK([\n    "apikey" => getenv("${model.NAME}_APIKEY"),\n])`
+    : `new ${model.const.Name}SDK()`
 
   Content(`### 1. Create a client
 
@@ -28,7 +28,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 <?php
 require_once '${model.const.Name.toLowerCase()}_sdk.php';
 
-$client = new ${model.const.Name}SDK([${apikeyArg}]);
+$client = ${ctor};
 \`\`\`
 
 `)
