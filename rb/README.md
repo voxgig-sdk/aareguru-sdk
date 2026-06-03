@@ -36,15 +36,13 @@ loading a specific record.
 ```ruby
 require_relative "Aareguru_sdk"
 
-client = AareguruSDK.new({
-  "apikey" => ENV["AAREGURU_APIKEY"],
-})
+client = AareguruSDK.new({})
 ```
 
 ### 3. Load a legacy
 
 ```ruby
-result, err = client.Legacy(nil).load({ "id" => "example_id" }, nil)
+result, err = client.Legacy().load({ "id" => "example_id" })
 raise err if err
 puts result
 ```
@@ -90,11 +88,9 @@ puts fetchdef["headers"]
 Create a mock client for unit testing — no server required:
 
 ```ruby
-client = AareguruSDK.test(nil, nil)
+client = AareguruSDK.test
 
-result, err = client.Aareguru(nil).load(
-  { "id" => "test01" }, nil
-)
+result, err = client.Aareguru().load({ "id" => "test01" })
 # result contains mock response data
 ```
 
@@ -126,7 +122,6 @@ Create a `.env.local` file at the project root:
 
 ```
 AAREGURU_TEST_LIVE=TRUE
-AAREGURU_APIKEY=<your-key>
 ```
 
 Then run:
@@ -149,7 +144,6 @@ Creates a new SDK client.
 
 | Option | Type | Description |
 | --- | --- | --- |
-| `apikey` | `String` | API key for authentication. |
 | `base` | `String` | Base URL of the API server. |
 | `prefix` | `String` | URL path prefix prepended to all requests. |
 | `suffix` | `String` | URL path suffix appended to all requests. |

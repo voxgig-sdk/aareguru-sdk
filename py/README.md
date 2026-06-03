@@ -28,18 +28,15 @@ loading a specific record.
 ### 1. Create a client
 
 ```python
-import os
 from aareguru_sdk import AareguruSDK
 
-client = AareguruSDK({
-    "apikey": os.environ.get("AAREGURU_APIKEY"),
-})
+client = AareguruSDK({})
 ```
 
 ### 3. Load a legacy
 
 ```python
-result, err = client.Legacy(None).load({"id": "example_id"}, None)
+result, err = client.Legacy().load({"id": "example_id"})
 if err:
     raise Exception(err)
 print(result)
@@ -87,11 +84,9 @@ print(fetchdef["headers"])
 Create a mock client for unit testing — no server required:
 
 ```python
-client = AareguruSDK.test(None, None)
+client = AareguruSDK.test()
 
-result, err = client.Aareguru(None).load(
-    {"id": "test01"}, None
-)
+result, err = client.Aareguru().load({"id": "test01"})
 # result contains mock response data
 ```
 
@@ -122,7 +117,6 @@ Create a `.env.local` file at the project root:
 
 ```
 AAREGURU_TEST_LIVE=TRUE
-AAREGURU_APIKEY=<your-key>
 ```
 
 Then run:
@@ -146,7 +140,6 @@ Creates a new SDK client.
 
 | Option | Type | Description |
 | --- | --- | --- |
-| `apikey` | `str` | API key for authentication. |
 | `base` | `str` | Base URL of the API server. |
 | `prefix` | `str` | URL path prefix prepended to all requests. |
 | `suffix` | `str` | URL path suffix appended to all requests. |

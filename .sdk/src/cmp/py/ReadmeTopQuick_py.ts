@@ -32,19 +32,23 @@ client = ${model.const.Name}SDK({${apikeyArg}})
     const eName = nom(exampleEntity, 'Name')
     const opnames = Object.keys(exampleEntity.op || {})
 
+    let hasCall = false
+
     if (opnames.includes('list')) {
       Content(`# List all ${eName.toLowerCase()}s
-${eName.toLowerCase()}s, err = client.${eName}(None).list(None, None)
+${eName.toLowerCase()}s, err = client.${eName}().list()
+print(${eName.toLowerCase()}s)
 `)
+      hasCall = true
     }
 
     if (opnames.includes('load')) {
       Content(`
 # Load a specific ${eName.toLowerCase()}
-${eName.toLowerCase()}, err = client.${eName}(None).load(
-    {"id": "example_id"}, None
-)
+${eName.toLowerCase()}, err = client.${eName}().load({"id": "example_id"})
+print(${eName.toLowerCase()})
 `)
+      hasCall = true
     }
   }
 

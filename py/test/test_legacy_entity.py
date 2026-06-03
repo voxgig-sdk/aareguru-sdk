@@ -91,7 +91,6 @@ def _legacy_basic_setup(extra):
         "AAREGURU_TEST_LEGACY_ENTID": idmap,
         "AAREGURU_TEST_LIVE": "FALSE",
         "AAREGURU_TEST_EXPLAIN": "FALSE",
-        "AAREGURU_APIKEY": "NONE",
     })
 
     idmap_resolved = helpers.to_map(
@@ -102,7 +101,6 @@ def _legacy_basic_setup(extra):
     if env.get("AAREGURU_TEST_LIVE") == "TRUE":
         merged_opts = vs.merge([
             {
-                "apikey": env.get("AAREGURU_APIKEY"),
             },
             extra or {},
         ])

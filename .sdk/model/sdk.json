@@ -23,6 +23,7 @@
         ],
         "title": "Aare.guru API",
         "version": "2018",
+        "auth": false,
         "tagline": "Real-time water temperature, weather, and flow data for the Aare River in Switzerland.",
         "homepage": "https://aare.guru",
         "docs_url": "https://aareguru.existenz.ch",

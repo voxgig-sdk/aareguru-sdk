@@ -107,14 +107,12 @@ func v2018DirectSetup(mockres any) *v2018DirectSetupResult {
 	env := envOverride(map[string]any{
 		"AAREGURU_TEST_V_____ENTID": map[string]any{},
 		"AAREGURU_TEST_LIVE":    "FALSE",
-		"AAREGURU_APIKEY":       "NONE",
 	})
 
 	live := env["AAREGURU_TEST_LIVE"] == "TRUE"
 
 	if live {
 		mergedOpts := map[string]any{
-			"apikey": env["AAREGURU_APIKEY"],
 		}
 		client := sdk.NewAareguruSDK(mergedOpts)
 

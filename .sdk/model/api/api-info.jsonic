@@ -23,6 +23,10 @@ main: {
       title: "Aare.guru API"
       version: "2018"
 
+      # Public API, no authentication. Disables apikey examples in
+      # generated code, README, and client construction.
+      auth: false
+
       tagline: "Real-time water temperature, weather, and flow data for the Aare River in Switzerland."
 
       homepage: "https://aare.guru"

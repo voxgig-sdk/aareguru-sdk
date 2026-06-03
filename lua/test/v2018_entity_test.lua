@@ -91,7 +91,6 @@ function v2018_basic_setup(extra)
     ["AAREGURU_TEST_V_____ENTID"] = idmap,
     ["AAREGURU_TEST_LIVE"] = "FALSE",
     ["AAREGURU_TEST_EXPLAIN"] = "FALSE",
-    ["AAREGURU_APIKEY"] = "NONE",
   })
 
   local idmap_resolved = helpers.to_map(
@@ -103,7 +102,6 @@ function v2018_basic_setup(extra)
   if env["AAREGURU_TEST_LIVE"] == "TRUE" then
     local merged_opts = vs.merge({
       {
-        apikey = env["AAREGURU_APIKEY"],
       },
       extra or {},
     })

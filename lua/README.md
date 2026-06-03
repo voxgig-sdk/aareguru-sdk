@@ -31,15 +31,13 @@ loading a specific record.
 ```lua
 local sdk = require("aareguru_sdk")
 
-local client = sdk.new({
-  apikey = os.getenv("AAREGURU_APIKEY"),
-})
+local client = sdk.new({})
 ```
 
 ### 3. Load a legacy
 
 ```lua
-local result, err = client:Legacy(nil):load({ id = "example_id" }, nil)
+local result, err = client:Legacy():load({ id = "example_id" })
 if err then error(err) end
 print(result)
 ```
@@ -85,11 +83,9 @@ print(fetchdef["headers"])
 Create a mock client for unit testing — no server required:
 
 ```lua
-local client = sdk.test(nil, nil)
+local client = sdk.test()
 
-local result, err = client:Aareguru(nil):load(
-  { id = "test01" }, nil
-)
+local result, err = client:Aareguru():load({ id = "test01" })
 -- result contains mock response data
 ```
 
@@ -123,7 +119,6 @@ Create a `.env.local` file at the project root:
 
 ```
 AAREGURU_TEST_LIVE=TRUE
-AAREGURU_APIKEY=<your-key>
 ```
 
 Then run:
@@ -146,7 +141,6 @@ Creates a new SDK client.
 
 | Option | Type | Description |
 | --- | --- | --- |
-| `apikey` | `string` | API key for authentication. |
 | `base` | `string` | Base URL of the API server. |
 | `prefix` | `string` | URL path prefix prepended to all requests. |
 | `suffix` | `string` | URL path suffix appended to all requests. |

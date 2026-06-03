@@ -41,7 +41,7 @@ $client = new ${model.const.Name}SDK([${apikeyArg}]);
       Content(`### 2. List ${eName.toLowerCase()}s
 
 \`\`\`php
-[$result, $err] = $client->${eName}(null)->list(null, null);
+[$result, $err] = $client->${eName}()->list();
 if ($err) { throw new \\Exception($err); }
 
 if (is_array($result)) {
@@ -59,7 +59,7 @@ if (is_array($result)) {
       Content(`### 3. Load a ${eName.toLowerCase()}
 
 \`\`\`php
-[$result, $err] = $client->${eName}(null)->load(["id" => "example_id"], null);
+[$result, $err] = $client->${eName}()->load(["id" => "example_id"]);
 if ($err) { throw new \\Exception($err); }
 print_r($result);
 \`\`\`
@@ -74,19 +74,19 @@ print_r($result);
 `)
       if (opnames.includes('create')) {
         Content(`// Create
-[$created, $_] = $client->${eName}(null)->create(["name" => "Example"], null);
+[$created, $_] = $client->${eName}()->create(["name" => "Example"]);
 
 `)
       }
       if (opnames.includes('update')) {
         Content(`// Update
-$client->${eName}(null)->update(["id" => $created["id"], "name" => "Example-Renamed"], null);
+$client->${eName}()->update(["id" => $created["id"], "name" => "Example-Renamed"]);
 
 `)
       }
       if (opnames.includes('remove')) {
         Content(`// Remove
-$client->${eName}(null)->remove(["id" => $created["id"]], null);
+$client->${eName}()->remove(["id" => $created["id"]]);
 `)
       }
       Content(`\`\`\`

@@ -66,14 +66,12 @@ def _v2018_direct_setup(mockres):
     env = runner.env_override({
         "AAREGURU_TEST_V_____ENTID": {},
         "AAREGURU_TEST_LIVE": "FALSE",
-        "AAREGURU_APIKEY": "NONE",
     })
 
     live = env.get("AAREGURU_TEST_LIVE") == "TRUE"
 
     if live:
         merged_opts = {
-            "apikey": env.get("AAREGURU_APIKEY"),
         }
         client = AareguruSDK(merged_opts)
         return {

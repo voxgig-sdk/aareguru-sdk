@@ -79,9 +79,7 @@ Example: `/v2018/current?city=bern&app=com.example.swim&version=1.0.42`
 ```ts
 import { AareguruSDK } from 'aareguru'
 
-const client = new AareguruSDK({
-  apikey: process.env.AAREGURU_APIKEY,
-})
+const client = new AareguruSDK({})
 
 // Load legacy data
 const legacy = await client.Legacy().load({})
@@ -141,10 +139,11 @@ Each entity supports the following operations where available: **load**,
 ```go
 import sdk "github.com/voxgig-sdk/aareguru-sdk/go"
 
-client := sdk.NewAareguruSDK(map[string]any{
-    "apikey": os.Getenv("AAREGURU_APIKEY"),
-})
+client := sdk.NewAareguruSDK(map[string]any{})
 
+// Load legacy data
+legacy, err := client.Legacy(nil).Load(map[string]any{}, nil)
+fmt.Println(legacy)
 ```
 
 ### Lua
@@ -152,15 +151,12 @@ client := sdk.NewAareguruSDK(map[string]any{
 ```lua
 local sdk = require("aareguru_sdk")
 
-local client = sdk.new({
-  apikey = os.getenv("AAREGURU_APIKEY"),
-})
+local client = sdk.new({})
 
 
 -- Load a specific legacy
-local legacy, err = client:Legacy(nil):load(
-  { id = "example_id" }, nil
-)
+local legacy, err = client:Legacy():load({ id = "example_id" })
+print(legacy)
 ```
 
 ### PHP
@@ -169,32 +165,25 @@ local legacy, err = client:Legacy(nil):load(
 <?php
 require_once 'aareguru_sdk.php';
 
-$client = new AareguruSDK([
-    "apikey" => getenv("AAREGURU_APIKEY"),
-]);
+$client = new AareguruSDK([]);
 
 
 // Load a specific legacy
-[$legacy, $err] = $client->Legacy(null)->load(
-    ["id" => "example_id"], null
-);
+[$legacy, $err] = $client->Legacy()->load(["id" => "example_id"]);
+print_r($legacy);
 ```
 
 ### Python
 
 ```python
-import os
 from aareguru_sdk import AareguruSDK
 
-client = AareguruSDK({
-    "apikey": os.environ.get("AAREGURU_APIKEY"),
-})
+client = AareguruSDK({})
 
 
 # Load a specific legacy
-legacy, err = client.Legacy(None).load(
-    {"id": "example_id"}, None
-)
+legacy, err = client.Legacy().load({"id": "example_id"})
+print(legacy)
 ```
 
 ### Ruby
@@ -202,18 +191,15 @@ legacy, err = client.Legacy(None).load(
 ```ruby
 require_relative "Aareguru_sdk"
 
-client = AareguruSDK.new({
-  "apikey" => ENV["AAREGURU_APIKEY"],
-})
+client = AareguruSDK.new({})
 
 
 # Load a specific legacy
-legacy, err = client.Legacy(nil).load(
-  { "id" => "example_id" }, nil
-)
+legacy, err = client.Legacy().load({ "id" => "example_id" })
+puts legacy
 ```
 
-## Testing without the network
+## Unit testing in offline mode
 
 Every SDK ships a test mode that swaps the HTTP transport for an
 in-memory mock, so unit tests run offline.
@@ -230,37 +216,29 @@ result, err := client.Legacy(nil).Load(
 ### Lua
 
 ```lua
-local client = sdk.test(nil, nil)
-local result, err = client:Legacy(nil):load(
-  { id = "test01" }, nil
-)
+local client = sdk.test()
+local result, err = client:Legacy():load({ id = "test01" })
 ```
 
 ### PHP
 
 ```php
-$client = AareguruSDK::test(null, null);
-[$result, $err] = $client->Legacy(null)->load(
-    ["id" => "test01"], null
-);
+$client = AareguruSDK::test();
+[$result, $err] = $client->Legacy()->load(["id" => "test01"]);
 ```
 
 ### Python
 
 ```python
-client = AareguruSDK.test(None, None)
-result, err = client.Legacy(None).load(
-    {"id": "test01"}, None
-)
+client = AareguruSDK.test()
+result, err = client.Legacy().load({"id": "test01"})
 ```
 
 ### Ruby
 
 ```ruby
-client = AareguruSDK.test(nil, nil)
-result, err = client.Legacy(nil).load(
-  { "id" => "test01" }, nil
-)
+client = AareguruSDK.test
+result, err = client.Legacy().load({ "id" => "test01" })
 ```
 
 ### TypeScript
