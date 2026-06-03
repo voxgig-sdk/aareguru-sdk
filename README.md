@@ -1,9 +1,125 @@
 # Aareguru SDK
 
+Real-time water temperature, weather, and flow data for the Aare River in Switzerland.
 
+> Golang, Lua, PHP, Python, Ruby, TypeScript SDKs, a CLI, an interactive REPL, and an MCP server for AI agents — all generated from one OpenAPI spec by [Voxgig](https://voxgig.com/sdk).
 
-Available for [Golang](go/) and [Go CLI](go-cli/) and [Go MCP server](go-mcp/) and [Lua](lua/) and [PHP](php/) and [Python](py/) and [Ruby](rb/) and [TypeScript](ts/).
+## About Aare.guru API
 
+[Aare.guru](https://aare.guru) is a community-run service that publishes
+live measurements for the [Aare](https://en.wikipedia.org/wiki/Aare) —
+Switzerland's longest river entirely within the country, and the river
+many Bernese swim in on a summer afternoon. The API answers the
+practical question *"how warm is the Aare today, and is it safe to
+swim?"* and exposes the raw data behind it.
+
+**What you get from the API**
+
+- Current water **temperature** (°C, rounded and unrounded variants)
+- **Flow** (m³/s) and a 1-5 **danger level** (`flow_gefahrenstufe`)
+- River **height** (m above sea level)
+- Air temperature, precipitation, sunshine and forecast **weather symbols**
+- Plain-text descriptions (`text`, `temperature_text`) suitable for UIs
+- Per-city queries for Bern, Olten, Thun, and other Aare locations
+
+**Data sources** — BAFU (Swiss Federal Office of Environment) for national
+Aare measurements, [TemperAare](https://temperaare.ch) for Olten, MeteoSchweiz
+SwissMetNet for weather observations, and Meteotest for the forecast.
+
+**Operational notes** — data updates every ~10 minutes (with 10-20 min
+delay); polling every 5 minutes is plenty. Responses are cached for 2
+minutes. CORS is wide-open (`*`) and JSONP is supported via a
+`callback` query parameter. Per the maintainers, *"every value could
+be null at any time — defensive programming always pays off."*
+
+## Try it
+
+**Golang**
+```bash
+go get github.com/voxgig-sdk/aareguru-sdk/go
+```
+
+**Lua**
+```bash
+luarocks install aareguru-sdk
+```
+
+**PHP**
+```bash
+composer require voxgig/aareguru-sdk
+```
+
+**Python**
+```bash
+pip install aareguru-sdk
+```
+
+**Ruby**
+```bash
+gem install aareguru-sdk
+```
+
+**TypeScript**
+```bash
+npm install aareguru
+```
+
+## 30-second quickstart
+
+Every request must include two free-text parameters so the maintainers
+can see who is using the API:
+
+- `app` — a stable identifier for your application (e.g. `com.example.swim`)
+- `version` — the version of your application (e.g. `1.0.42`)
+
+Example: `/v2018/current?city=bern&app=com.example.swim&version=1.0.42`
+
+### TypeScript
+
+```ts
+import { AareguruSDK } from 'aareguru'
+
+const client = new AareguruSDK({
+  apikey: process.env.AAREGURU_APIKEY,
+})
+
+// Load legacy data
+const legacy = await client.Legacy().load({})
+console.log(legacy.data)
+```
+
+See the [TypeScript README](ts/README.md) for the
+full guide, or scroll down for the same example in other languages.
+
+## What's in the box
+
+| Surface | Use it for | Path |
+| --- | --- | --- |
+| **SDK** (Golang, Lua, PHP, Python, Ruby, TypeScript) | App integration | `go/` `lua/` `php/` `py/` `rb/` `ts/` |
+| **CLI** | Scripts, CI, ops, one-off API calls | `go-cli/` |
+| **MCP server** | AI agents (Claude, Cursor, Cline) | `go-mcp/` |
+
+## Use it from an AI agent (MCP)
+
+The generated MCP server exposes every operation in this SDK as an
+[MCP](https://modelcontextprotocol.io) tool that Claude, Cursor or Cline
+can call directly. Build and register it:
+
+```bash
+cd go-mcp && go build -o aareguru-mcp .
+```
+
+Then add it to your agent's MCP config (Claude Desktop, Cursor, etc.):
+
+```json
+{
+  "mcpServers": {
+    "aareguru": {
+      "command": "/abs/path/to/aareguru-mcp"
+    }
+  }
+}
+```
 
 ## Entities
 
@@ -11,52 +127,14 @@ The API exposes 3 entities:
 
 | Entity | Description | API path |
 | --- | --- | --- |
-| **Legacy** |  | `/current` |
-| **Stuff** |  | `/logs` |
-| **V2018** |  | `/v2018/history` |
+| **Legacy** | Legacy single-location endpoints (`/current`, `/today`, `/currentV2`) — returns current Aare water and weather data without a city parameter. Kept for backwards compatibility; new code should prefer `v2018`. | `/current` |
+| **Stuff** | Operational data: request logs (`/logs`), Slack feed (`/slack`), and raw upstream measurements (`/rawdata`). | `/logs` |
+| **V2018** | The current data API. Per-city queries for current conditions, today's forecast, history, and the embeddable widget (`/v2018/current`, `/v2018/today`, `/v2018/history`, `/v2018/cities`, `/v2018/widget`). | `/v2018/history` |
 
-Each entity supports the following operations where available: **load**, **list**, **create**,
-**update**, and **remove**.
+Each entity supports the following operations where available: **load**,
+**list**, **create**, **update**, and **remove**.
 
-
-## Architecture
-
-### Entity-operation model
-
-Every SDK call follows the same pipeline:
-
-1. **Point** — resolve the API endpoint from the operation definition.
-2. **Spec** — build the HTTP specification (URL, method, headers, body).
-3. **Request** — send the HTTP request.
-4. **Response** — receive and parse the response.
-5. **Result** — extract the result data for the caller.
-
-At each stage a feature hook fires (e.g. `PrePoint`, `PreSpec`,
-`PreRequest`), allowing features to inspect or modify the pipeline.
-
-### Features
-
-Features are hook-based middleware that extend SDK behaviour.
-
-| Feature | Purpose |
-| --- | --- |
-| **TestFeature** | In-memory mock transport for testing without a live server |
-
-You can add custom features by passing them in the `extend` option at
-construction time.
-
-### Direct and Prepare
-
-For endpoints not covered by the entity model, use the low-level methods:
-
-- **`direct(fetchargs)`** — build and send an HTTP request in one step.
-- **`prepare(fetchargs)`** — build the request without sending it.
-
-Both accept a map with `path`, `method`, `params`, `query`, `headers`,
-and `body`.
-
-
-## Quick start
+## Quickstart in other languages
 
 ### Golang
 
@@ -135,22 +213,10 @@ legacy, err = client.Legacy(nil).load(
 )
 ```
 
-### TypeScript
+## Testing without the network
 
-```ts
-import { AareguruSDK } from 'aareguru'
-
-const client = new AareguruSDK({
-  apikey: process.env.AAREGURU_APIKEY,
-})
-
-```
-
-
-## Testing
-
-Both SDKs provide a test mode that replaces the HTTP transport with an
-in-memory mock, so tests run without a network connection.
+Every SDK ships a test mode that swaps the HTTP transport for an
+in-memory mock, so unit tests run offline.
 
 ### Golang
 
@@ -205,6 +271,37 @@ const result = await client.Legacy().load({ id: 'test01' })
 // result.ok === true, result.data contains mock data
 ```
 
+## How it works
+
+Every SDK call runs the same five-stage pipeline:
+
+1. **Point** — resolve the API endpoint from the operation definition.
+2. **Spec** — build the HTTP specification (URL, method, headers, body).
+3. **Request** — send the HTTP request.
+4. **Response** — receive and parse the response.
+5. **Result** — extract the result data for the caller.
+
+A feature hook fires at each stage (e.g. `PrePoint`, `PreSpec`,
+`PreRequest`), so features can inspect or modify the pipeline without
+forking the SDK.
+
+### Features
+
+| Feature | Purpose |
+| --- | --- |
+| **TestFeature** | In-memory mock transport for testing without a live server |
+
+Pass custom features via the `extend` option at construction time.
+
+### Direct and Prepare
+
+For endpoints the entity model doesn't cover, use the low-level methods:
+
+- **`direct(fetchargs)`** — build and send an HTTP request in one step.
+- **`prepare(fetchargs)`** — build the request without sending it.
+
+Both accept a map with `path`, `method`, `params`, `query`,
+`headers`, and `body`. See the [How-to guides](#how-to-guides) below.
 
 ## How-to guides
 
@@ -267,15 +364,33 @@ const result = await client.direct({
 console.log(result.data)
 ```
 
+## Per-language documentation
 
-## Language-specific documentation
+- [Golang](go/README.md)
+- [Lua](lua/README.md)
+- [PHP](php/README.md)
+- [Python](py/README.md)
+- [Ruby](rb/README.md)
+- [TypeScript](ts/README.md)
 
-- [Golang SDK](go/README.md)
-- [Go CLI SDK](go-cli/README.md)
-- [Go MCP server SDK](go-mcp/README.md)
-- [Lua SDK](lua/README.md)
-- [PHP SDK](php/README.md)
-- [Python SDK](py/README.md)
-- [Ruby SDK](rb/README.md)
-- [TypeScript SDK](ts/README.md)
+## Using the Aare.guru API
 
+- Upstream: [https://aare.guru](https://aare.guru)
+- API docs: [https://aareguru.existenz.ch](https://aareguru.existenz.ch)
+- Contact: [aaregurus@existenz.ch](mailto:aaregurus@existenz.ch)
+
+**Free for non-commercial use.** If you build something with this API, please:
+
+- email [aaregurus@existenz.ch](mailto:aaregurus@existenz.ch) to let them know
+- link back to [https://aare.guru](https://aare.guru) and the Swiss Federal
+  Office of Environment ([BAFU](https://www.bafu.admin.ch))
+- credit the upstream data sources where you display the data
+
+---
+
+Generated by the [Voxgig SDK Generator](https://voxgig.com/sdk) from the
+Aare.guru API OpenAPI spec. MIT-licensed — fork it, ship it, own it.
+
+Browse 500+ more generated SDKs at [https://github.com/voxgig-sdk](https://github.com/voxgig-sdk).
+
+Want this production-grade for your team? [Voxgig DX consulting](https://voxgig.com/consulting/developer-experience).

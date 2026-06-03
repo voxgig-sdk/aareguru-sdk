@@ -1,6 +1,11 @@
 # Aareguru TypeScript SDK
 
-The TypeScript SDK for the Aareguru API. Provides a type-safe, entity-oriented interface with full async/await support.
+Real-time water temperature, weather, and flow data for the Aare River in Switzerland.
+
+The TypeScript SDK for the Aareguru API — a type-safe, entity-oriented client with full async/await support.
+
+> Other languages, the CLI, and MCP server live alongside this one — see
+> the [top-level README](../README.md).
 
 
 ## Install

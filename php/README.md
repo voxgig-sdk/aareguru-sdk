@@ -1,6 +1,11 @@
 # Aareguru PHP SDK
 
-The PHP SDK for the Aareguru API. Provides an entity-oriented interface using PHP conventions.
+Real-time water temperature, weather, and flow data for the Aare River in Switzerland.
+
+The PHP SDK for the Aareguru API — an entity-oriented client using PHP conventions.
+
+> Other languages, the CLI, and MCP server live alongside this one — see
+> the [top-level README](../README.md).
 
 
 ## Install

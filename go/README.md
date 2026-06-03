@@ -1,6 +1,11 @@
 # Aareguru Golang SDK
 
-The Golang SDK for the Aareguru API. Provides an entity-oriented interface using standard Go conventions — no generics required, data flows as `map[string]any`.
+Real-time water temperature, weather, and flow data for the Aare River in Switzerland.
+
+The Golang SDK for the Aareguru API — an entity-oriented client using standard Go conventions. No generics required; data flows as `map[string]any`.
+
+> Other languages, the CLI, and MCP server live alongside this one — see
+> the [top-level README](../README.md).
 
 
 ## Install

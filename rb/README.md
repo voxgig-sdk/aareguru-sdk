@@ -1,6 +1,11 @@
 # Aareguru Ruby SDK
 
-The Ruby SDK for the Aareguru API. Provides an entity-oriented interface using idiomatic Ruby conventions.
+Real-time water temperature, weather, and flow data for the Aare River in Switzerland.
+
+The Ruby SDK for the Aareguru API — an entity-oriented client using idiomatic Ruby conventions.
+
+> Other languages, the CLI, and MCP server live alongside this one — see
+> the [top-level README](../README.md).
 
 
 ## Install
