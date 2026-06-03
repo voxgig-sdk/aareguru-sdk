@@ -66,14 +66,6 @@ npm install aareguru
 
 ## 30-second quickstart
 
-Every request must include two free-text parameters so the maintainers
-can see who is using the API:
-
-- `app` — a stable identifier for your application (e.g. `com.example.swim`)
-- `version` — the version of your application (e.g. `1.0.42`)
-
-Example: `/v2018/current?city=bern&app=com.example.swim&version=1.0.42`
-
 ### TypeScript
 
 ```ts

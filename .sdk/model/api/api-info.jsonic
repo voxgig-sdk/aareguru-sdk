@@ -74,16 +74,6 @@ minutes. CORS is wide-open (\`*\`) and JSONP is supported via a
 be null at any time — defensive programming always pays off."*
 `
 
-      required_params_md: `
-Every request must include two free-text parameters so the maintainers
-can see who is using the API:
-
-- \`app\` — a stable identifier for your application (e.g. \`com.example.swim\`)
-- \`version\` — the version of your application (e.g. \`1.0.42\`)
-
-Example: \`/v2018/current?city=bern&app=com.example.swim&version=1.0.42\`
-`
-
       entity_desc: {
         legacy: "Legacy single-location endpoints (`/current`, `/today`, `/currentV2`) — returns current Aare water and weather data without a city parameter. Kept for backwards compatibility; new code should prefer `v2018`."
         stuff: "Operational data: request logs (`/logs`), Slack feed (`/slack`), and raw upstream measurements (`/rawdata`)."
