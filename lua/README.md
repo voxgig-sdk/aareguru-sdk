@@ -1,6 +1,6 @@
 # Aareguru Lua SDK
 
-Real-time water temperature, weather, and flow data for the Aare River in Switzerland.
+
 
 The Lua SDK for the Aareguru API — an entity-oriented client using Lua conventions.
 
@@ -31,7 +31,9 @@ loading a specific record.
 ```lua
 local sdk = require("aareguru_sdk")
 
-local client = sdk.new()
+local client = sdk.new({
+  apikey = os.getenv("AAREGURU_APIKEY"),
+})
 ```
 
 ### 3. Load a legacy
@@ -119,6 +121,7 @@ Create a `.env.local` file at the project root:
 
 ```
 AAREGURU_TEST_LIVE=TRUE
+AAREGURU_APIKEY=<your-key>
 ```
 
 Then run:
@@ -141,6 +144,7 @@ Creates a new SDK client.
 
 | Option | Type | Description |
 | --- | --- | --- |
+| `apikey` | `string` | API key for authentication. |
 | `base` | `string` | Base URL of the API server. |
 | `prefix` | `string` | URL path prefix prepended to all requests. |
 | `suffix` | `string` | URL path suffix appended to all requests. |

@@ -1,75 +1,60 @@
 {
-  "name": "aareguru",
-  "origin": "voxgig-sdk",
   "def": "aareguru_0.1.0.yaml",
   "main": {
+    "def": {
+      "desc": ""
+    },
     "kit": {
-      "info": {
-        "description": "Public data API behind aare.guru. Calls should include free-form `app` and `version` query parameters (e.g. `...v2018/current?app=app.identifier.meine.app&version=1.42`). The API is public for non-commercial use. See the upstream documentation for parameter details. JSONP supported via the `callback` parameter; CORS is open.",
-        "servers": [
-          {
-            "description": "LIVE",
-            "url": "https://aareguru.existenz.ch"
-          },
-          {
-            "description": "TEST",
-            "url": "https://aareguru-test.existenz.ch"
-          }
-        ],
-        "title": "Aare.guru API",
-        "version": "2018",
-        "auth": false,
-        "tagline": "Real-time water temperature, weather, and flow data for the Aare River in Switzerland.",
-        "homepage": "https://aare.guru",
-        "docs_url": "https://aareguru.existenz.ch",
-        "status_url": "https://status.existenz.ch",
-        "license_short": "Free for non-commercial use, with attribution.",
-        "license_md": "\n**Free for non-commercial use.** If you build something with this API:\n\n- link back to [https://aare.guru](https://aare.guru) and the Swiss Federal\n  Office of Environment ([BAFU](https://www.bafu.admin.ch))\n- credit the upstream data sources where you display the data\n- see the upstream site for any updated terms\n",
-        "about_md": "\n[Aare.guru](https://aare.guru) is a community-run service that publishes\nlive measurements for the [Aare](https://en.wikipedia.org/wiki/Aare) —\nSwitzerland's longest river entirely within the country, and the river\nmany Bernese swim in on a summer afternoon. The API answers the\npractical question *\"how warm is the Aare today, and is it safe to\nswim?\"* and exposes the raw data behind it.\n\n**What you get from the API**\n\n- Current water **temperature** (°C, rounded and unrounded variants)\n- **Flow** (m³/s) and a 1-5 **danger level** (`flow_gefahrenstufe`)\n- River **height** (m above sea level)\n- Air temperature, precipitation, sunshine and forecast **weather symbols**\n- Plain-text descriptions (`text`, `temperature_text`) suitable for UIs\n- Per-city queries for Bern, Olten, Thun, and other Aare locations\n\n**Data sources** — BAFU (Swiss Federal Office of Environment) for national\nAare measurements, [TemperAare](https://temperaare.ch) for Olten, MeteoSchweiz\nSwissMetNet for weather observations, and Meteotest for the forecast.\n\n**Operational notes** — data updates every ~10 minutes (with 10-20 min\ndelay); polling every 5 minutes is plenty. Responses are cached for 2\nminutes. CORS is wide-open (`*`) and JSONP is supported via a\n`callback` query parameter. *\"Every value could be null at any time —\ndefensive programming always pays off.\"*\n",
-        "entity_desc": {
-          "legacy": "Legacy single-location endpoints (`/current`, `/today`, `/currentV2`) — returns current Aare water and weather data without a city parameter. Kept for backwards compatibility; new code should prefer `v2018`.",
-          "stuff": "Operational data: request logs (`/logs`), Slack feed (`/slack`), and raw upstream measurements (`/rawdata`).",
-          "v2018": "The current data API. Per-city queries for current conditions, today's forecast, history, and the embeddable widget (`/v2018/current`, `/v2018/today`, `/v2018/history`, `/v2018/cities`, `/v2018/widget`)."
-        }
-      },
       "config": {
         "auth": {
           "prefix": "Bearer"
         },
+        "docs_order": [
+          "ts",
+          "py",
+          "php",
+          "go",
+          "rb",
+          "lua"
+        ],
         "headers": {
           "content-type": "application/json"
         }
       },
       "entity": {
         "legacy": {
+          "active": true,
           "alias": {
             "field": {}
           },
+          "fields": [],
           "name": "legacy",
           "op": {
             "load": {
+              "input": "data",
               "name": "load",
               "points": [
                 {
+                  "active": true,
                   "args": {
                     "query": [
                       {
+                        "active": true,
                         "example": "my.app.ch",
                         "kind": "query",
                         "name": "app",
                         "orig": "app",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       },
                       {
+                        "active": true,
                         "example": "1.0.42",
                         "kind": "query",
                         "name": "version",
                         "orig": "version",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       }
                     ]
                   },
@@ -87,29 +72,29 @@
                   "transform": {
                     "req": "`reqdata`",
                     "res": "`body`"
-                  },
-                  "active": true
+                  }
                 },
                 {
+                  "active": true,
                   "args": {
                     "query": [
                       {
+                        "active": true,
                         "example": "my.app.ch",
                         "kind": "query",
                         "name": "app",
                         "orig": "app",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       },
                       {
+                        "active": true,
                         "example": "1.0.42",
                         "kind": "query",
                         "name": "version",
                         "orig": "version",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       }
                     ]
                   },
@@ -127,29 +112,29 @@
                   "transform": {
                     "req": "`reqdata`",
                     "res": "`body`"
-                  },
-                  "active": true
+                  }
                 },
                 {
+                  "active": true,
                   "args": {
                     "query": [
                       {
+                        "active": true,
                         "example": "my.app.ch",
                         "kind": "query",
                         "name": "app",
                         "orig": "app",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       },
                       {
+                        "active": true,
                         "example": "1.0.42",
                         "kind": "query",
                         "name": "version",
                         "orig": "version",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       }
                     ]
                   },
@@ -167,66 +152,66 @@
                   "transform": {
                     "req": "`reqdata`",
                     "res": "`body`"
-                  },
-                  "active": true
+                  }
                 }
-              ],
-              "input": "data"
+              ]
             }
           },
-          "active": true,
-          "fields": [],
           "relations": {
             "ancestors": []
           }
         },
         "stuff": {
+          "active": true,
           "alias": {
             "field": {}
           },
+          "fields": [],
           "name": "stuff",
           "op": {
             "load": {
+              "input": "data",
               "name": "load",
               "points": [
                 {
+                  "active": true,
                   "args": {
                     "query": [
                       {
+                        "active": true,
                         "example": "my.app.ch",
                         "kind": "query",
                         "name": "app",
                         "orig": "app",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       },
                       {
+                        "active": true,
                         "example": 12,
                         "kind": "query",
                         "name": "line",
                         "orig": "line",
                         "reqd": false,
-                        "type": "`$INTEGER`",
-                        "active": true
+                        "type": "`$INTEGER`"
                       },
                       {
+                        "active": true,
                         "example": "v2018_bueber",
                         "kind": "query",
                         "name": "service",
                         "orig": "service",
                         "reqd": true,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       },
                       {
+                        "active": true,
                         "example": "1.0.42",
                         "kind": "query",
                         "name": "version",
                         "orig": "version",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       }
                     ]
                   },
@@ -246,38 +231,38 @@
                   "transform": {
                     "req": "`reqdata`",
                     "res": "`body`"
-                  },
-                  "active": true
+                  }
                 },
                 {
+                  "active": true,
                   "args": {
                     "query": [
                       {
+                        "active": true,
                         "example": "my.app.ch",
                         "kind": "query",
                         "name": "app",
                         "orig": "app",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       },
                       {
+                        "active": true,
                         "example": "v2018_bueber",
                         "kind": "query",
                         "name": "service",
                         "orig": "service",
                         "reqd": true,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       },
                       {
+                        "active": true,
                         "example": "1.0.42",
                         "kind": "query",
                         "name": "version",
                         "orig": "version",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       }
                     ]
                   },
@@ -296,98 +281,98 @@
                   "transform": {
                     "req": "`reqdata`",
                     "res": "`body`"
-                  },
-                  "active": true
+                  }
                 },
                 {
+                  "active": true,
+                  "args": {},
                   "method": "GET",
                   "orig": "/slack",
                   "parts": [
                     "slack"
                   ],
+                  "select": {},
                   "transform": {
                     "req": "`reqdata`",
                     "res": "`body`"
-                  },
-                  "active": true,
-                  "args": {},
-                  "select": {}
+                  }
                 }
-              ],
-              "input": "data"
+              ]
             }
           },
-          "active": true,
-          "fields": [],
           "relations": {
             "ancestors": []
           }
         },
         "v2018": {
+          "active": true,
           "alias": {
             "field": {}
           },
+          "fields": [],
           "name": "v2018",
           "op": {
             "load": {
+              "input": "data",
               "name": "load",
               "points": [
                 {
+                  "active": true,
                   "args": {
                     "query": [
                       {
+                        "active": true,
                         "example": "my.app.ch",
                         "kind": "query",
                         "name": "app",
                         "orig": "app",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       },
                       {
+                        "active": true,
                         "example": "bern",
                         "kind": "query",
                         "name": "city",
                         "orig": "city",
                         "reqd": true,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       },
                       {
+                        "active": true,
                         "example": "2025-02-13",
                         "kind": "query",
                         "name": "end",
                         "orig": "end",
                         "reqd": true,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       },
                       {
+                        "active": true,
                         "example": "2025-01-01",
                         "kind": "query",
                         "name": "start",
                         "orig": "start",
                         "reqd": true,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       },
                       {
+                        "active": true,
                         "example": null,
                         "kind": "query",
                         "name": "value",
                         "orig": "value",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       },
                       {
+                        "active": true,
                         "example": "1.0.42",
                         "kind": "query",
                         "name": "version",
                         "orig": "version",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       }
                     ]
                   },
@@ -411,47 +396,47 @@
                   "transform": {
                     "req": "`reqdata`",
                     "res": "`body`"
-                  },
-                  "active": true
+                  }
                 },
                 {
+                  "active": true,
                   "args": {
                     "query": [
                       {
+                        "active": true,
                         "example": "my.app.ch",
                         "kind": "query",
                         "name": "app",
                         "orig": "app",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       },
                       {
+                        "active": true,
                         "example": "bern",
                         "kind": "query",
                         "name": "city",
                         "orig": "city",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       },
                       {
+                        "active": true,
                         "example": null,
                         "kind": "query",
                         "name": "value",
                         "orig": "value",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       },
                       {
+                        "active": true,
                         "example": "1.0.42",
                         "kind": "query",
                         "name": "version",
                         "orig": "version",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       }
                     ]
                   },
@@ -473,47 +458,47 @@
                   "transform": {
                     "req": "`reqdata`",
                     "res": "`body`"
-                  },
-                  "active": true
+                  }
                 },
                 {
+                  "active": true,
                   "args": {
                     "query": [
                       {
+                        "active": true,
                         "example": "my.app.ch",
                         "kind": "query",
                         "name": "app",
                         "orig": "app",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       },
                       {
+                        "active": true,
                         "example": "bern",
                         "kind": "query",
                         "name": "city",
                         "orig": "city",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       },
                       {
+                        "active": true,
                         "example": null,
                         "kind": "query",
                         "name": "value",
                         "orig": "value",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       },
                       {
+                        "active": true,
                         "example": "1.0.42",
                         "kind": "query",
                         "name": "version",
                         "orig": "version",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       }
                     ]
                   },
@@ -535,38 +520,38 @@
                   "transform": {
                     "req": "`reqdata`",
                     "res": "`body`"
-                  },
-                  "active": true
+                  }
                 },
                 {
+                  "active": true,
                   "args": {
                     "query": [
                       {
+                        "active": true,
                         "example": "my.app.ch",
                         "kind": "query",
                         "name": "app",
                         "orig": "app",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       },
                       {
+                        "active": true,
                         "example": null,
                         "kind": "query",
                         "name": "value",
                         "orig": "value",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       },
                       {
+                        "active": true,
                         "example": "1.0.42",
                         "kind": "query",
                         "name": "version",
                         "orig": "version",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       }
                     ]
                   },
@@ -587,38 +572,38 @@
                   "transform": {
                     "req": "`reqdata`",
                     "res": "`body`"
-                  },
-                  "active": true
+                  }
                 },
                 {
+                  "active": true,
                   "args": {
                     "query": [
                       {
+                        "active": true,
                         "example": "my.app.ch",
                         "kind": "query",
                         "name": "app",
                         "orig": "app",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       },
                       {
+                        "active": true,
                         "example": null,
                         "kind": "query",
                         "name": "value",
                         "orig": "value",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       },
                       {
+                        "active": true,
                         "example": "1.0.42",
                         "kind": "query",
                         "name": "version",
                         "orig": "version",
                         "reqd": false,
-                        "type": "`$STRING`",
-                        "active": true
+                        "type": "`$STRING`"
                       }
                     ]
                   },
@@ -639,15 +624,11 @@
                   "transform": {
                     "req": "`reqdata`",
                     "res": "`body`"
-                  },
-                  "active": true
+                  }
                 }
-              ],
-              "input": "data"
+              ]
             }
           },
-          "active": true,
-          "fields": [],
           "relations": {
             "ancestors": []
           }
@@ -655,9 +636,6 @@
       },
       "feature": {
         "test": {
-          "name": "test",
-          "title": "In-memory mock transport for testing without a live server",
-          "version": "0.0.1",
           "active": true,
           "config": {
             "options": {
@@ -665,6 +643,14 @@
             }
           },
           "hook": {
+            "GetData": {
+              "active": true,
+              "await": false
+            },
+            "GetMatch": {
+              "active": true,
+              "await": false
+            },
             "PostConstruct": {
               "active": true,
               "await": false
@@ -673,25 +659,11 @@
               "active": true,
               "await": false
             },
-            "SetData": {
-              "active": true,
-              "await": false
-            },
-            "GetData": {
-              "active": true,
-              "await": false
-            },
-            "SetMatch": {
-              "active": true
-            },
-            "GetMatch": {
-              "active": true,
+            "PostOperation": {
+              "active": false,
               "await": false
             },
             "PrePoint": {
-              "active": true
-            },
-            "PreSpec": {
               "active": true,
               "await": false
             },
@@ -707,20 +679,32 @@
               "active": true,
               "await": false
             },
+            "PreSpec": {
+              "active": true,
+              "await": false
+            },
             "PreTarget": {
               "active": false,
               "await": false
             },
-            "PostOperation": {
-              "active": false,
+            "SetData": {
+              "active": true,
+              "await": false
+            },
+            "SetMatch": {
+              "active": true,
               "await": false
             }
           },
+          "name": "test",
           "target": {
-            "ts": {
+            "go": {
               "deps": {}
             },
-            "go": {
+            "go-cli": {
+              "deps": {}
+            },
+            "go-mcp": {
               "deps": {}
             },
             "lua": {
@@ -735,28 +719,34 @@
             "rb": {
               "deps": {}
             },
-            "go-cli": {
-              "deps": {}
-            },
-            "go-mcp": {
+            "ts": {
               "deps": {}
             }
-          }
+          },
+          "title": "In-memory mock transport for testing without a live server",
+          "version": "0.0.1"
         }
       },
       "flow": {
         "BasicLegacyFlow": {
+          "active": true,
           "entity": "legacy",
+          "key$": "BasicLegacyFlow",
           "kind": "basic",
           "name": "BasicLegacyFlow",
+          "param": {},
           "step": [
             {
+              "active": true,
+              "data": {},
               "input": {
                 "ref": "legacy_ref01",
                 "srcdatavar": "legacy_ref01_data",
                 "suffix": "_dt0"
               },
+              "match": {},
               "op": "load",
+              "spec": [],
               "valid": [
                 {
                   "apply": "TextFieldMark",
@@ -764,29 +754,29 @@
                     "mark": "Mark01-legacy_ref01"
                   }
                 }
-              ],
-              "active": true,
-              "match": {},
-              "data": {},
-              "spec": []
+              ]
             }
-          ],
-          "key$": "BasicLegacyFlow",
-          "active": true,
-          "param": {}
+          ]
         },
         "BasicStuffFlow": {
+          "active": true,
           "entity": "stuff",
+          "key$": "BasicStuffFlow",
           "kind": "basic",
           "name": "BasicStuffFlow",
+          "param": {},
           "step": [
             {
+              "active": true,
+              "data": {},
               "input": {
                 "ref": "stuff_ref01",
                 "srcdatavar": "stuff_ref01_data",
                 "suffix": "_dt0"
               },
+              "match": {},
               "op": "load",
+              "spec": [],
               "valid": [
                 {
                   "apply": "TextFieldMark",
@@ -794,29 +784,29 @@
                     "mark": "Mark01-stuff_ref01"
                   }
                 }
-              ],
-              "active": true,
-              "match": {},
-              "data": {},
-              "spec": []
+              ]
             }
-          ],
-          "key$": "BasicStuffFlow",
-          "active": true,
-          "param": {}
+          ]
         },
         "BasicV2018Flow": {
+          "active": true,
           "entity": "v2018",
+          "key$": "BasicV2018Flow",
           "kind": "basic",
           "name": "BasicV2018Flow",
+          "param": {},
           "step": [
             {
+              "active": true,
+              "data": {},
               "input": {
                 "ref": "v2018_ref01",
                 "srcdatavar": "v2018_ref01_data",
                 "suffix": "_dt0"
               },
+              "match": {},
               "op": "load",
+              "spec": [],
               "valid": [
                 {
                   "apply": "TextFieldMark",
@@ -824,28 +814,58 @@
                     "mark": "Mark01-v2018_ref01"
                   }
                 }
-              ],
-              "active": true,
-              "match": {},
-              "data": {},
-              "spec": []
+              ]
             }
-          ],
-          "key$": "BasicV2018Flow",
-          "active": true,
-          "param": {}
+          ]
         }
       },
+      "info": {
+        "contact": {
+          "email": "aaregurus@existenz.ch",
+          "name": "Aaregurus",
+          "url": "https://aare.guru/aare-info"
+        },
+        "description": "Dienschte hinger aare.guru<p>Bei Requests auf die API bitte frei wählbare <code>app</code> und <code>version</code> mitgeben. Z.B.: <code>...v2018/current?app=app.identifier.meine.app&version=1.42</code>.<p>Diese API ist öffentlich und darf für nicht-kommerzielle Zwecke frei benutzt werden. Sag uns bitte auf <a href='mailto:aaregurus@existenz.ch'>aaregurus@existenz.ch</a> Bescheid wenn du das machst. Und setz einen Link zurück auf https://aare.guru.<p>Danke.<p>Die Erläuterung der Parameter innerhalb des Services findest du auf der <a href='https://aareguru.existenz.ch#parameter'>Aare.guru-API-Startseite.</a><p>JSONP erlaubt via callback-Parameter. CORS-Header auf <code>*</code> gesetzt.<p>Mit viel Liebe, Christian Studer (<a href='https://bureau.existenz.ch'>Bureau für digitale Existenz</a>)",
+        "servers": [
+          {
+            "description": "LIVE",
+            "url": "https://aareguru.existenz.ch"
+          },
+          {
+            "description": "TEST",
+            "url": "https://aareguru-test.existenz.ch"
+          }
+        ],
+        "title": "Aare.guru API",
+        "version": "2018"
+      },
+      "option": {},
       "target": {
-        "go-cli": {
-          "title": "Go CLI",
-          "ext": "go",
+        "go": {
+          "active": true,
           "comment": {
             "line": "//"
           },
+          "deps": {},
+          "ext": "go",
           "module": {
             "name": "aareguru"
           },
+          "name": "go",
+          "srcfeature": false,
+          "title": "Golang"
+        },
+        "go-cli": {
+          "active": true,
+          "comment": {
+            "line": "//"
+          },
+          "deps": {},
+          "ext": "go",
+          "module": {
+            "name": "aareguru"
+          },
+          "name": "go-cli",
           "phase": {
             "entity": {
               "active": false
@@ -860,19 +880,19 @@
               "active": false
             }
           },
-          "deps": {},
-          "name": "go-cli",
-          "active": true
+          "title": "Go CLI"
         },
         "go-mcp": {
-          "title": "Go MCP server",
-          "ext": "go",
+          "active": true,
           "comment": {
             "line": "//"
           },
+          "deps": {},
+          "ext": "go",
           "module": {
             "name": "aareguru"
           },
+          "name": "go-mcp",
           "phase": {
             "entity": {
               "active": false
@@ -887,138 +907,120 @@
               "active": false
             }
           },
-          "deps": {},
-          "name": "go-mcp",
-          "active": true
-        },
-        "ts": {
-          "title": "TypeScript",
-          "ext": "ts",
-          "comment": {
-            "line": "//"
-          },
-          "module": {
-            "name": "aareguru"
-          },
-          "base": "node_modules/@voxgig/sdkgen/project/.sdk",
-          "deps": {
-            "dotenv": {
-              "active": true,
-              "version": "^17.4.2",
-              "kind": "dev"
-            },
-            "typescript": {
-              "active": true,
-              "version": "^5.9.3",
-              "kind": "dev"
-            },
-            "@types/node": {
-              "active": true,
-              "version": "^25.6.0",
-              "kind": "dev"
-            }
-          },
-          "name": "ts",
-          "active": true
-        },
-        "go": {
-          "title": "Golang",
-          "ext": "go",
-          "comment": {
-            "line": "//"
-          },
-          "module": {
-            "name": "aareguru"
-          },
-          "srcfeature": false,
-          "deps": {},
-          "name": "go",
-          "active": true
+          "title": "Go MCP server"
         },
         "lua": {
-          "title": "Lua",
-          "ext": "lua",
+          "active": true,
           "comment": {
             "line": "--"
           },
-          "module": {
-            "name": "aareguru"
-          },
-          "srcfeature": false,
           "deps": {
             "dkjson": {
               "active": true,
-              "version": "2.5",
-              "kind": "prod"
+              "kind": "prod",
+              "version": "2.5"
             }
           },
+          "ext": "lua",
+          "module": {
+            "name": "aareguru"
+          },
           "name": "lua",
-          "active": true
+          "srcfeature": false,
+          "title": "Lua"
         },
         "php": {
-          "title": "PHP",
-          "ext": "php",
+          "active": true,
           "comment": {
             "line": "//"
           },
+          "deps": {},
+          "ext": "php",
           "module": {
             "name": "aareguru"
           },
-          "srcfeature": false,
-          "deps": {},
           "name": "php",
-          "active": true
+          "srcfeature": false,
+          "title": "PHP"
         },
         "py": {
-          "title": "Python",
-          "ext": "py",
+          "active": true,
           "comment": {
             "line": "#"
           },
-          "module": {
-            "name": "aareguru"
-          },
-          "srcfeature": false,
           "deps": {
             "requests": {
               "active": true,
-              "version": "2.33",
-              "kind": "prod"
+              "kind": "prod",
+              "version": "2.33"
             }
           },
-          "name": "py",
-          "active": true
-        },
-        "rb": {
-          "title": "Ruby",
-          "ext": "rb",
-          "comment": {
-            "line": "#"
-          },
+          "ext": "py",
           "module": {
             "name": "aareguru"
           },
+          "name": "py",
           "srcfeature": false,
+          "title": "Python"
+        },
+        "rb": {
+          "active": true,
+          "comment": {
+            "line": "#"
+          },
           "deps": {
-            "voxgig-struct": {
-              "active": true,
-              "version": "0.0.10",
-              "kind": "prod"
-            },
             "json": {
               "active": true,
-              "version": "0",
-              "kind": "prod"
+              "kind": "prod",
+              "version": "0"
+            },
+            "voxgig-struct": {
+              "active": true,
+              "kind": "prod",
+              "version": "0.0.10"
             }
           },
+          "ext": "rb",
+          "module": {
+            "name": "aareguru"
+          },
           "name": "rb",
-          "active": true
+          "srcfeature": false,
+          "title": "Ruby"
+        },
+        "ts": {
+          "active": true,
+          "base": "node_modules/@voxgig/sdkgen/project/.sdk",
+          "comment": {
+            "line": "//"
+          },
+          "deps": {
+            "@types/node": {
+              "active": true,
+              "kind": "dev",
+              "version": "^25.6.0"
+            },
+            "dotenv": {
+              "active": true,
+              "kind": "dev",
+              "version": "^17.4.2"
+            },
+            "typescript": {
+              "active": true,
+              "kind": "dev",
+              "version": "^5.9.3"
+            }
+          },
+          "ext": "ts",
+          "module": {
+            "name": "aareguru"
+          },
+          "name": "ts",
+          "title": "TypeScript"
         }
-      },
-      "option": {}
-    },
-    "def": {
-      "desc": ""
+      }
     }
-  }
+  },
+  "name": "aareguru",
+  "origin": "voxgig-sdk"
 }

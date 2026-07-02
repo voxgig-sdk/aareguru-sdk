@@ -1,6 +1,6 @@
 # Aareguru Python SDK
 
-Real-time water temperature, weather, and flow data for the Aare River in Switzerland.
+
 
 The Python SDK for the Aareguru API — an entity-oriented client following Pythonic conventions.
 
@@ -28,9 +28,12 @@ loading a specific record.
 ### 1. Create a client
 
 ```python
+import os
 from aareguru_sdk import AareguruSDK
 
-client = AareguruSDK()
+client = AareguruSDK({
+    "apikey": os.environ.get("AAREGURU_APIKEY"),
+})
 ```
 
 ### 3. Load a legacy
@@ -117,6 +120,7 @@ Create a `.env.local` file at the project root:
 
 ```
 AAREGURU_TEST_LIVE=TRUE
+AAREGURU_APIKEY=<your-key>
 ```
 
 Then run:
@@ -140,6 +144,7 @@ Creates a new SDK client.
 
 | Option | Type | Description |
 | --- | --- | --- |
+| `apikey` | `str` | API key for authentication. |
 | `base` | `str` | Base URL of the API server. |
 | `prefix` | `str` | URL path prefix prepended to all requests. |
 | `suffix` | `str` | URL path suffix appended to all requests. |

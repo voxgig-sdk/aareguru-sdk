@@ -4,7 +4,7 @@ import { cmp, Content, File } from '@voxgig/sdkgen'
 
 // Generates ts/test/ReadmeExample.test.ts — a test that reads the
 // repo's top-level README.md at runtime, extracts the first TS code
-// block under "## 30-second quickstart", transforms `new <Name>SDK(...)`
+// block under "## Quickstart", transforms `new <Name>SDK(...)`
 // to `<Name>SDK.test()` so it runs offline, evaluates the rest, and
 // asserts no error. Catches drift between the README quickstart and
 // the real SDK API.
@@ -45,8 +45,8 @@ describe('README example', () => {
     const readmePath = Path.join(__dirname, '..', '..', 'README.md')
     const md = Fs.readFileSync(readmePath, 'utf8')
 
-    const block = findFirstTsBlock(md, '30-second quickstart')
-    assert(block, 'No TypeScript code block found under "## 30-second quickstart" in README.md')
+    const block = findFirstTsBlock(md, 'Quickstart')
+    assert(block, 'No TypeScript code block found under "## Quickstart" in README.md')
 
     const code = transformForTestMode(block, '${Name}')
 

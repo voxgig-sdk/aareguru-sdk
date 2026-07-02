@@ -99,12 +99,14 @@ func legacyDirectSetup(mockres any) *legacyDirectSetupResult {
 	env := envOverride(map[string]any{
 		"AAREGURU_TEST_LEGACY_ENTID": map[string]any{},
 		"AAREGURU_TEST_LIVE":    "FALSE",
+		"AAREGURU_APIKEY":       "NONE",
 	})
 
 	live := env["AAREGURU_TEST_LIVE"] == "TRUE"
 
 	if live {
 		mergedOpts := map[string]any{
+			"apikey": env["AAREGURU_APIKEY"],
 		}
 		client := sdk.NewAareguruSDK(mergedOpts)
 

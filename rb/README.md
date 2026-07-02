@@ -1,6 +1,6 @@
 # Aareguru Ruby SDK
 
-Real-time water temperature, weather, and flow data for the Aare River in Switzerland.
+
 
 The Ruby SDK for the Aareguru API — an entity-oriented client using idiomatic Ruby conventions.
 
@@ -36,7 +36,9 @@ loading a specific record.
 ```ruby
 require_relative "Aareguru_sdk"
 
-client = AareguruSDK.new
+client = AareguruSDK.new({
+  "apikey" => ENV["AAREGURU_APIKEY"],
+})
 ```
 
 ### 3. Load a legacy
@@ -122,6 +124,7 @@ Create a `.env.local` file at the project root:
 
 ```
 AAREGURU_TEST_LIVE=TRUE
+AAREGURU_APIKEY=<your-key>
 ```
 
 Then run:
@@ -144,6 +147,7 @@ Creates a new SDK client.
 
 | Option | Type | Description |
 | --- | --- | --- |
+| `apikey` | `String` | API key for authentication. |
 | `base` | `String` | Base URL of the API server. |
 | `prefix` | `String` | URL path prefix prepended to all requests. |
 | `suffix` | `String` | URL path suffix appended to all requests. |

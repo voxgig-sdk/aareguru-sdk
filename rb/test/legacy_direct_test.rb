@@ -61,12 +61,14 @@ def legacy_direct_setup(mockres)
   env = Runner.env_override({
     "AAREGURU_TEST_LEGACY_ENTID" => {},
     "AAREGURU_TEST_LIVE" => "FALSE",
+    "AAREGURU_APIKEY" => "NONE",
   })
 
   live = env["AAREGURU_TEST_LIVE"] == "TRUE"
 
   if live
     merged_opts = {
+      "apikey" => env["AAREGURU_APIKEY"],
     }
     client = AareguruSDK.new(merged_opts)
     return {

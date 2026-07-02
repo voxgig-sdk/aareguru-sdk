@@ -117,6 +117,7 @@ func legacyBasicSetup(extra map[string]any) *entityTestSetup {
 		"AAREGURU_TEST_LEGACY_ENTID": idmap,
 		"AAREGURU_TEST_LIVE":      "FALSE",
 		"AAREGURU_TEST_EXPLAIN":   "FALSE",
+		"AAREGURU_APIKEY":         "NONE",
 	})
 
 	idmapResolved := core.ToMapAny(env["AAREGURU_TEST_LEGACY_ENTID"])
@@ -127,6 +128,7 @@ func legacyBasicSetup(extra map[string]any) *entityTestSetup {
 	if env["AAREGURU_TEST_LIVE"] == "TRUE" {
 		mergedOpts := vs.Merge([]any{
 			map[string]any{
+				"apikey": env["AAREGURU_APIKEY"],
 			},
 			extra,
 		})

@@ -80,12 +80,14 @@ function directSetup(mockres?: any) {
   const env = envOverride({
     'AAREGURU_TEST_V_____ENTID': {},
     'AAREGURU_TEST_LIVE': 'FALSE',
+    'AAREGURU_APIKEY': 'NONE',
   })
 
   const live = 'TRUE' === env.AAREGURU_TEST_LIVE
 
   if (live) {
     const client = new AareguruSDK({
+      apikey: env.AAREGURU_APIKEY,
     })
 
     let idmap: any = env['AAREGURU_TEST_V_____ENTID']

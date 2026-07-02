@@ -113,6 +113,7 @@ function basicSetup(extra?: any) {
     'AAREGURU_TEST_STUFF_ENTID': idmap,
     'AAREGURU_TEST_LIVE': 'FALSE',
     'AAREGURU_TEST_EXPLAIN': 'FALSE',
+    'AAREGURU_APIKEY': 'NONE',
   })
 
   idmap = env['AAREGURU_TEST_STUFF_ENTID']
@@ -122,6 +123,7 @@ function basicSetup(extra?: any) {
   if (live) {
     client = new AareguruSDK(merge([
       {
+        apikey: env.AAREGURU_APIKEY,
       },
       extra
     ]))

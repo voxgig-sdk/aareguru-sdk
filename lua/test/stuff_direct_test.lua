@@ -68,12 +68,14 @@ function stuff_direct_setup(mockres)
   local env = runner.env_override({
     ["AAREGURU_TEST_STUFF_ENTID"] = {},
     ["AAREGURU_TEST_LIVE"] = "FALSE",
+    ["AAREGURU_APIKEY"] = "NONE",
   })
 
   local live = env["AAREGURU_TEST_LIVE"] == "TRUE"
 
   if live then
     local merged_opts = {
+      apikey = env["AAREGURU_APIKEY"],
     }
     local client = sdk.new(merged_opts)
     return {

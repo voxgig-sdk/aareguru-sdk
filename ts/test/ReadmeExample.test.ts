@@ -30,8 +30,8 @@ describe('README example', () => {
     const readmePath = Path.join(__dirname, '..', '..', 'README.md')
     const md = Fs.readFileSync(readmePath, 'utf8')
 
-    const block = findFirstTsBlock(md, '30-second quickstart')
-    assert(block, 'No TypeScript code block found under "## 30-second quickstart" in README.md')
+    const block = findFirstTsBlock(md, 'Quickstart')
+    assert(block, 'No TypeScript code block found under "## Quickstart" in README.md')
 
     const code = transformForTestMode(block, 'Aareguru')
 

@@ -1,6 +1,6 @@
 # Aareguru Golang SDK
 
-Real-time water temperature, weather, and flow data for the Aare River in Switzerland.
+
 
 The Golang SDK for the Aareguru API — an entity-oriented client using standard Go conventions. No generics required; data flows as `map[string]any`.
 
@@ -33,13 +33,16 @@ package main
 
 import (
     "fmt"
+    "os"
 
     sdk "github.com/voxgig-sdk/aareguru-sdk/go"
     "github.com/voxgig-sdk/aareguru-sdk/go/core"
 )
 
 func main() {
-    client := sdk.New()
+    client := sdk.NewAareguruSDK(map[string]any{
+        "apikey": os.Getenv("AAREGURU_APIKEY"),
+    })
 ```
 
 ### 3. Load a legacy
@@ -142,6 +145,7 @@ Create a `.env.local` file at the project root:
 
 ```
 AAREGURU_TEST_LIVE=TRUE
+AAREGURU_APIKEY=<your-key>
 ```
 
 Then run:
@@ -163,6 +167,7 @@ Creates a new SDK client.
 
 | Option | Type | Description |
 | --- | --- | --- |
+| `"apikey"` | `string` | API key for authentication. |
 | `"base"` | `string` | Base URL of the API server. |
 | `"prefix"` | `string` | URL path prefix prepended to all requests. |
 | `"suffix"` | `string` | URL path suffix appended to all requests. |
