@@ -10,7 +10,7 @@ main: kit: target: 'go-mcp': {
   title: 'Go MCP server'
   ext: go
   comment: line: "//"
-  module: name: 'aareguru'
+  module: name: '$$name$$'
 
   // Per-generation-phase activation. Mirrors go-cli — only Main runs.
   phase: {
@@ -31,4 +31,11 @@ main: kit: target: 'go-mcp': {
 // feature can specify per-target dep variants.
 main: kit: feature: &: target: 'go-mcp': deps: &: {
   kind: *'prod' | string
+}
+
+
+# Publication: tag-only — the Go module proxy resolves versions from the
+# go-mcp/vX.Y.Z GitHub tag; there is no package registry to upload to.
+main: kit: target: 'go-mcp': publish: {
+  tag: { active: true, via: 'root' }
 }
