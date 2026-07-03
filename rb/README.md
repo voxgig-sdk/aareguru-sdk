@@ -10,13 +10,13 @@ The Ruby SDK for the Aareguru API — an entity-oriented client using idiomatic 
 
 ## Install
 ```bash
-gem install aareguru-sdk
+gem install voxgig-sdk-aareguru
 ```
 
 Or add to your `Gemfile`:
 
 ```ruby
-gem "aareguru-sdk"
+gem "voxgig-sdk-aareguru"
 ```
 
 Then run:

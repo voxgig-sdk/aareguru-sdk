@@ -10,7 +10,7 @@ The Python SDK for the Aareguru API — an entity-oriented client following Pyth
 
 ## Install
 ```bash
-pip install aareguru-sdk
+pip install voxgig-sdk-aareguru
 ```
 
 Or install from source:

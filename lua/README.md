@@ -10,7 +10,7 @@ The Lua SDK for the Aareguru API — an entity-oriented client using Lua convent
 
 ## Install
 ```bash
-luarocks install aareguru-sdk
+luarocks install voxgig-sdk-aareguru
 ```
 
 If the module is not yet published, add the source directory to

@@ -1,8 +1,17 @@
 {
   "name": "voxgig-sdk/aareguru",
-  "description": "Aareguru SDK for PHP",
+  "description": "Unofficial generated PHP SDK for the Aare.guru public API. Not affiliated with or endorsed by the upstream API provider.",
   "type": "library",
+  "keywords": ["voxgig", "sdk", "generated-sdk", "openapi", "api-client", "aareguru"],
+  "homepage": "https://github.com/voxgig-sdk/aareguru-sdk",
   "license": "MIT",
+  "authors": [
+    { "name": "Voxgig", "homepage": "https://voxgig.com" }
+  ],
+  "support": {
+    "issues": "https://github.com/voxgig-sdk/aareguru-sdk/issues",
+    "source": "https://github.com/voxgig-sdk/aareguru-sdk"
+  },
   "minimum-stability": "stable",
   "require": {
     "php": ">=8.2"

@@ -1,7 +1,23 @@
 {
   "name": "@voxgig-sdk/aareguru",
   "version": "0.0.1",
-  "description": "DESCRIPTION",
+  "description": "Unofficial generated TypeScript SDK for the Aare.guru public API. Not affiliated with or endorsed by the upstream API provider.",
+  "keywords": [
+    "voxgig",
+    "sdk",
+    "generated-sdk",
+    "openapi",
+    "api-client",
+    "aareguru"
+  ],
+  "homepage": "https://github.com/voxgig-sdk/aareguru-sdk#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/voxgig-sdk/aareguru-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/voxgig-sdk/aareguru-sdk/issues"
+  },
   "main": "dist/AareguruSDK.js",
   "type": "commonjs",
   "types": "dist/AareguruSDK.d.ts",
@@ -14,7 +30,10 @@
     "clean": "rm -rf node_modules yarn.lock package-lock.json",
     "reset": "npm run clean && npm i && npm run build && npm test"
   },
-  "author": "Aareguru",
+  "author": {
+    "name": "Voxgig",
+    "url": "https://voxgig.com"
+  },
   "license": "MIT",
   "dependencies": {},
   "peerDependencies": {},

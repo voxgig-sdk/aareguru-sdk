@@ -10,7 +10,7 @@ main: kit: target: 'go-cli': {
   title: 'Go CLI'
   ext: go
   comment: line: "//"
-  module: name: '$$name$$'
+  module: name: 'aareguru'
 
   // Per-generation-phase activation. Mirrors the feature pattern
   // (`main.kit.feature.<name>: { active: true }`). Root.ts inspects

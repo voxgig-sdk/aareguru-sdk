@@ -26,7 +26,7 @@ main: kit: feature: &: target: ts: deps: &: {
 }
 
 
-# Publication: npm registry.
+# Publication: npm registry (declared but not yet active).
 main: kit: target: ts: publish: {
   tag: { active: true }
   registry: {

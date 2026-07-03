@@ -10,7 +10,7 @@ The TypeScript SDK for the Aareguru API — a type-safe, entity-oriented client 
 
 ## Install
 ```bash
-npm install aareguru
+npm install @voxgig-sdk/aareguru
 ```
 ## Tutorial: your first API call
 

@@ -1,15 +1,6 @@
 {
-  "NAME": "AAREGURU",
-  "Name": "Aareguru",
   "def": "aareguru_0.1.0.yaml",
   "main": {
-    "api": {
-      "entity": {},
-      "guide": {}
-    },
-    "custom": {
-      "plurals": {}
-    },
     "def": {
       "desc": ""
     },
@@ -894,7 +885,7 @@
           "deps": {},
           "ext": "go",
           "module": {
-            "name": "$$name$$"
+            "name": "aareguru"
           },
           "name": "go-cli",
           "phase": {
@@ -943,7 +934,7 @@
           "deps": {},
           "ext": "go",
           "module": {
-            "name": "$$name$$"
+            "name": "aareguru"
           },
           "name": "go-mcp",
           "phase": {
@@ -1207,8 +1198,5 @@
     }
   },
   "name": "aareguru",
-  "name-": "aareguru",
-  "name_": "aareguru",
-  "name__orig": "aareguru",
   "origin": "voxgig-sdk"
 }

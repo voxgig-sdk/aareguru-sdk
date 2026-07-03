@@ -10,7 +10,7 @@ main: kit: target: 'go-mcp': {
   title: 'Go MCP server'
   ext: go
   comment: line: "//"
-  module: name: '$$name$$'
+  module: name: 'aareguru'
 
   // Per-generation-phase activation. Mirrors go-cli — only Main runs.
   phase: {

@@ -10,7 +10,7 @@ The PHP SDK for the Aareguru API — an entity-oriented client using PHP convent
 
 ## Install
 ```bash
-composer require voxgig/aareguru-sdk
+composer require voxgig-sdk/aareguru
 ```
 
 
