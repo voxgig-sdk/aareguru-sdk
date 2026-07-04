@@ -45,6 +45,7 @@ class V2018Entity
     end
   end
 
+  # @return [V2018, Hash] the current V2018 data
   def data_get
     @_utility.feature_hook.call(@_entctx, "GetData")
     VoxgigStruct.clone(@_data)
@@ -57,12 +58,18 @@ class V2018Entity
     end
   end
 
+  # @return [Hash] the current match filter (any subset of V2018 fields)
   def match_get
     @_utility.feature_hook.call(@_entctx, "GetMatch")
     VoxgigStruct.clone(@_match)
   end
 
   
+  # Load a single V2018.
+  #
+  # @param reqmatch [V2018LoadMatch, Hash, nil] match criteria (id/query fields)
+  # @param ctrl [Object, nil] optional per-call control
+  # @return [V2018, Hash] the loaded V2018; raises AareguruError on failure
   def load(reqmatch, ctrl = nil)
     utility = @_utility
     ctx = utility.make_context.call({

@@ -4,6 +4,7 @@
 main: {
   kit: {
     info: {
+      auth: false
       contact: {
         email: "aaregurus@existenz.ch"
         name: "Aaregurus"

@@ -9,9 +9,12 @@ The TypeScript SDK for the Aareguru API — a type-safe, entity-oriented client 
 
 
 ## Install
-```bash
-npm install @voxgig-sdk/aareguru
-```
+This package is not yet published to npm. Install it from the GitHub
+release tag (`ts/vX.Y.Z`):
+
+- Releases: [https://github.com/voxgig-sdk/aareguru-sdk/releases](https://github.com/voxgig-sdk/aareguru-sdk/releases)
+
+
 ## Tutorial: your first API call
 
 This tutorial walks through creating a client, listing entities, and
@@ -20,17 +23,15 @@ loading a specific record.
 ### 1. Create a client
 
 ```ts
-import { AareguruSDK } from 'aareguru'
+import { AareguruSDK } from '@voxgig-sdk/aareguru'
 
-const client = new AareguruSDK({
-  apikey: process.env.AAREGURU_APIKEY,
-})
+const client = new AareguruSDK()
 ```
 
 ### 3. Load a legacy
 
 ```ts
-const result = await client.Legacy().load({ id: 'example_id' })
+const result = await client.legacy.load({ id: 'example_id' })
 
 if (result.ok) {
   console.log(result.data)
@@ -79,7 +80,7 @@ Create a mock client for unit testing — no server required:
 ```ts
 const client = AareguruSDK.test()
 
-const result = await client.Planet().load({ id: 'test01' })
+const result = await client.legacy.load({ id: 'test01' })
 // result.ok === true
 // result.data contains mock response data
 ```
@@ -87,7 +88,7 @@ const result = await client.Planet().load({ id: 'test01' })
 You can also use the instance method:
 
 ```ts
-const client = new AareguruSDK({ apikey: '...' })
+const client = new AareguruSDK()
 const testClient = client.tester()
 ```
 
@@ -96,7 +97,7 @@ const testClient = client.tester()
 Entity instances remember their last match and data:
 
 ```ts
-const entity = client.Planet()
+const entity = client.legacy
 
 // First call sets internal match
 await entity.load({ id: 'example' })
@@ -123,7 +124,6 @@ const logger = {
 }
 
 const client = new AareguruSDK({
-  apikey: '...',
   extend: [logger],
 })
 ```
@@ -134,7 +134,6 @@ Create a `.env.local` file at the project root:
 
 ```
 AAREGURU_TEST_LIVE=TRUE
-AAREGURU_APIKEY=<your-key>
 ```
 
 Then run:
@@ -152,7 +151,6 @@ cd ts && npm test
 
 ```ts
 new AareguruSDK(options?: {
-  apikey?: string
   base?: string
   prefix?: string
   suffix?: string
@@ -163,7 +161,6 @@ new AareguruSDK(options?: {
 
 | Option | Type | Description |
 | --- | --- | --- |
-| `apikey` | `string` | API key for authentication. |
 | `base` | `string` | Base URL of the API server. |
 | `prefix` | `string` | URL path prefix prepended to all requests. |
 | `suffix` | `string` | URL path suffix appended to all requests. |
@@ -285,7 +282,7 @@ API path: `/v2018/history`
 
 ### Legacy
 
-Create an instance: `const legacy = client.Legacy()`
+Create an instance: `const legacy = client.legacy`
 
 #### Operations
 
@@ -296,13 +293,13 @@ Create an instance: `const legacy = client.Legacy()`
 #### Example: Load
 
 ```ts
-const legacy = await client.Legacy().load({ id: 'legacy_id' })
+const legacy = await client.legacy.load({ id: 'legacy_id' })
 ```
 
 
 ### Stuff
 
-Create an instance: `const stuff = client.Stuff()`
+Create an instance: `const stuff = client.stuff`
 
 #### Operations
 
@@ -313,13 +310,13 @@ Create an instance: `const stuff = client.Stuff()`
 #### Example: Load
 
 ```ts
-const stuff = await client.Stuff().load({ id: 'stuff_id' })
+const stuff = await client.stuff.load({ id: 'stuff_id' })
 ```
 
 
 ### V2018
 
-Create an instance: `const v2018 = client.V2018()`
+Create an instance: `const v2018 = client.v2018`
 
 #### Operations
 
@@ -330,7 +327,7 @@ Create an instance: `const v2018 = client.V2018()`
 #### Example: Load
 
 ```ts
-const v2018 = await client.V2018().load({ id: 'v2018_id' })
+const v2018 = await client.v2018.load({ id: 'v2018_id' })
 ```
 
 
@@ -391,7 +388,7 @@ aareguru/
 Import the SDK from the package root:
 
 ```ts
-import { AareguruSDK } from 'aareguru'
+import { AareguruSDK } from '@voxgig-sdk/aareguru'
 ```
 
 ### Entity state
@@ -401,11 +398,11 @@ stores the returned data and match criteria internally. Subsequent
 calls on the same instance can rely on this state.
 
 ```ts
-const moon = client.Moon()
-await moon.load({ planet_id: 'earth', id: 'luna' })
+const legacy = client.legacy
+await legacy.load({ id: "example_id" })
 
-// moon.data() now returns the loaded moon data
-// moon.match() returns { planet_id: 'earth', id: 'luna' }
+// legacy.data() now returns the loaded legacy data
+// legacy.match() returns { id: "example_id" }
 ```
 
 Call `make()` to create a fresh instance with the same configuration

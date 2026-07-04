@@ -42,8 +42,7 @@ class StuffEntityTest < Minitest::Test
     # LOAD
     stuff_ref01_ent = client.Stuff(nil)
     stuff_ref01_match_dt0 = {}
-    stuff_ref01_data_dt0_loaded, err = stuff_ref01_ent.load(stuff_ref01_match_dt0, nil)
-    assert_nil err
+    stuff_ref01_data_dt0_loaded = stuff_ref01_ent.load(stuff_ref01_match_dt0, nil)
     assert !stuff_ref01_data_dt0_loaded.nil?
 
   end
@@ -82,7 +81,6 @@ def stuff_basic_setup(extra)
     "AAREGURU_TEST_STUFF_ENTID" => idmap,
     "AAREGURU_TEST_LIVE" => "FALSE",
     "AAREGURU_TEST_EXPLAIN" => "FALSE",
-    "AAREGURU_APIKEY" => "NONE",
   })
 
   idmap_resolved = Helpers.to_map(
@@ -94,7 +92,6 @@ def stuff_basic_setup(extra)
   if env["AAREGURU_TEST_LIVE"] == "TRUE"
     merged_opts = Vs.merge([
       {
-        "apikey" => env["AAREGURU_APIKEY"],
       },
       extra || {},
     ])

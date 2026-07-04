@@ -4,6 +4,8 @@ import { LegacyEntity } from './entity/LegacyEntity'
 import { StuffEntity } from './entity/StuffEntity'
 import { V2018Entity } from './entity/V2018Entity'
 
+export type * from './AareguruTypes'
+
 
 import { inspect } from 'node:util'
 
@@ -204,18 +206,42 @@ class AareguruSDK {
 
 
 
+  _legacy?: LegacyEntity
+
+  // Idiomatic facade: `client.legacy.list()` / `client.legacy.load({ id })`.
+  get legacy(): LegacyEntity {
+    return (this._legacy ??= new LegacyEntity(this, undefined))
+  }
+
+  /** @deprecated Use `client.legacy` instead. */
   Legacy(data?: any) {
     const self = this
     return new LegacyEntity(self,data)
   }
 
 
+  _stuff?: StuffEntity
+
+  // Idiomatic facade: `client.stuff.list()` / `client.stuff.load({ id })`.
+  get stuff(): StuffEntity {
+    return (this._stuff ??= new StuffEntity(this, undefined))
+  }
+
+  /** @deprecated Use `client.stuff` instead. */
   Stuff(data?: any) {
     const self = this
     return new StuffEntity(self,data)
   }
 
 
+  _v2018?: V2018Entity
+
+  // Idiomatic facade: `client.v2018.list()` / `client.v2018.load({ id })`.
+  get v2018(): V2018Entity {
+    return (this._v2018 ??= new V2018Entity(this, undefined))
+  }
+
+  /** @deprecated Use `client.v2018` instead. */
   V2018(data?: any) {
     const self = this
     return new V2018Entity(self,data)

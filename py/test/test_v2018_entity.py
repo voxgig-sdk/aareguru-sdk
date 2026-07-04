@@ -49,8 +49,7 @@ class TestV2018Entity:
         # LOAD
         v2018_ref01_ent = client.V2018(None)
         v2018_ref01_match_dt0 = {}
-        v2018_ref01_data_dt0_loaded, err = v2018_ref01_ent.load(v2018_ref01_match_dt0, None)
-        assert err is None
+        v2018_ref01_data_dt0_loaded = v2018_ref01_ent.load(v2018_ref01_match_dt0, None)
         assert v2018_ref01_data_dt0_loaded is not None
 
 
@@ -91,7 +90,6 @@ def _v2018_basic_setup(extra):
         "AAREGURU_TEST_V_____ENTID": idmap,
         "AAREGURU_TEST_LIVE": "FALSE",
         "AAREGURU_TEST_EXPLAIN": "FALSE",
-        "AAREGURU_APIKEY": "NONE",
     })
 
     idmap_resolved = helpers.to_map(
@@ -102,7 +100,6 @@ def _v2018_basic_setup(extra):
     if env.get("AAREGURU_TEST_LIVE") == "TRUE":
         merged_opts = vs.merge([
             {
-                "apikey": env.get("AAREGURU_APIKEY"),
             },
             extra or {},
         ])

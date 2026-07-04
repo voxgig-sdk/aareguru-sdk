@@ -49,8 +49,7 @@ class LegacyEntityTest extends TestCase
         // LOAD
         $legacy_ref01_ent = $client->Legacy(null);
         $legacy_ref01_match_dt0 = [];
-        [$legacy_ref01_data_dt0_loaded, $err] = $legacy_ref01_ent->load($legacy_ref01_match_dt0, null);
-        $this->assertNull($err);
+        $legacy_ref01_data_dt0_loaded = $legacy_ref01_ent->load($legacy_ref01_match_dt0, null);
         $this->assertNotNull($legacy_ref01_data_dt0_loaded);
 
     }
@@ -85,7 +84,6 @@ function legacy_basic_setup($extra)
         "AAREGURU_TEST_LEGACY_ENTID" => $idmap,
         "AAREGURU_TEST_LIVE" => "FALSE",
         "AAREGURU_TEST_EXPLAIN" => "FALSE",
-        "AAREGURU_APIKEY" => "NONE",
     ]);
 
     $idmap_resolved = Helpers::to_map(
@@ -97,7 +95,6 @@ function legacy_basic_setup($extra)
     if ($env["AAREGURU_TEST_LIVE"] === "TRUE") {
         $merged_opts = Vs::merge([
             [
-                "apikey" => $env["AAREGURU_APIKEY"],
             ],
             $extra ?? [],
         ]);

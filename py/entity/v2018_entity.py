@@ -1,7 +1,13 @@
 # Aareguru SDK V2018 entity
 
+from __future__ import annotations
+
 from utility.voxgig_struct import voxgig_struct as vs
 from core import helpers
+from aareguru_types import (
+    V2018,
+    V2018LoadMatch,
+)
 
 
 class V2018Entity:
@@ -44,7 +50,7 @@ class V2018Entity:
             self._data = helpers.to_map(vs.clone(args)) or {}
             self._utility.feature_hook(self._entctx, "SetData")
 
-    def data_get(self):
+    def data_get(self) -> V2018:
         self._utility.feature_hook(self._entctx, "GetData")
         return vs.clone(self._data)
 
@@ -53,12 +59,12 @@ class V2018Entity:
             self._match = helpers.to_map(vs.clone(args)) or {}
             self._utility.feature_hook(self._entctx, "SetMatch")
 
-    def match_get(self):
+    def match_get(self) -> V2018:
         self._utility.feature_hook(self._entctx, "GetMatch")
         return vs.clone(self._match)
 
     
-    def load(self, reqmatch, ctrl=None):
+    def load(self, reqmatch: V2018LoadMatch, ctrl=None) -> V2018:
         utility = self._utility
         ctx = utility.make_context({
             "opname": "load",

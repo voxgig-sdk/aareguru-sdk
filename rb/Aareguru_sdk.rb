@@ -13,6 +13,9 @@ require_relative 'config'
 require_relative 'feature/base_feature'
 require_relative 'features'
 
+# Load typed models (Struct value objects).
+require_relative 'Aareguru_types'
+
 
 class AareguruSDK
   attr_accessor :mode, :features, :options
@@ -131,7 +134,7 @@ class AareguruSDK
     end
 
     _, err = utility.prepare_auth.call(ctx)
-    return nil, err if err
+    raise err if err
 
     utility.make_fetch_def.call(ctx)
   end
@@ -139,8 +142,14 @@ class AareguruSDK
   def direct(fetchargs = {})
     utility = @_utility
 
-    fetchdef, err = prepare(fetchargs)
-    return { "ok" => false, "err" => err }, nil if err
+    # direct() is the raw-HTTP escape hatch: it always returns a result hash
+    # ({ "ok" => ..., ... }) and never raises. prepare() raises on error, so
+    # trap that and surface it in the hash.
+    begin
+      fetchdef = prepare(fetchargs)
+    rescue AareguruError => err
+      return { "ok" => false, "err" => err }
+    end
 
     fetchargs ||= {}
     ctrl = AareguruHelpers.to_map(VoxgigStruct.getprop(fetchargs, "ctrl")) || {}
@@ -153,13 +162,13 @@ class AareguruSDK
     url = fetchdef["url"] || ""
     fetched, fetch_err = utility.fetcher.call(ctx, url, fetchdef)
 
-    return { "ok" => false, "err" => fetch_err }, nil if fetch_err
+    return { "ok" => false, "err" => fetch_err } if fetch_err
 
     if fetched.nil?
       return {
         "ok" => false,
         "err" => ctx.make_error("direct_no_response", "response: undefined"),
-      }, nil
+      }
     end
 
     if fetched.is_a?(Hash)
@@ -189,28 +198,49 @@ class AareguruSDK
         "status" => status,
         "headers" => headers,
         "data" => json_data,
-      }, nil
+      }
     end
 
     return {
       "ok" => false,
       "err" => ctx.make_error("direct_invalid", "invalid response type"),
-    }, nil
+    }
   end
 
 
+  # Idiomatic facade: client.legacy.list / client.legacy.load({ "id" => ... })
+  def legacy
+    require_relative 'entity/legacy_entity'
+    @legacy ||= LegacyEntity.new(self, nil)
+  end
+
+  # Deprecated: use client.legacy instead.
   def Legacy(data = nil)
     require_relative 'entity/legacy_entity'
     LegacyEntity.new(self, data)
   end
 
 
+  # Idiomatic facade: client.stuff.list / client.stuff.load({ "id" => ... })
+  def stuff
+    require_relative 'entity/stuff_entity'
+    @stuff ||= StuffEntity.new(self, nil)
+  end
+
+  # Deprecated: use client.stuff instead.
   def Stuff(data = nil)
     require_relative 'entity/stuff_entity'
     StuffEntity.new(self, data)
   end
 
 
+  # Idiomatic facade: client.v2018.list / client.v2018.load({ "id" => ... })
+  def v2018
+    require_relative 'entity/v2018_entity'
+    @v2018 ||= V2018Entity.new(self, nil)
+  end
+
+  # Deprecated: use client.v2018 instead.
   def V2018(data = nil)
     require_relative 'entity/v2018_entity'
     V2018Entity.new(self, data)

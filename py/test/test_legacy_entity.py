@@ -49,8 +49,7 @@ class TestLegacyEntity:
         # LOAD
         legacy_ref01_ent = client.Legacy(None)
         legacy_ref01_match_dt0 = {}
-        legacy_ref01_data_dt0_loaded, err = legacy_ref01_ent.load(legacy_ref01_match_dt0, None)
-        assert err is None
+        legacy_ref01_data_dt0_loaded = legacy_ref01_ent.load(legacy_ref01_match_dt0, None)
         assert legacy_ref01_data_dt0_loaded is not None
 
 
@@ -91,7 +90,6 @@ def _legacy_basic_setup(extra):
         "AAREGURU_TEST_LEGACY_ENTID": idmap,
         "AAREGURU_TEST_LIVE": "FALSE",
         "AAREGURU_TEST_EXPLAIN": "FALSE",
-        "AAREGURU_APIKEY": "NONE",
     })
 
     idmap_resolved = helpers.to_map(
@@ -102,7 +100,6 @@ def _legacy_basic_setup(extra):
     if env.get("AAREGURU_TEST_LIVE") == "TRUE":
         merged_opts = vs.merge([
             {
-                "apikey": env.get("AAREGURU_APIKEY"),
             },
             extra or {},
         ])

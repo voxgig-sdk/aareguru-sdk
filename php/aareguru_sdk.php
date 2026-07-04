@@ -103,7 +103,7 @@ class AareguruSDK
         return $this->_rootctx;
     }
 
-    public function prepare(array $fetchargs = []): array
+    public function prepare(array $fetchargs = []): mixed
     {
         $utility = $this->_utility;
         $fetchargs = $fetchargs ?? [];
@@ -149,19 +149,27 @@ class AareguruSDK
 
         [$_, $err] = ($utility->prepare_auth)($ctx);
         if ($err) {
-            return [null, $err];
+            return ($utility->make_error)($ctx, $err);
         }
 
-        return ($utility->make_fetch_def)($ctx);
+        [$fetchdef, $fd_err] = ($utility->make_fetch_def)($ctx);
+        if ($fd_err) {
+            return ($utility->make_error)($ctx, $fd_err);
+        }
+        return $fetchdef;
     }
 
-    public function direct(array $fetchargs = []): array
+    public function direct(array $fetchargs = []): mixed
     {
         $utility = $this->_utility;
 
-        [$fetchdef, $err] = $this->prepare($fetchargs);
-        if ($err) {
-            return [["ok" => false, "err" => $err], null];
+        // direct() is the raw-HTTP escape hatch: it never throws, it returns
+        // an {ok, err, ...} dict. prepare() now raises on error, so catch it
+        // and surface the failure through the dict instead.
+        try {
+            $fetchdef = $this->prepare($fetchargs);
+        } catch (\Throwable $err) {
+            return ["ok" => false, "err" => $err];
         }
 
         $fetchargs = $fetchargs ?? [];
@@ -176,14 +184,14 @@ class AareguruSDK
         [$fetched, $fetch_err] = ($utility->fetcher)($ctx, $url, $fetchdef);
 
         if ($fetch_err) {
-            return [["ok" => false, "err" => $fetch_err], null];
+            return ["ok" => false, "err" => $fetch_err];
         }
 
         if ($fetched === null) {
-            return [[
+            return [
                 "ok" => false,
                 "err" => $ctx->make_error("direct_no_response", "response: undefined"),
-            ], null];
+            ];
         }
 
         if (is_array($fetched)) {
@@ -208,38 +216,71 @@ class AareguruSDK
                 }
             }
 
-            return [[
+            return [
                 "ok" => $status >= 200 && $status < 300,
                 "status" => $status,
                 "headers" => Struct::getprop($fetched, "headers"),
                 "data" => $json_data,
-            ], null];
+            ];
         }
 
-        return [[
+        return [
             "ok" => false,
             "err" => $ctx->make_error("direct_invalid", "invalid response type"),
-        ], null];
+        ];
     }
 
 
-    public function Legacy($data = null)
+    private $_legacy = null;
+
+    // Idiomatic facade: $client->legacy()->list() / ->load(["id" => ...]).
+    // Also serves the deprecated PascalCase alias Legacy() (PHP method
+    // names are case-insensitive).
+    public function legacy($data = null)
     {
         require_once __DIR__ . '/entity/legacy_entity.php';
+        if ($data === null) {
+            if ($this->_legacy === null) {
+                $this->_legacy = new LegacyEntity($this, null);
+            }
+            return $this->_legacy;
+        }
         return new LegacyEntity($this, $data);
     }
 
 
-    public function Stuff($data = null)
+    private $_stuff = null;
+
+    // Idiomatic facade: $client->stuff()->list() / ->load(["id" => ...]).
+    // Also serves the deprecated PascalCase alias Stuff() (PHP method
+    // names are case-insensitive).
+    public function stuff($data = null)
     {
         require_once __DIR__ . '/entity/stuff_entity.php';
+        if ($data === null) {
+            if ($this->_stuff === null) {
+                $this->_stuff = new StuffEntity($this, null);
+            }
+            return $this->_stuff;
+        }
         return new StuffEntity($this, $data);
     }
 
 
-    public function V2018($data = null)
+    private $_v2018 = null;
+
+    // Idiomatic facade: $client->v2018()->list() / ->load(["id" => ...]).
+    // Also serves the deprecated PascalCase alias V2018() (PHP method
+    // names are case-insensitive).
+    public function v2018($data = null)
     {
         require_once __DIR__ . '/entity/v2018_entity.php';
+        if ($data === null) {
+            if ($this->_v2018 === null) {
+                $this->_v2018 = new V2018Entity($this, null);
+            }
+            return $this->_v2018;
+        }
         return new V2018Entity($this, $data);
     }
 

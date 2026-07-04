@@ -38,10 +38,6 @@ class Config {
   options = {
     base: 'https://aareguru.existenz.ch',
 
-    auth: {
-      prefix: 'Bearer',
-    },
-
     headers: {
       "content-type": "application/json"
     },

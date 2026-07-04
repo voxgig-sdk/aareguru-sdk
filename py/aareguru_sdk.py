@@ -144,16 +144,23 @@ class AareguruSDK:
 
         _, err = utility.prepare_auth(ctx)
         if err is not None:
-            return None, err
+            raise err
 
-        return utility.make_fetch_def(ctx)
+        fetchdef, err = utility.make_fetch_def(ctx)
+        if err is not None:
+            raise err
+
+        return fetchdef
 
     def direct(self, fetchargs=None):
         utility = self._utility
 
-        fetchdef, err = self.prepare(fetchargs)
-        if err is not None:
-            return {"ok": False, "err": err}, None
+        try:
+            fetchdef = self.prepare(fetchargs)
+        except Exception as err:
+            # direct() is the raw-HTTP escape hatch: it never raises, it
+            # returns a result object callers branch on via result["ok"].
+            return {"ok": False, "err": err}
 
         if fetchargs is None:
             fetchargs = {}
@@ -170,13 +177,13 @@ class AareguruSDK:
         fetched, fetch_err = utility.fetcher(ctx, url, fetchdef)
 
         if fetch_err is not None:
-            return {"ok": False, "err": fetch_err}, None
+            return {"ok": False, "err": fetch_err}
 
         if fetched is None:
             return {
                 "ok": False,
                 "err": ctx.make_error("direct_no_response", "response: undefined"),
-            }, None
+            }
 
         if isinstance(fetched, dict):
             status = helpers.to_int(vs.getprop(fetched, "status"))
@@ -205,25 +212,58 @@ class AareguruSDK:
                 "status": status,
                 "headers": headers,
                 "data": json_data,
-            }, None
+            }
 
         return {
             "ok": False,
             "err": ctx.make_error("direct_invalid", "invalid response type"),
-        }, None
+        }
 
+
+    @property
+    def legacy(self):
+        """Idiomatic facade: client.legacy.list() / client.legacy.load({"id": ...})."""
+        from entity.legacy_entity import LegacyEntity
+        cached = getattr(self, "_legacy", None)
+        if cached is None:
+            cached = LegacyEntity(self, None)
+            self._legacy = cached
+        return cached
 
     def Legacy(self, data=None):
+        # Deprecated: use client.legacy instead.
         from entity.legacy_entity import LegacyEntity
         return LegacyEntity(self, data)
 
 
+    @property
+    def stuff(self):
+        """Idiomatic facade: client.stuff.list() / client.stuff.load({"id": ...})."""
+        from entity.stuff_entity import StuffEntity
+        cached = getattr(self, "_stuff", None)
+        if cached is None:
+            cached = StuffEntity(self, None)
+            self._stuff = cached
+        return cached
+
     def Stuff(self, data=None):
+        # Deprecated: use client.stuff instead.
         from entity.stuff_entity import StuffEntity
         return StuffEntity(self, data)
 
 
+    @property
+    def v2018(self):
+        """Idiomatic facade: client.v2018.list() / client.v2018.load({"id": ...})."""
+        from entity.v2018_entity import V2018Entity
+        cached = getattr(self, "_v2018", None)
+        if cached is None:
+            cached = V2018Entity(self, None)
+            self._v2018 = cached
+        return cached
+
     def V2018(self, data=None):
+        # Deprecated: use client.v2018 instead.
         from entity.v2018_entity import V2018Entity
         return V2018Entity(self, data)
 

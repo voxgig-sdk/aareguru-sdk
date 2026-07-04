@@ -245,16 +245,25 @@ func (sdk *AareguruSDK) Direct(fetchargs map[string]any) (map[string]any, error)
 }
 
 
+// Legacy returns a Legacy entity bound to this client.
+// Idiomatic usage: client.Legacy(nil).List(nil, nil) or
+// client.Legacy(nil).Load(map[string]any{"id": ...}, nil).
 func (sdk *AareguruSDK) Legacy(data map[string]any) AareguruEntity {
 	return NewLegacyEntityFunc(sdk, data)
 }
 
 
+// Stuff returns a Stuff entity bound to this client.
+// Idiomatic usage: client.Stuff(nil).List(nil, nil) or
+// client.Stuff(nil).Load(map[string]any{"id": ...}, nil).
 func (sdk *AareguruSDK) Stuff(data map[string]any) AareguruEntity {
 	return NewStuffEntityFunc(sdk, data)
 }
 
 
+// V2018 returns a V2018 entity bound to this client.
+// Idiomatic usage: client.V2018(nil).List(nil, nil) or
+// client.V2018(nil).Load(map[string]any{"id": ...}, nil).
 func (sdk *AareguruSDK) V2018(data map[string]any) AareguruEntity {
 	return NewV2018EntityFunc(sdk, data)
 }

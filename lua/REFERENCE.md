@@ -19,7 +19,6 @@ Create a new SDK client instance.
 | Name | Type | Description |
 | --- | --- | --- |
 | `options` | `table` | SDK configuration options. |
-| `options.apikey` | `string` | API key for authentication. |
 | `options.base` | `string` | Base URL for API requests. |
 | `options.prefix` | `string` | URL prefix appended after base. |
 | `options.suffix` | `string` | URL suffix appended after path. |
@@ -92,7 +91,7 @@ same parameters as `direct()`.
 ## LegacyEntity
 
 ```lua
-local legacy = client:Legacy(nil)
+local legacy = client:legacy(nil)
 ```
 
 ### Operations
@@ -102,7 +101,7 @@ local legacy = client:Legacy(nil)
 Load a single entity matching the given criteria.
 
 ```lua
-local result, err = client:Legacy():load({ id = "legacy_id" })
+local result, err = client:legacy():load({ id = "legacy_id" })
 ```
 
 ### Common Methods
@@ -138,7 +137,7 @@ Return the entity name.
 ## StuffEntity
 
 ```lua
-local stuff = client:Stuff(nil)
+local stuff = client:stuff(nil)
 ```
 
 ### Operations
@@ -148,7 +147,7 @@ local stuff = client:Stuff(nil)
 Load a single entity matching the given criteria.
 
 ```lua
-local result, err = client:Stuff():load({ id = "stuff_id" })
+local result, err = client:stuff():load({ id = "stuff_id" })
 ```
 
 ### Common Methods
@@ -184,7 +183,7 @@ Return the entity name.
 ## V2018Entity
 
 ```lua
-local v2018 = client:V2018(nil)
+local v2018 = client:v2018(nil)
 ```
 
 ### Operations
@@ -194,7 +193,7 @@ local v2018 = client:V2018(nil)
 Load a single entity matching the given criteria.
 
 ```lua
-local result, err = client:V2018():load({ id = "v2018_id" })
+local result, err = client:v2018():load({ id = "v2018_id" })
 ```
 
 ### Common Methods

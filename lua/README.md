@@ -9,12 +9,9 @@ The Lua SDK for the Aareguru API — an entity-oriented client using Lua convent
 
 
 ## Install
-```bash
-luarocks install voxgig-sdk-aareguru
-```
-
-If the module is not yet published, add the source directory to
-your `LUA_PATH`:
+This package is not yet published to LuaRocks. Install it from the
+GitHub release tag (`lua/vX.Y.Z`, see [Releases](https://github.com/voxgig-sdk/aareguru-sdk/releases)),
+or add the source directory to your `LUA_PATH`:
 
 ```bash
 export LUA_PATH="path/to/lua/?.lua;path/to/lua/?/init.lua;;"
@@ -31,15 +28,13 @@ loading a specific record.
 ```lua
 local sdk = require("aareguru_sdk")
 
-local client = sdk.new({
-  apikey = os.getenv("AAREGURU_APIKEY"),
-})
+local client = sdk.new()
 ```
 
 ### 3. Load a legacy
 
 ```lua
-local result, err = client:Legacy():load({ id = "example_id" })
+local result, err = client:legacy():load({ id = "example_id" })
 if err then error(err) end
 print(result)
 ```
@@ -87,7 +82,7 @@ Create a mock client for unit testing — no server required:
 ```lua
 local client = sdk.test()
 
-local result, err = client:Aareguru():load({ id = "test01" })
+local result, err = client:legacy():load({ id = "test01" })
 -- result contains mock response data
 ```
 
@@ -121,7 +116,6 @@ Create a `.env.local` file at the project root:
 
 ```
 AAREGURU_TEST_LIVE=TRUE
-AAREGURU_APIKEY=<your-key>
 ```
 
 Then run:
@@ -144,7 +138,6 @@ Creates a new SDK client.
 
 | Option | Type | Description |
 | --- | --- | --- |
-| `apikey` | `string` | API key for authentication. |
 | `base` | `string` | Base URL of the API server. |
 | `prefix` | `string` | URL path prefix prepended to all requests. |
 | `suffix` | `string` | URL path suffix appended to all requests. |
@@ -240,7 +233,7 @@ API path: `/v2018/history`
 
 ### Legacy
 
-Create an instance: `const legacy = client.Legacy()`
+Create an instance: `const legacy = client.legacy`
 
 #### Operations
 
@@ -251,13 +244,13 @@ Create an instance: `const legacy = client.Legacy()`
 #### Example: Load
 
 ```ts
-const legacy = await client.Legacy().load({ id: 'legacy_id' })
+const legacy = await client.legacy.load({ id: 'legacy_id' })
 ```
 
 
 ### Stuff
 
-Create an instance: `const stuff = client.Stuff()`
+Create an instance: `const stuff = client.stuff`
 
 #### Operations
 
@@ -268,13 +261,13 @@ Create an instance: `const stuff = client.Stuff()`
 #### Example: Load
 
 ```ts
-const stuff = await client.Stuff().load({ id: 'stuff_id' })
+const stuff = await client.stuff.load({ id: 'stuff_id' })
 ```
 
 
 ### V2018
 
-Create an instance: `const v2018 = client.V2018()`
+Create an instance: `const v2018 = client.v2018`
 
 #### Operations
 
@@ -285,7 +278,7 @@ Create an instance: `const v2018 = client.V2018()`
 #### Example: Load
 
 ```ts
-const v2018 = await client.V2018().load({ id: 'v2018_id' })
+const v2018 = await client.v2018.load({ id: 'v2018_id' })
 ```
 
 
@@ -360,11 +353,11 @@ Entity instances are stateful. After a successful `load`, the entity
 stores the returned data and match criteria internally.
 
 ```lua
-local moon = client:Moon(nil)
-moon:load({ planet_id = "earth", id = "luna" }, nil)
+local legacy = client:legacy()
+legacy:load({ id = "example_id" })
 
--- moon:data_get() now returns the loaded moon data
--- moon:match_get() returns the last match criteria
+-- legacy:data_get() now returns the loaded legacy data
+-- legacy:match_get() returns the last match criteria
 ```
 
 Call `make()` to create a fresh instance with the same configuration

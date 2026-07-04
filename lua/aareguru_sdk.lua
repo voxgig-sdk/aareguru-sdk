@@ -244,18 +244,57 @@ end
 
 
 
+-- Idiomatic facade: client:legacy():list() / client:legacy():load({ id = ... })
+function AareguruSDK:legacy(data)
+  local EntityMod = require("entity.legacy_entity")
+  if data == nil then
+    if self._legacy == nil then
+      self._legacy = EntityMod.new(self, nil)
+    end
+    return self._legacy
+  end
+  return EntityMod.new(self, data)
+end
+
+-- Deprecated: use client:legacy() instead.
 function AareguruSDK:Legacy(data)
   local EntityMod = require("entity.legacy_entity")
   return EntityMod.new(self, data)
 end
 
 
+-- Idiomatic facade: client:stuff():list() / client:stuff():load({ id = ... })
+function AareguruSDK:stuff(data)
+  local EntityMod = require("entity.stuff_entity")
+  if data == nil then
+    if self._stuff == nil then
+      self._stuff = EntityMod.new(self, nil)
+    end
+    return self._stuff
+  end
+  return EntityMod.new(self, data)
+end
+
+-- Deprecated: use client:stuff() instead.
 function AareguruSDK:Stuff(data)
   local EntityMod = require("entity.stuff_entity")
   return EntityMod.new(self, data)
 end
 
 
+-- Idiomatic facade: client:v2018():list() / client:v2018():load({ id = ... })
+function AareguruSDK:v2018(data)
+  local EntityMod = require("entity.v2018_entity")
+  if data == nil then
+    if self._v2018 == nil then
+      self._v2018 = EntityMod.new(self, nil)
+    end
+    return self._v2018
+  end
+  return EntityMod.new(self, data)
+end
+
+-- Deprecated: use client:v2018() instead.
 function AareguruSDK:V2018(data)
   local EntityMod = require("entity.v2018_entity")
   return EntityMod.new(self, data)

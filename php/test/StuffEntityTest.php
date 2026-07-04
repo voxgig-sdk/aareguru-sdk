@@ -49,8 +49,7 @@ class StuffEntityTest extends TestCase
         // LOAD
         $stuff_ref01_ent = $client->Stuff(null);
         $stuff_ref01_match_dt0 = [];
-        [$stuff_ref01_data_dt0_loaded, $err] = $stuff_ref01_ent->load($stuff_ref01_match_dt0, null);
-        $this->assertNull($err);
+        $stuff_ref01_data_dt0_loaded = $stuff_ref01_ent->load($stuff_ref01_match_dt0, null);
         $this->assertNotNull($stuff_ref01_data_dt0_loaded);
 
     }
@@ -85,7 +84,6 @@ function stuff_basic_setup($extra)
         "AAREGURU_TEST_STUFF_ENTID" => $idmap,
         "AAREGURU_TEST_LIVE" => "FALSE",
         "AAREGURU_TEST_EXPLAIN" => "FALSE",
-        "AAREGURU_APIKEY" => "NONE",
     ]);
 
     $idmap_resolved = Helpers::to_map(
@@ -97,7 +95,6 @@ function stuff_basic_setup($extra)
     if ($env["AAREGURU_TEST_LIVE"] === "TRUE") {
         $merged_opts = Vs::merge([
             [
-                "apikey" => $env["AAREGURU_APIKEY"],
             ],
             $extra ?? [],
         ]);

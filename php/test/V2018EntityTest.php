@@ -49,8 +49,7 @@ class V2018EntityTest extends TestCase
         // LOAD
         $v2018_ref01_ent = $client->V2018(null);
         $v2018_ref01_match_dt0 = [];
-        [$v2018_ref01_data_dt0_loaded, $err] = $v2018_ref01_ent->load($v2018_ref01_match_dt0, null);
-        $this->assertNull($err);
+        $v2018_ref01_data_dt0_loaded = $v2018_ref01_ent->load($v2018_ref01_match_dt0, null);
         $this->assertNotNull($v2018_ref01_data_dt0_loaded);
 
     }
@@ -85,7 +84,6 @@ function v2018_basic_setup($extra)
         "AAREGURU_TEST_V_____ENTID" => $idmap,
         "AAREGURU_TEST_LIVE" => "FALSE",
         "AAREGURU_TEST_EXPLAIN" => "FALSE",
-        "AAREGURU_APIKEY" => "NONE",
     ]);
 
     $idmap_resolved = Helpers::to_map(
@@ -97,7 +95,6 @@ function v2018_basic_setup($extra)
     if ($env["AAREGURU_TEST_LIVE"] === "TRUE") {
         $merged_opts = Vs::merge([
             [
-                "apikey" => $env["AAREGURU_APIKEY"],
             ],
             $extra ?? [],
         ]);

@@ -18,7 +18,6 @@ Create a new SDK client instance.
 | Name | Type | Description |
 | --- | --- | --- |
 | `options` | `object` | SDK configuration options. |
-| `options.apikey` | `string` | API key for authentication. |
 | `options.base` | `string` | Base URL for API requests. |
 | `options.prefix` | `string` | URL prefix appended after base. |
 | `options.suffix` | `string` | URL suffix appended after path. |
@@ -134,7 +133,7 @@ Alias for `AareguruSDK.test()`.
 ## LegacyEntity
 
 ```ts
-const legacy = client.Legacy()
+const legacy = client.legacy
 ```
 
 ### Operations
@@ -144,7 +143,7 @@ const legacy = client.Legacy()
 Load a single entity matching the given criteria.
 
 ```ts
-const result = await client.Legacy().load({ id: 'legacy_id' })
+const result = await client.legacy.load({ id: 'legacy_id' })
 ```
 
 ### Common Methods
@@ -178,7 +177,7 @@ Return a copy of the entity options.
 ## StuffEntity
 
 ```ts
-const stuff = client.Stuff()
+const stuff = client.stuff
 ```
 
 ### Operations
@@ -188,7 +187,7 @@ const stuff = client.Stuff()
 Load a single entity matching the given criteria.
 
 ```ts
-const result = await client.Stuff().load({ id: 'stuff_id' })
+const result = await client.stuff.load({ id: 'stuff_id' })
 ```
 
 ### Common Methods
@@ -222,7 +221,7 @@ Return a copy of the entity options.
 ## V2018Entity
 
 ```ts
-const v2018 = client.V2018()
+const v2018 = client.v2018
 ```
 
 ### Operations
@@ -232,7 +231,7 @@ const v2018 = client.V2018()
 Load a single entity matching the given criteria.
 
 ```ts
-const result = await client.V2018().load({ id: 'v2018_id' })
+const result = await client.v2018.load({ id: 'v2018_id' })
 ```
 
 ### Common Methods

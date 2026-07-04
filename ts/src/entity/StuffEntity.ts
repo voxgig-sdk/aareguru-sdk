@@ -14,9 +14,13 @@ import type {
   Control,
 } from '../types'
 
+import type {
+  Stuff,
+  StuffLoadMatch,
+} from '../AareguruTypes'
 
 // TODO: needs Entity superclass
-class StuffEntity extends AareguruEntityBase {
+class StuffEntity extends AareguruEntityBase<Stuff> {
 
   constructor(client: AareguruSDK, entopts: any) {
     super(client, entopts)
@@ -32,7 +36,7 @@ class StuffEntity extends AareguruEntityBase {
 
 
 
-  async load(this: any, reqmatch?: any, ctrl?: Control) {
+  async load(this: any, reqmatch?: StuffLoadMatch, ctrl?: Control): Promise<Stuff> {
 
     const utility = this._utility
 
@@ -136,7 +140,9 @@ class StuffEntity extends AareguruEntityBase {
         throw err
       }
       else {
-        return undefined
+        // Off-happy-path (throw disabled): typed as any so the method's
+        // Promise<Stuff> return stays clean under strict null checks.
+        return undefined as any
       }
     }
   }
