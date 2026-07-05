@@ -32,8 +32,9 @@ client = AareguruSDK.new
 
 ```ruby
 begin
-  result = client.legacy.load({ "id" => "example_id" })
-  puts result
+  # load returns the bare Legacy record (raises on error).
+  legacy = client.Legacy.load({ "id" => "example_id" })
+  puts legacy
 rescue => err
   warn "load failed: #{err}"
 end
@@ -80,13 +81,17 @@ end
 
 ### Use test mode
 
-Create a mock client for unit testing — no server required:
+Create a mock client for unit testing — no server required. Seed fixture
+data via the `entity` option so offline calls resolve without a live server:
 
 ```ruby
-client = AareguruSDK.test
+client = AareguruSDK.test({
+  "entity" => { "legacy" => { "test01" => { "id" => "test01" } } },
+})
 
-result = client.legacy.load({ "id" => "test01" })
-# result contains mock response data
+# load returns the bare mock record (raises on error).
+legacy = client.Legacy.load({ "id" => "test01" })
+puts legacy
 ```
 
 ### Use a custom fetch function
@@ -237,7 +242,7 @@ API path: `/v2018/history`
 
 ### Legacy
 
-Create an instance: `const legacy = client.legacy`
+Create an instance: `legacy = client.Legacy`
 
 #### Operations
 
@@ -247,14 +252,15 @@ Create an instance: `const legacy = client.legacy`
 
 #### Example: Load
 
-```ts
-const legacy = await client.legacy.load({ id: 'legacy_id' })
+```ruby
+# load returns the bare Legacy record (raises on error).
+legacy = client.Legacy.load({ "id" => "legacy_id" })
 ```
 
 
 ### Stuff
 
-Create an instance: `const stuff = client.stuff`
+Create an instance: `stuff = client.Stuff`
 
 #### Operations
 
@@ -264,14 +270,15 @@ Create an instance: `const stuff = client.stuff`
 
 #### Example: Load
 
-```ts
-const stuff = await client.stuff.load({ id: 'stuff_id' })
+```ruby
+# load returns the bare Stuff record (raises on error).
+stuff = client.Stuff.load({ "id" => "stuff_id" })
 ```
 
 
 ### V2018
 
-Create an instance: `const v2018 = client.v2018`
+Create an instance: `v2018 = client.V2018`
 
 #### Operations
 
@@ -281,8 +288,9 @@ Create an instance: `const v2018 = client.v2018`
 
 #### Example: Load
 
-```ts
-const v2018 = await client.v2018.load({ id: 'v2018_id' })
+```ruby
+# load returns the bare V2018 record (raises on error).
+v2018 = client.V2018.load({ "id" => "v2018_id" })
 ```
 
 
@@ -357,7 +365,7 @@ Entity instances are stateful. After a successful `load`, the entity
 stores the returned data and match criteria internally.
 
 ```ruby
-legacy = client.legacy
+legacy = client.Legacy
 legacy.load({ "id" => "example_id" })
 
 # legacy.data_get now returns the loaded legacy data

@@ -133,7 +133,7 @@ Alias for `AareguruSDK.test()`.
 ## LegacyEntity
 
 ```ts
-const legacy = client.legacy
+const legacy = client.Legacy()
 ```
 
 ### Operations
@@ -143,7 +143,7 @@ const legacy = client.legacy
 Load a single entity matching the given criteria.
 
 ```ts
-const result = await client.legacy.load({ id: 'legacy_id' })
+const result = await client.Legacy().load({ id: 'legacy_id' })
 ```
 
 ### Common Methods
@@ -177,7 +177,7 @@ Return a copy of the entity options.
 ## StuffEntity
 
 ```ts
-const stuff = client.stuff
+const stuff = client.Stuff()
 ```
 
 ### Operations
@@ -187,7 +187,7 @@ const stuff = client.stuff
 Load a single entity matching the given criteria.
 
 ```ts
-const result = await client.stuff.load({ id: 'stuff_id' })
+const result = await client.Stuff().load({ id: 'stuff_id' })
 ```
 
 ### Common Methods
@@ -221,7 +221,7 @@ Return a copy of the entity options.
 ## V2018Entity
 
 ```ts
-const v2018 = client.v2018
+const v2018 = client.V2018()
 ```
 
 ### Operations
@@ -231,7 +231,7 @@ const v2018 = client.v2018
 Load a single entity matching the given criteria.
 
 ```ts
-const result = await client.v2018.load({ id: 'v2018_id' })
+const result = await client.V2018().load({ id: 'v2018_id' })
 ```
 
 ### Common Methods

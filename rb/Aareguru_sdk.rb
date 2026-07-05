@@ -208,39 +208,21 @@ class AareguruSDK
   end
 
 
-  # Idiomatic facade: client.legacy.list / client.legacy.load({ "id" => ... })
-  def legacy
-    require_relative 'entity/legacy_entity'
-    @legacy ||= LegacyEntity.new(self, nil)
-  end
-
-  # Deprecated: use client.legacy instead.
+  # Canonical facade: client.Legacy.list / client.Legacy.load({ "id" => ... })
   def Legacy(data = nil)
     require_relative 'entity/legacy_entity'
     LegacyEntity.new(self, data)
   end
 
 
-  # Idiomatic facade: client.stuff.list / client.stuff.load({ "id" => ... })
-  def stuff
-    require_relative 'entity/stuff_entity'
-    @stuff ||= StuffEntity.new(self, nil)
-  end
-
-  # Deprecated: use client.stuff instead.
+  # Canonical facade: client.Stuff.list / client.Stuff.load({ "id" => ... })
   def Stuff(data = nil)
     require_relative 'entity/stuff_entity'
     StuffEntity.new(self, data)
   end
 
 
-  # Idiomatic facade: client.v2018.list / client.v2018.load({ "id" => ... })
-  def v2018
-    require_relative 'entity/v2018_entity'
-    @v2018 ||= V2018Entity.new(self, nil)
-  end
-
-  # Deprecated: use client.v2018 instead.
+  # Canonical facade: client.V2018.list / client.V2018.load({ "id" => ... })
   def V2018(data = nil)
     require_relative 'entity/v2018_entity'
     V2018Entity.new(self, data)

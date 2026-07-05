@@ -30,36 +30,30 @@ go mod edit -replace github.com/voxgig-sdk/aareguru-sdk/go=../aareguru-sdk/go
 This tutorial walks through creating a client, listing entities, and
 loading a specific record.
 
-### 1. Create a client
+### Quickstart
+
+A complete program: create a client, then call the entity operations.
+Each operation returns `(value, error)` — the value is the data itself
+(there is no `{ok, data}` wrapper), so check `err` and use the value
+directly.
 
 ```go
 package main
 
 import (
     "fmt"
-
     sdk "github.com/voxgig-sdk/aareguru-sdk/go"
-    "github.com/voxgig-sdk/aareguru-sdk/go/core"
 )
 
 func main() {
     client := sdk.New()
-```
 
-### 3. Load a legacy
-
-```go
-    result, err = client.Legacy(nil).Load(
-        map[string]any{"id": "example_id"}, nil,
-    )
+    // Load a single legacy — the value is the loaded record.
+    legacy, err := client.Legacy(nil).Load(map[string]any{"id": "example_id"}, nil)
     if err != nil {
         panic(err)
     }
-
-    rm = core.ToMapAny(result)
-    if rm["ok"] == true {
-        fmt.Println(rm["data"])
-    }
+    fmt.Println(legacy)
 }
 ```
 
@@ -110,10 +104,13 @@ Create a mock client for unit testing — no server required:
 ```go
 client := sdk.Test()
 
-result, err := client.Legacy(nil).Load(
+legacy, err := client.Legacy(nil).Load(
     map[string]any{"id": "test01"}, nil,
 )
-// result contains mock response data
+if err != nil {
+    panic(err)
+}
+fmt.Println(legacy) // the loaded mock data
 ```
 
 ### Use a custom fetch function
@@ -212,17 +209,24 @@ All entities implement the `AareguruEntity` interface.
 
 ### Result shape
 
-Entity operations return `(any, error)`. The `any` value is a
-`map[string]any` with these keys:
+Entity operations return `(value, error)`. The `value` is the
+operation's data **directly** — there is no wrapper:
 
-| Key | Type | Description |
-| --- | --- | --- |
-| `"ok"` | `bool` | `true` if the HTTP status is 2xx. |
-| `"status"` | `int` | HTTP status code. |
-| `"headers"` | `map[string]any` | Response headers. |
-| `"data"` | `any` | Parsed JSON response body. |
+| Operation | `value` |
+| --- | --- |
+| `Load` / `Create` / `Update` / `Remove` | the entity record (`map[string]any`) |
+| `List` | a `[]any` of entity records |
 
-On error, `"ok"` is `false` and `"err"` contains the error value.
+Check `err` first, then use the value directly (or the typed
+`...Typed` variants, which return the entity's model struct and a typed
+slice):
+
+    legacy, err := client.Legacy(nil).Load(map[string]any{"id": "example_id"}, nil)
+    if err != nil { /* handle */ }
+    // legacy is the loaded record
+
+Only `Direct()` returns a response envelope — a `map[string]any` with
+`"ok"`, `"status"`, `"headers"`, and `"data"` keys.
 
 ### Entities
 
@@ -271,7 +275,11 @@ Create an instance: `legacy := client.Legacy(nil)`
 #### Example: Load
 
 ```go
-result, err := client.Legacy(nil).Load(map[string]any{"id": "legacy_id"}, nil)
+legacy, err := client.Legacy(nil).Load(map[string]any{"id": "legacy_id"}, nil)
+if err != nil {
+    panic(err)
+}
+fmt.Println(legacy) // the loaded record
 ```
 
 
@@ -288,7 +296,11 @@ Create an instance: `stuff := client.Stuff(nil)`
 #### Example: Load
 
 ```go
-result, err := client.Stuff(nil).Load(map[string]any{"id": "stuff_id"}, nil)
+stuff, err := client.Stuff(nil).Load(map[string]any{"id": "stuff_id"}, nil)
+if err != nil {
+    panic(err)
+}
+fmt.Println(stuff) // the loaded record
 ```
 
 
@@ -305,7 +317,11 @@ Create an instance: `v2018 := client.V2018(nil)`
 #### Example: Load
 
 ```go
-result, err := client.V2018(nil).Load(map[string]any{"id": "v2018_id"}, nil)
+v2018, err := client.V2018(nil).Load(map[string]any{"id": "v2018_id"}, nil)
+if err != nil {
+    panic(err)
+}
+fmt.Println(v2018) // the loaded record
 ```
 
 

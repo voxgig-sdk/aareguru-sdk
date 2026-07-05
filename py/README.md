@@ -33,10 +33,12 @@ client = AareguruSDK()
 
 ### 3. Load a legacy
 
+`load()` returns the bare record (a `dict`) and raises on error.
+
 ```python
 try:
-    result = client.legacy.load({"id": "example_id"})
-    print(result)
+    legacy = client.Legacy().load({"id": "example_id"})
+    print(legacy)
 except Exception as err:
     print(f"load failed: {err}")
 ```
@@ -84,8 +86,9 @@ Create a mock client for unit testing — no server required:
 ```python
 client = AareguruSDK.test()
 
-result = client.legacy.load({"id": "test01"})
-# result contains mock response data
+# Entity ops return the bare record and raise on error.
+legacy = client.Legacy().load({"id": "test01"})
+# legacy contains the mock response record
 ```
 
 ### Use a custom fetch function
@@ -237,7 +240,7 @@ API path: `/v2018/history`
 
 ### Legacy
 
-Create an instance: `const legacy = client.legacy`
+Create an instance: `legacy = client.Legacy()`
 
 #### Operations
 
@@ -247,14 +250,14 @@ Create an instance: `const legacy = client.legacy`
 
 #### Example: Load
 
-```ts
-const legacy = await client.legacy.load({ id: 'legacy_id' })
+```python
+legacy = client.Legacy().load({"id": "legacy_id"})
 ```
 
 
 ### Stuff
 
-Create an instance: `const stuff = client.stuff`
+Create an instance: `stuff = client.Stuff()`
 
 #### Operations
 
@@ -264,14 +267,14 @@ Create an instance: `const stuff = client.stuff`
 
 #### Example: Load
 
-```ts
-const stuff = await client.stuff.load({ id: 'stuff_id' })
+```python
+stuff = client.Stuff().load({"id": "stuff_id"})
 ```
 
 
 ### V2018
 
-Create an instance: `const v2018 = client.v2018`
+Create an instance: `v2018 = client.V2018()`
 
 #### Operations
 
@@ -281,8 +284,8 @@ Create an instance: `const v2018 = client.v2018`
 
 #### Example: Load
 
-```ts
-const v2018 = await client.v2018.load({ id: 'v2018_id' })
+```python
+v2018 = client.V2018().load({"id": "v2018_id"})
 ```
 
 
@@ -356,7 +359,7 @@ Entity instances are stateful. After a successful `load`, the entity
 stores the returned data and match criteria internally.
 
 ```python
-legacy = client.legacy
+legacy = client.Legacy()
 legacy.load({"id": "example_id"})
 
 # legacy.data_get() now returns the loaded legacy data

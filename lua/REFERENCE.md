@@ -91,7 +91,7 @@ same parameters as `direct()`.
 ## LegacyEntity
 
 ```lua
-local legacy = client:legacy(nil)
+local legacy = client:Legacy(nil)
 ```
 
 ### Operations
@@ -101,7 +101,7 @@ local legacy = client:legacy(nil)
 Load a single entity matching the given criteria.
 
 ```lua
-local result, err = client:legacy():load({ id = "legacy_id" })
+local result, err = client:Legacy():load({ id = "legacy_id" })
 ```
 
 ### Common Methods
@@ -137,7 +137,7 @@ Return the entity name.
 ## StuffEntity
 
 ```lua
-local stuff = client:stuff(nil)
+local stuff = client:Stuff(nil)
 ```
 
 ### Operations
@@ -147,7 +147,7 @@ local stuff = client:stuff(nil)
 Load a single entity matching the given criteria.
 
 ```lua
-local result, err = client:stuff():load({ id = "stuff_id" })
+local result, err = client:Stuff():load({ id = "stuff_id" })
 ```
 
 ### Common Methods
@@ -183,7 +183,7 @@ Return the entity name.
 ## V2018Entity
 
 ```lua
-local v2018 = client:v2018(nil)
+local v2018 = client:V2018(nil)
 ```
 
 ### Operations
@@ -193,7 +193,7 @@ local v2018 = client:v2018(nil)
 Load a single entity matching the given criteria.
 
 ```lua
-local result, err = client:v2018():load({ id = "v2018_id" })
+local result, err = client:V2018():load({ id = "v2018_id" })
 ```
 
 ### Common Methods

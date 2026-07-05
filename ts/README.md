@@ -30,11 +30,14 @@ const client = new AareguruSDK()
 
 ### 3. Load a legacy
 
-```ts
-const result = await client.legacy.load({ id: 'example_id' })
+`load()` returns the entity directly and throws on failure:
 
-if (result.ok) {
-  console.log(result.data)
+```ts
+try {
+  const legacy = await client.Legacy().load({ id: 'example_id' })
+  console.log(legacy)
+} catch (err) {
+  console.error('load failed:', err)
 }
 ```
 
@@ -52,6 +55,9 @@ const result = await client.direct({
   params: { id: 'example' },
 })
 
+if (result instanceof Error) {
+  throw result
+}
 if (result.ok) {
   console.log(result.status)  // 200
   console.log(result.data)    // response body
@@ -80,9 +86,9 @@ Create a mock client for unit testing — no server required:
 ```ts
 const client = AareguruSDK.test()
 
-const result = await client.legacy.load({ id: 'test01' })
-// result.ok === true
-// result.data contains mock response data
+const legacy = await client.Legacy().load({ id: 'test01' })
+// legacy is a bare entity populated with mock response data
+console.log(legacy)
 ```
 
 You can also use the instance method:
@@ -97,7 +103,7 @@ const testClient = client.tester()
 Entity instances remember their last match and data:
 
 ```ts
-const entity = client.legacy
+const entity = client.Legacy()
 
 // First call sets internal match
 await entity.load({ id: 'example' })
@@ -194,29 +200,30 @@ All entities share the same interface.
 
 | Method | Signature | Description |
 | --- | --- | --- |
-| `load` | `load(reqmatch?, ctrl?): Promise<Result>` | Load a single entity by match criteria. |
-| `list` | `list(reqmatch?, ctrl?): Promise<Result>` | List entities matching the criteria. |
-| `create` | `create(reqdata?, ctrl?): Promise<Result>` | Create a new entity. |
-| `update` | `update(reqdata?, ctrl?): Promise<Result>` | Update an existing entity. |
-| `remove` | `remove(reqmatch?, ctrl?): Promise<Result>` | Remove an entity. |
+| `load` | `load(reqmatch?, ctrl?): Promise<Entity>` | Load a single entity by match criteria. |
+| `list` | `list(reqmatch?, ctrl?): Promise<Entity[]>` | List entities matching the criteria. |
+| `create` | `create(reqdata?, ctrl?): Promise<Entity>` | Create a new entity. |
+| `update` | `update(reqdata?, ctrl?): Promise<Entity>` | Update an existing entity. |
+| `remove` | `remove(reqmatch?, ctrl?): Promise<void>` | Remove an entity. |
 | `data` | `data(data?): any` | Get or set entity data. |
 | `match` | `match(match?): any` | Get or set entity match criteria. |
 | `make` | `make(): Entity` | Create a new instance with the same options. |
 | `client` | `client(): AareguruSDK` | Return the parent SDK client. |
 | `entopts` | `entopts(): object` | Return a copy of the entity options. |
 
-#### Result shape
+#### Return values
 
-All entity operations return a Result object:
+Entity operations resolve to the entity data directly — there is no
+result envelope:
 
-```ts
-{
-  ok: boolean      // true if the HTTP status is 2xx
-  status: number   // HTTP status code
-  headers: object  // response headers
-  data: any        // parsed JSON response body
-}
-```
+- `load`, `create` and `update` resolve to a single entity object.
+- `list` resolves to an **array** of entity objects (iterate it directly;
+  there is no `.data` and no `.ok`).
+- `remove` resolves to `void`.
+
+On a failed request these methods **throw**, so wrap calls in
+`try`/`catch` to handle errors. Only `direct()` returns the result
+envelope described below.
 
 ### DirectResult shape
 
@@ -282,7 +289,7 @@ API path: `/v2018/history`
 
 ### Legacy
 
-Create an instance: `const legacy = client.legacy`
+Create an instance: `const legacy = client.Legacy()`
 
 #### Operations
 
@@ -293,13 +300,13 @@ Create an instance: `const legacy = client.legacy`
 #### Example: Load
 
 ```ts
-const legacy = await client.legacy.load({ id: 'legacy_id' })
+const legacy = await client.Legacy().load({ id: 'legacy_id' })
 ```
 
 
 ### Stuff
 
-Create an instance: `const stuff = client.stuff`
+Create an instance: `const stuff = client.Stuff()`
 
 #### Operations
 
@@ -310,13 +317,13 @@ Create an instance: `const stuff = client.stuff`
 #### Example: Load
 
 ```ts
-const stuff = await client.stuff.load({ id: 'stuff_id' })
+const stuff = await client.Stuff().load({ id: 'stuff_id' })
 ```
 
 
 ### V2018
 
-Create an instance: `const v2018 = client.v2018`
+Create an instance: `const v2018 = client.V2018()`
 
 #### Operations
 
@@ -327,7 +334,7 @@ Create an instance: `const v2018 = client.v2018`
 #### Example: Load
 
 ```ts
-const v2018 = await client.v2018.load({ id: 'v2018_id' })
+const v2018 = await client.V2018().load({ id: 'v2018_id' })
 ```
 
 
@@ -398,7 +405,7 @@ stores the returned data and match criteria internally. Subsequent
 calls on the same instance can rely on this state.
 
 ```ts
-const legacy = client.legacy
+const legacy = client.Legacy()
 await legacy.load({ id: "example_id" })
 
 // legacy.data() now returns the loaded legacy data

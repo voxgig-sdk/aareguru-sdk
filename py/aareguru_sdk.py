@@ -220,57 +220,27 @@ class AareguruSDK:
         }
 
 
-    @property
-    def legacy(self):
-        """Idiomatic facade: client.legacy.list() / client.legacy.load({"id": ...})."""
-        from entity.legacy_entity import LegacyEntity
-        cached = getattr(self, "_legacy", None)
-        if cached is None:
-            cached = LegacyEntity(self, None)
-            self._legacy = cached
-        return cached
-
-    def Legacy(self, data=None):
-        # Deprecated: use client.legacy instead.
+    def Legacy(self, data=None) -> "LegacyEntity":
+        """Entity factory: client.Legacy().list({}) / client.Legacy().load({"id": ...})."""
         from entity.legacy_entity import LegacyEntity
         return LegacyEntity(self, data)
 
 
-    @property
-    def stuff(self):
-        """Idiomatic facade: client.stuff.list() / client.stuff.load({"id": ...})."""
-        from entity.stuff_entity import StuffEntity
-        cached = getattr(self, "_stuff", None)
-        if cached is None:
-            cached = StuffEntity(self, None)
-            self._stuff = cached
-        return cached
-
-    def Stuff(self, data=None):
-        # Deprecated: use client.stuff instead.
+    def Stuff(self, data=None) -> "StuffEntity":
+        """Entity factory: client.Stuff().list({}) / client.Stuff().load({"id": ...})."""
         from entity.stuff_entity import StuffEntity
         return StuffEntity(self, data)
 
 
-    @property
-    def v2018(self):
-        """Idiomatic facade: client.v2018.list() / client.v2018.load({"id": ...})."""
-        from entity.v2018_entity import V2018Entity
-        cached = getattr(self, "_v2018", None)
-        if cached is None:
-            cached = V2018Entity(self, None)
-            self._v2018 = cached
-        return cached
-
-    def V2018(self, data=None):
-        # Deprecated: use client.v2018 instead.
+    def V2018(self, data=None) -> "V2018Entity":
+        """Entity factory: client.V2018().list({}) / client.V2018().load({"id": ...})."""
         from entity.v2018_entity import V2018Entity
         return V2018Entity(self, data)
 
 
 
     @classmethod
-    def test(cls, testopts=None, sdkopts=None):
+    def test(cls, testopts=None, sdkopts=None) -> "AareguruSDK":
         if sdkopts is None:
             sdkopts = {}
         sdkopts = vs.clone(sdkopts)
@@ -290,3 +260,11 @@ class AareguruSDK:
         sdk.mode = "test"
 
         return sdk
+
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from entity.legacy_entity import LegacyEntity
+    from entity.stuff_entity import StuffEntity
+    from entity.v2018_entity import V2018Entity

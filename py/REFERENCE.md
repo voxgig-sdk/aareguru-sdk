@@ -88,7 +88,7 @@ Prepare a fetch definition without sending. Returns the `fetchdef` and raises on
 ## LegacyEntity
 
 ```python
-legacy = client.legacy
+legacy = client.Legacy()
 ```
 
 ### Operations
@@ -98,7 +98,7 @@ legacy = client.legacy
 Load a single entity matching the given criteria. Returns the entity data and raises on error.
 
 ```python
-result = client.legacy.load({"id": "legacy_id"})
+result = client.Legacy().load({"id": "legacy_id"})
 ```
 
 ### Common Methods
@@ -133,7 +133,7 @@ Return the entity name.
 ## StuffEntity
 
 ```python
-stuff = client.stuff
+stuff = client.Stuff()
 ```
 
 ### Operations
@@ -143,7 +143,7 @@ stuff = client.stuff
 Load a single entity matching the given criteria. Returns the entity data and raises on error.
 
 ```python
-result = client.stuff.load({"id": "stuff_id"})
+result = client.Stuff().load({"id": "stuff_id"})
 ```
 
 ### Common Methods
@@ -178,7 +178,7 @@ Return the entity name.
 ## V2018Entity
 
 ```python
-v2018 = client.v2018
+v2018 = client.V2018()
 ```
 
 ### Operations
@@ -188,7 +188,7 @@ v2018 = client.v2018
 Load a single entity matching the given criteria. Returns the entity data and raises on error.
 
 ```python
-result = client.v2018.load({"id": "v2018_id"})
+result = client.V2018().load({"id": "v2018_id"})
 ```
 
 ### Common Methods

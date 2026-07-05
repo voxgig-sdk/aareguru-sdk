@@ -244,8 +244,9 @@ end
 
 
 
--- Idiomatic facade: client:legacy():list() / client:legacy():load({ id = ... })
-function AareguruSDK:legacy(data)
+-- Idiomatic facade: client:Legacy():list() / client:Legacy():load({ id = ... })
+-- Entity access is capitalised (PascalCase) for parity with the other SDKs.
+function AareguruSDK:Legacy(data)
   local EntityMod = require("entity.legacy_entity")
   if data == nil then
     if self._legacy == nil then
@@ -256,15 +257,10 @@ function AareguruSDK:legacy(data)
   return EntityMod.new(self, data)
 end
 
--- Deprecated: use client:legacy() instead.
-function AareguruSDK:Legacy(data)
-  local EntityMod = require("entity.legacy_entity")
-  return EntityMod.new(self, data)
-end
 
-
--- Idiomatic facade: client:stuff():list() / client:stuff():load({ id = ... })
-function AareguruSDK:stuff(data)
+-- Idiomatic facade: client:Stuff():list() / client:Stuff():load({ id = ... })
+-- Entity access is capitalised (PascalCase) for parity with the other SDKs.
+function AareguruSDK:Stuff(data)
   local EntityMod = require("entity.stuff_entity")
   if data == nil then
     if self._stuff == nil then
@@ -275,15 +271,10 @@ function AareguruSDK:stuff(data)
   return EntityMod.new(self, data)
 end
 
--- Deprecated: use client:stuff() instead.
-function AareguruSDK:Stuff(data)
-  local EntityMod = require("entity.stuff_entity")
-  return EntityMod.new(self, data)
-end
 
-
--- Idiomatic facade: client:v2018():list() / client:v2018():load({ id = ... })
-function AareguruSDK:v2018(data)
+-- Idiomatic facade: client:V2018():list() / client:V2018():load({ id = ... })
+-- Entity access is capitalised (PascalCase) for parity with the other SDKs.
+function AareguruSDK:V2018(data)
   local EntityMod = require("entity.v2018_entity")
   if data == nil then
     if self._v2018 == nil then
@@ -291,12 +282,6 @@ function AareguruSDK:v2018(data)
     end
     return self._v2018
   end
-  return EntityMod.new(self, data)
-end
-
--- Deprecated: use client:v2018() instead.
-function AareguruSDK:V2018(data)
-  local EntityMod = require("entity.v2018_entity")
   return EntityMod.new(self, data)
 end
 

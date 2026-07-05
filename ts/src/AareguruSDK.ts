@@ -206,42 +206,21 @@ class AareguruSDK {
 
 
 
-  _legacy?: LegacyEntity
-
-  // Idiomatic facade: `client.legacy.list()` / `client.legacy.load({ id })`.
-  get legacy(): LegacyEntity {
-    return (this._legacy ??= new LegacyEntity(this, undefined))
-  }
-
-  /** @deprecated Use `client.legacy` instead. */
+  // Entity access: `client.Legacy().list()` / `client.Legacy().load({ id })`.
   Legacy(data?: any) {
     const self = this
     return new LegacyEntity(self,data)
   }
 
 
-  _stuff?: StuffEntity
-
-  // Idiomatic facade: `client.stuff.list()` / `client.stuff.load({ id })`.
-  get stuff(): StuffEntity {
-    return (this._stuff ??= new StuffEntity(this, undefined))
-  }
-
-  /** @deprecated Use `client.stuff` instead. */
+  // Entity access: `client.Stuff().list()` / `client.Stuff().load({ id })`.
   Stuff(data?: any) {
     const self = this
     return new StuffEntity(self,data)
   }
 
 
-  _v2018?: V2018Entity
-
-  // Idiomatic facade: `client.v2018.list()` / `client.v2018.load({ id })`.
-  get v2018(): V2018Entity {
-    return (this._v2018 ??= new V2018Entity(this, undefined))
-  }
-
-  /** @deprecated Use `client.v2018` instead. */
+  // Entity access: `client.V2018().list()` / `client.V2018().load({ id })`.
   V2018(data?: any) {
     const self = this
     return new V2018Entity(self,data)

@@ -26,9 +26,9 @@ import { AareguruSDK } from '@voxgig-sdk/aareguru'
 
 const client = new AareguruSDK()
 
-// Load legacy data
-const legacy = await client.legacy.load({})
-console.log(legacy.data)
+// Load legacy data (returns a Legacy)
+const legacy = await client.Legacy().load()
+console.log(legacy)
 ```
 
 See the [TypeScript README](ts/README.md) for the full guide.
@@ -86,8 +86,8 @@ from aareguru_sdk import AareguruSDK
 client = AareguruSDK()
 
 
-# Load a specific legacy
-legacy = client.legacy.load({"id": "example_id"})
+# Load a specific legacy (returns the record, raises on error)
+legacy = client.Legacy().load({"id": "example_id"})
 print(legacy)
 ```
 
@@ -100,8 +100,8 @@ require_once 'aareguru_sdk.php';
 $client = new AareguruSDK();
 
 
-// Load a specific legacy
-$legacy = $client->legacy()->load(["id" => "example_id"]);
+// Load a specific legacy (returns the bare record; throws on error)
+$legacy = $client->Legacy()->load(["id" => "example_id"]);
 print_r($legacy);
 ```
 
@@ -125,8 +125,8 @@ require_relative "Aareguru_sdk"
 client = AareguruSDK.new
 
 
-# Load a specific legacy
-legacy = client.legacy.load({ "id" => "example_id" })
+# Load a specific legacy (returns the bare record; raises on error)
+legacy = client.Legacy.load({ "id" => "example_id" })
 puts legacy
 ```
 
@@ -139,7 +139,7 @@ local client = sdk.new()
 
 
 -- Load a specific legacy
-local legacy, err = client:legacy():load({ id = "example_id" })
+local legacy, err = client:Legacy():load({ id = "example_id" })
 print(legacy)
 ```
 
@@ -152,22 +152,27 @@ in-memory mock, so unit tests run offline.
 
 ```ts
 const client = AareguruSDK.test()
-const result = await client.legacy.load({ id: 'test01' })
-// result.ok === true, result.data contains mock data
+const legacy = await client.Legacy().load({ id: 'test01' })
+// legacy is a bare Legacy populated with mock data
+console.log(legacy)
 ```
 
 ### Python
 
 ```python
 client = AareguruSDK.test()
-result = client.legacy.load({"id": "test01"})
+legacy = client.Legacy().load({"id": "test01"})
+print(legacy)
 ```
 
 ### PHP
 
 ```php
-$client = AareguruSDK::test();
-$result = $client->legacy()->load(["id" => "test01"]);
+// Seed fixture data so offline calls resolve without a live server.
+$client = AareguruSDK::test([
+    "entity" => ["legacy" => ["test01" => ["id" => "test01"]]],
+]);
+$legacy = $client->Legacy()->load(["id" => "test01"]);
 ```
 
 ### Golang
@@ -182,15 +187,18 @@ result, err := client.Legacy(nil).Load(
 ### Ruby
 
 ```ruby
-client = AareguruSDK.test
-result = client.legacy.load({ "id" => "test01" })
+# Seed fixture data so offline calls resolve without a live server.
+client = AareguruSDK.test({
+  "entity" => { "legacy" => { "test01" => { "id" => "test01" } } },
+})
+legacy = client.Legacy.load({ "id" => "test01" })
 ```
 
 ### Lua
 
 ```lua
 local client = sdk.test()
-local result, err = client:legacy():load({ id = "test01" })
+local result, err = client:Legacy():load({ id = "test01" })
 ```
 
 ## How it works
@@ -238,6 +246,9 @@ const result = await client.direct({
   method: 'GET',
   params: { id: 'example' },
 })
+if (result instanceof Error) {
+  throw result
+}
 console.log(result.data)
 ```
 

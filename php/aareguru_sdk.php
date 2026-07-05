@@ -233,10 +233,10 @@ class AareguruSDK
 
     private $_legacy = null;
 
-    // Idiomatic facade: $client->legacy()->list() / ->load(["id" => ...]).
-    // Also serves the deprecated PascalCase alias Legacy() (PHP method
-    // names are case-insensitive).
-    public function legacy($data = null)
+    // Canonical facade: $client->Legacy()->list() / ->load(["id" => ...]).
+    // PHP method names are case-insensitive, so lowercase $client->legacy()
+    // resolves here too.
+    public function Legacy($data = null)
     {
         require_once __DIR__ . '/entity/legacy_entity.php';
         if ($data === null) {
@@ -251,10 +251,10 @@ class AareguruSDK
 
     private $_stuff = null;
 
-    // Idiomatic facade: $client->stuff()->list() / ->load(["id" => ...]).
-    // Also serves the deprecated PascalCase alias Stuff() (PHP method
-    // names are case-insensitive).
-    public function stuff($data = null)
+    // Canonical facade: $client->Stuff()->list() / ->load(["id" => ...]).
+    // PHP method names are case-insensitive, so lowercase $client->stuff()
+    // resolves here too.
+    public function Stuff($data = null)
     {
         require_once __DIR__ . '/entity/stuff_entity.php';
         if ($data === null) {
@@ -269,10 +269,10 @@ class AareguruSDK
 
     private $_v2018 = null;
 
-    // Idiomatic facade: $client->v2018()->list() / ->load(["id" => ...]).
-    // Also serves the deprecated PascalCase alias V2018() (PHP method
-    // names are case-insensitive).
-    public function v2018($data = null)
+    // Canonical facade: $client->V2018()->list() / ->load(["id" => ...]).
+    // PHP method names are case-insensitive, so lowercase $client->v2018()
+    // resolves here too.
+    public function V2018($data = null)
     {
         require_once __DIR__ . '/entity/v2018_entity.php';
         if ($data === null) {
