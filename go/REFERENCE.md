@@ -108,7 +108,7 @@ legacy := client.Legacy(nil)
 Load a single entity matching the given criteria.
 
 ```go
-result, err := client.Legacy(nil).Load(map[string]any{"id": "legacy_id"}, nil)
+result, err := client.Legacy(nil).Load(nil, nil)
 ```
 
 ### Common Methods
@@ -148,7 +148,7 @@ stuff := client.Stuff(nil)
 Load a single entity matching the given criteria.
 
 ```go
-result, err := client.Stuff(nil).Load(map[string]any{"id": "stuff_id"}, nil)
+result, err := client.Stuff(nil).Load(nil, nil)
 ```
 
 ### Common Methods
@@ -188,7 +188,7 @@ v2018 := client.V2018(nil)
 Load a single entity matching the given criteria.
 
 ```go
-result, err := client.V2018(nil).Load(map[string]any{"id": "v2018_id"}, nil)
+result, err := client.V2018(nil).Load(nil, nil)
 ```
 
 ### Common Methods

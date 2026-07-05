@@ -12,8 +12,7 @@ import "encoding/json"
 type Legacy struct {
 }
 
-// LegacyLoadMatch mirrors the legacy fields as an all-optional match
-// filter (Go analog of Partial<Legacy>).
+// LegacyLoadMatch is the typed request payload for Legacy.LoadTyped.
 type LegacyLoadMatch struct {
 }
 
@@ -21,8 +20,7 @@ type LegacyLoadMatch struct {
 type Stuff struct {
 }
 
-// StuffLoadMatch mirrors the stuff fields as an all-optional match
-// filter (Go analog of Partial<Stuff>).
+// StuffLoadMatch is the typed request payload for Stuff.LoadTyped.
 type StuffLoadMatch struct {
 }
 
@@ -30,8 +28,7 @@ type StuffLoadMatch struct {
 type V2018 struct {
 }
 
-// V2018LoadMatch mirrors the v2018 fields as an all-optional match
-// filter (Go analog of Partial<V2018>).
+// V2018LoadMatch is the typed request payload for V2018.LoadTyped.
 type V2018LoadMatch struct {
 }
 

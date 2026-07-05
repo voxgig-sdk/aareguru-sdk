@@ -12,7 +12,7 @@
 class Legacy
 end
 
-# Match filter for Legacy#load (any subset of Legacy fields).
+# Request payload for Legacy#load.
 class LegacyLoadMatch
 end
 
@@ -20,7 +20,7 @@ end
 class Stuff
 end
 
-# Match filter for Stuff#load (any subset of Stuff fields).
+# Request payload for Stuff#load.
 class StuffLoadMatch
 end
 
@@ -28,7 +28,7 @@ end
 class V2018
 end
 
-# Match filter for V2018#load (any subset of V2018 fields).
+# Request payload for V2018#load.
 class V2018LoadMatch
 end
 

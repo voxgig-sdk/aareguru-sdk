@@ -101,7 +101,7 @@ local legacy = client:Legacy(nil)
 Load a single entity matching the given criteria.
 
 ```lua
-local result, err = client:Legacy():load({ id = "legacy_id" })
+local result, err = client:Legacy():load()
 ```
 
 ### Common Methods
@@ -147,7 +147,7 @@ local stuff = client:Stuff(nil)
 Load a single entity matching the given criteria.
 
 ```lua
-local result, err = client:Stuff():load({ id = "stuff_id" })
+local result, err = client:Stuff():load()
 ```
 
 ### Common Methods
@@ -193,7 +193,7 @@ local v2018 = client:V2018(nil)
 Load a single entity matching the given criteria.
 
 ```lua
-local result, err = client:V2018():load({ id = "v2018_id" })
+local result, err = client:V2018():load()
 ```
 
 ### Common Methods

@@ -8,15 +8,18 @@
 export interface Legacy {
 }
 
-export type LegacyLoadMatch = Partial<Legacy>
+export interface LegacyLoadMatch {
+}
 
 export interface Stuff {
 }
 
-export type StuffLoadMatch = Partial<Stuff>
+export interface StuffLoadMatch {
+}
 
 export interface V2018 {
 }
 
-export type V2018LoadMatch = Partial<V2018>
+export interface V2018LoadMatch {
+}
 

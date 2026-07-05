@@ -8,7 +8,7 @@ Complete API reference for the Aareguru Ruby SDK.
 ### Constructor
 
 ```ruby
-require_relative 'aareguru_sdk'
+require_relative 'Aareguru_sdk'
 
 client = AareguruSDK.new(options)
 ```
@@ -104,7 +104,7 @@ legacy = client.Legacy
 Load a single entity matching the given criteria. Raises on error.
 
 ```ruby
-result = client.Legacy.load({ "id" => "legacy_id" })
+result = client.Legacy.load()
 ```
 
 ### Common Methods
@@ -150,7 +150,7 @@ stuff = client.Stuff
 Load a single entity matching the given criteria. Raises on error.
 
 ```ruby
-result = client.Stuff.load({ "id" => "stuff_id" })
+result = client.Stuff.load()
 ```
 
 ### Common Methods
@@ -196,7 +196,7 @@ v2018 = client.V2018
 Load a single entity matching the given criteria. Raises on error.
 
 ```ruby
-result = client.V2018.load({ "id" => "v2018_id" })
+result = client.V2018.load()
 ```
 
 ### Common Methods

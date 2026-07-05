@@ -221,19 +221,19 @@ class AareguruSDK:
 
 
     def Legacy(self, data=None) -> "LegacyEntity":
-        """Entity factory: client.Legacy().list({}) / client.Legacy().load({"id": ...})."""
+        """Entity factory: client.Legacy().list() / client.Legacy().load({"id": ...})."""
         from entity.legacy_entity import LegacyEntity
         return LegacyEntity(self, data)
 
 
     def Stuff(self, data=None) -> "StuffEntity":
-        """Entity factory: client.Stuff().list({}) / client.Stuff().load({"id": ...})."""
+        """Entity factory: client.Stuff().list() / client.Stuff().load({"id": ...})."""
         from entity.stuff_entity import StuffEntity
         return StuffEntity(self, data)
 
 
     def V2018(self, data=None) -> "V2018Entity":
-        """Entity factory: client.V2018().list({}) / client.V2018().load({"id": ...})."""
+        """Entity factory: client.V2018().list() / client.V2018().load({"id": ...})."""
         from entity.v2018_entity import V2018Entity
         return V2018Entity(self, data)
 

@@ -17,7 +17,7 @@ class Legacy
 {
 }
 
-/** Match filter for Legacy#load (any subset of Legacy fields). */
+/** Request payload for Legacy#load. */
 class LegacyLoadMatch
 {
 }
@@ -27,7 +27,7 @@ class Stuff
 {
 }
 
-/** Match filter for Stuff#load (any subset of Stuff fields). */
+/** Request payload for Stuff#load. */
 class StuffLoadMatch
 {
 }
@@ -37,7 +37,7 @@ class V2018
 {
 }
 
-/** Match filter for V2018#load (any subset of V2018 fields). */
+/** Request payload for V2018#load. */
 class V2018LoadMatch
 {
 }

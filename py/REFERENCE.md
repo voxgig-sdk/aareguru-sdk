@@ -98,7 +98,7 @@ legacy = client.Legacy()
 Load a single entity matching the given criteria. Returns the entity data and raises on error.
 
 ```python
-result = client.Legacy().load({"id": "legacy_id"})
+result = client.Legacy().load()
 ```
 
 ### Common Methods
@@ -143,7 +143,7 @@ stuff = client.Stuff()
 Load a single entity matching the given criteria. Returns the entity data and raises on error.
 
 ```python
-result = client.Stuff().load({"id": "stuff_id"})
+result = client.Stuff().load()
 ```
 
 ### Common Methods
@@ -188,7 +188,7 @@ v2018 = client.V2018()
 Load a single entity matching the given criteria. Returns the entity data and raises on error.
 
 ```python
-result = client.V2018().load({"id": "v2018_id"})
+result = client.V2018().load()
 ```
 
 ### Common Methods

@@ -143,7 +143,7 @@ const legacy = client.Legacy()
 Load a single entity matching the given criteria.
 
 ```ts
-const result = await client.Legacy().load({ id: 'legacy_id' })
+const result = await client.Legacy().load()
 ```
 
 ### Common Methods
@@ -187,7 +187,7 @@ const stuff = client.Stuff()
 Load a single entity matching the given criteria.
 
 ```ts
-const result = await client.Stuff().load({ id: 'stuff_id' })
+const result = await client.Stuff().load()
 ```
 
 ### Common Methods
@@ -231,7 +231,7 @@ const v2018 = client.V2018()
 Load a single entity matching the given criteria.
 
 ```ts
-const result = await client.V2018().load({ id: 'v2018_id' })
+const result = await client.V2018().load()
 ```
 
 ### Common Methods
