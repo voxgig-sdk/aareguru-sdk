@@ -1,6 +1,6 @@
 # Aareguru PHP SDK
 
-
+Real-time water temperature, weather, and flow data for the Aare River in Switzerland.
 
 The PHP SDK for the Aareguru API — an entity-oriented client using PHP conventions.
 

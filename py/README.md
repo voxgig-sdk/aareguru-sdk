@@ -1,6 +1,6 @@
 # Aareguru Python SDK
 
-
+Real-time water temperature, weather, and flow data for the Aare River in Switzerland.
 
 The Python SDK for the Aareguru API — an entity-oriented client following Pythonic conventions.
 
