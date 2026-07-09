@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "voxgig-sdk-aareguru"
-version = "0.0.1"
+version = "0.1.6"
 description = "Unofficial generated Python SDK for the Aare.guru public API. Not affiliated with or endorsed by the upstream API provider."
 readme = "README.md"
 license = "MIT"

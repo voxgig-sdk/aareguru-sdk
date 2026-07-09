@@ -83,7 +83,7 @@ const Root = cmp(function Root(props: any) {
 
       Folder({ name: target.name }, () => {
 
-        // Per-generation-phase activation. A target's jsonic carries
+        // Per-generation-phase activation. A target's aontu model carries
         // a `phase` map mirroring the feature pattern:
         //
         //   phase: {

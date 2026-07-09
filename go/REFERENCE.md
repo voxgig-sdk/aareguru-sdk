@@ -99,6 +99,7 @@ same parameters as `Direct()`.
 
 ```go
 legacy := client.Legacy(nil)
+fmt.Println(legacy.GetName()) // "legacy"
 ```
 
 ### Operations
@@ -109,6 +110,10 @@ Load a single entity matching the given criteria.
 
 ```go
 result, err := client.Legacy(nil).Load(nil, nil)
+if err != nil {
+    panic(err)
+}
+fmt.Println(result)
 ```
 
 ### Common Methods
@@ -139,6 +144,7 @@ Return the entity name.
 
 ```go
 stuff := client.Stuff(nil)
+fmt.Println(stuff.GetName()) // "stuff"
 ```
 
 ### Operations
@@ -149,6 +155,10 @@ Load a single entity matching the given criteria.
 
 ```go
 result, err := client.Stuff(nil).Load(nil, nil)
+if err != nil {
+    panic(err)
+}
+fmt.Println(result)
 ```
 
 ### Common Methods
@@ -179,6 +189,7 @@ Return the entity name.
 
 ```go
 v2018 := client.V2018(nil)
+fmt.Println(v2018.GetName()) // "v2018"
 ```
 
 ### Operations
@@ -189,6 +200,10 @@ Load a single entity matching the given criteria.
 
 ```go
 result, err := client.V2018(nil).Load(nil, nil)
+if err != nil {
+    panic(err)
+}
+fmt.Println(result)
 ```
 
 ### Common Methods
