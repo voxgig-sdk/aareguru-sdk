@@ -1,4 +1,4 @@
--- ProjectName SDK exists test
+-- Aareguru SDK exists test
 
 local sdk = require("aareguru_sdk")
 
