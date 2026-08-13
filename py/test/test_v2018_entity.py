@@ -6,9 +6,9 @@ import time
 
 import pytest
 
-from utility.voxgig_struct import voxgig_struct as vs
+from aareguru_sdk.utility.voxgig_struct import voxgig_struct as vs
 from aareguru_sdk import AareguruSDK
-from core import helpers
+from aareguru_sdk.core import helpers
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 from test import runner
@@ -36,7 +36,7 @@ class TestV2018Entity:
         # without an *_ENTID env override, those IDs hit the live API and 4xx.
         if setup.get("synthetic_only"):
             pytest.skip("live entity test uses synthetic IDs from fixture — "
-                        "set AAREGURU_TEST_V_____ENTID JSON to run live")
+                        "set AAREGURU_TEST_V2018_ENTID JSON to run live")
         client = setup["client"]
 
         # Bootstrap entity data from existing test data.
@@ -83,17 +83,17 @@ def _v2018_basic_setup(extra):
     # mode is on without a real override, the basic test runs against synthetic
     # IDs from the fixture and 4xx's. We surface this so the test can skip.
     _entid_env_raw = os.environ.get(
-        "AAREGURU_TEST_V_____ENTID")
+        "AAREGURU_TEST_V2018_ENTID")
     _idmap_overridden = _entid_env_raw is not None and _entid_env_raw.strip().startswith("{")
 
     env = runner.env_override({
-        "AAREGURU_TEST_V_____ENTID": idmap,
+        "AAREGURU_TEST_V2018_ENTID": idmap,
         "AAREGURU_TEST_LIVE": "FALSE",
         "AAREGURU_TEST_EXPLAIN": "FALSE",
     })
 
     idmap_resolved = helpers.to_map(
-        env.get("AAREGURU_TEST_V_____ENTID"))
+        env.get("AAREGURU_TEST_V2018_ENTID"))
     if idmap_resolved is None:
         idmap_resolved = helpers.to_map(idmap)
 

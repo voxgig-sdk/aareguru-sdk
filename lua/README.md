@@ -1,6 +1,6 @@
 # Aareguru Lua SDK
 
-Real-time water temperature, weather, and flow data for the Aare River in Switzerland.
+
 
 The Lua SDK for the Aareguru API — an entity-oriented client using Lua conventions.
 
@@ -48,7 +48,7 @@ Entity operations return `(value, err)`. Check `err` before using
 the value:
 
 ```lua
-local legacy, err = client:Legacy():load()
+local stuff, err = client:Stuff():load()
 if err then error(err) end
 ```
 
@@ -106,7 +106,7 @@ Create a mock client for unit testing — no server required:
 ```lua
 local client = sdk.test()
 
-local result, err = client:Legacy():load()
+local result, err = client:Stuff():load()
 -- result is the returned data; err is set on failure
 ```
 
@@ -382,11 +382,11 @@ Entity instances are stateful. After a successful `load`, the entity
 stores the returned data and match criteria internally.
 
 ```lua
-local legacy = client:Legacy()
-legacy:load()
+local stuff = client:Stuff()
+stuff:load()
 
--- legacy:data_get() now returns the legacy data from the last load
--- legacy:match_get() returns the last match criteria
+-- stuff:data_get() now returns the stuff data from the last load
+-- stuff:match_get() returns the last match criteria
 ```
 
 Call `make()` to create a fresh instance with the same configuration

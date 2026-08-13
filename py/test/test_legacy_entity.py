@@ -6,9 +6,9 @@ import time
 
 import pytest
 
-from utility.voxgig_struct import voxgig_struct as vs
+from aareguru_sdk.utility.voxgig_struct import voxgig_struct as vs
 from aareguru_sdk import AareguruSDK
-from core import helpers
+from aareguru_sdk.core import helpers
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 from test import runner

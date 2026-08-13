@@ -3,9 +3,9 @@
 import json
 import pytest
 
-from utility.voxgig_struct import voxgig_struct as vs
+from aareguru_sdk.utility.voxgig_struct import voxgig_struct as vs
 from aareguru_sdk import AareguruSDK
-from core import helpers
+from aareguru_sdk.core import helpers
 from test import runner
 
 
@@ -63,7 +63,7 @@ def _v2018_direct_setup(mockres):
     calls = []
 
     env = runner.env_override({
-        "AAREGURU_TEST_V_____ENTID": {},
+        "AAREGURU_TEST_V2018_ENTID": {},
         "AAREGURU_TEST_LIVE": "FALSE",
     })
 

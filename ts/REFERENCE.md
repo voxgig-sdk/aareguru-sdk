@@ -224,6 +224,30 @@ Return a copy of the entity options.
 const v2018 = client.V2018()
 ```
 
+### Actions
+
+This entity exposes custom API actions in addition to the standard
+operations. Select one with `$action` in the call's argument; the
+remaining keys are sent as that action's payload.
+
+| Action | Route | Call |
+| --- | --- | --- |
+| `city` | `/v2018/cities` | `client.V2018().load({ $action: 'city', ... })` |
+| `current` | `/v2018/current` | `client.V2018().load({ $action: 'current', ... })` |
+| `history` | `/v2018/history` | `client.V2018().load({ $action: 'history', ... })` |
+| `today` | `/v2018/today` | `client.V2018().load({ $action: 'today', ... })` |
+| `widget` | `/v2018/widget` | `client.V2018().load({ $action: 'widget', ... })` |
+
+An action returns that action's OWN response, which is not necessarily a
+V2018 record — check the API definition for its shape.
+
+```ts
+const result = await client.V2018().load({
+  $action: 'city',
+  /* ...the action's own arguments */
+})
+```
+
 ### Operations
 
 #### `load(match: object, ctrl?: object)`

@@ -24,6 +24,7 @@ require_relative 'prepare_method'
 require_relative 'prepare_params'
 require_relative 'prepare_path'
 require_relative 'prepare_query'
+require_relative 'graphql'
 require_relative 'result_basic'
 require_relative 'result_body'
 require_relative 'result_headers'
@@ -55,6 +56,8 @@ AareguruUtility.registrar = ->(u) {
   u.prepare_params = AareguruUtilities::PrepareParams
   u.prepare_path = AareguruUtilities::PreparePath
   u.prepare_query = AareguruUtilities::PrepareQuery
+  u.graphql_body = AareguruUtilities::GraphqlBody
+  u.graphql_errors = AareguruUtilities::GraphqlErrors
   u.result_basic = AareguruUtilities::ResultBasic
   u.result_body = AareguruUtilities::ResultBody
   u.result_headers = AareguruUtilities::ResultHeaders

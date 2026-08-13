@@ -1,4 +1,4 @@
-# ProjectName SDK exists test
+# Aareguru SDK exists test
 
 import pytest
 from aareguru_sdk import AareguruSDK

@@ -1,6 +1,6 @@
 # Aareguru Golang SDK
 
-Real-time water temperature, weather, and flow data for the Aare River in Switzerland.
+
 
 The Golang SDK for the Aareguru API — an entity-oriented client using standard Go conventions. No generics required; data flows as `map[string]any`.
 
@@ -66,12 +66,12 @@ Every entity operation returns `(value, error)`. Check `err` before
 using the value — there is no exception to catch:
 
 ```go
-legacy, err := client.Legacy(nil).Load(nil, nil)
+stuff, err := client.Stuff(nil).Load(nil, nil)
 if err != nil {
     // handle err
     return
 }
-_ = legacy
+_ = stuff
 ```
 
 `Direct` follows the same `(value, error)` convention:
@@ -135,13 +135,13 @@ Create a mock client for unit testing — no server required:
 ```go
 client := sdk.Test()
 
-legacy, err := client.Legacy(nil).Load(
+stuff, err := client.Stuff(nil).Load(
     nil, nil,
 )
 if err != nil {
     panic(err)
 }
-fmt.Println(legacy) // the returned mock data
+fmt.Println(stuff) // the returned mock data
 ```
 
 ### Use a custom fetch function
@@ -424,11 +424,11 @@ Entity instances are stateful. After a successful `Load`, the entity
 stores the returned data and match criteria internally.
 
 ```go
-legacy := client.Legacy(nil)
-legacy.Load(nil, nil)
+stuff := client.Stuff(nil)
+stuff.Load(nil, nil)
 
-// legacy.Data() now returns the legacy data from the last load
-// legacy.Match() returns the last match criteria
+// stuff.Data() now returns the stuff data from the last load
+// stuff.Match() returns the last match criteria
 ```
 
 Call `Make()` to create a fresh instance with the same configuration

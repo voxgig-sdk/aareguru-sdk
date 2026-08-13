@@ -1,6 +1,6 @@
 # Aareguru TypeScript SDK
 
-Real-time water temperature, weather, and flow data for the Aare River in Switzerland.
+
 
 The TypeScript SDK for the Aareguru API — a type-safe, entity-oriented client with full async/await support.
 
@@ -53,8 +53,8 @@ Entity operations reject on failure, so wrap them in `try` / `catch`:
 
 ```ts
 try {
-  const legacy = await client.Legacy().load()
-  console.log(legacy)
+  const stuff = await client.Stuff().load()
+  console.log(stuff)
 } catch (err) {
   console.error('load failed:', err)
 }
@@ -120,9 +120,10 @@ Create a mock client for unit testing — no server required:
 ```ts
 const client = AareguruSDK.test()
 
-const legacy = await client.Legacy().load()
-// legacy is a bare entity populated with mock response data
-console.log(legacy)
+const stuff = await client.Stuff().load()
+// stuff is the entity, populated with mock response data
+// — call stuff.data() for the record itself
+console.log(stuff)
 ```
 
 You can also use the instance method:
@@ -137,7 +138,7 @@ const testClient = client.tester()
 Entity instances remember their last match and data:
 
 ```ts
-const entity = client.Legacy()
+const entity = client.Stuff()
 
 // First call runs the operation and stores its result
 await entity.load()
@@ -434,11 +435,11 @@ stores the returned data and match criteria internally. Subsequent
 calls on the same instance can rely on this state.
 
 ```ts
-const legacy = client.Legacy()
-await legacy.load()
+const stuff = client.Stuff()
+await stuff.load()
 
-// legacy.data() now returns the legacy data from the last `load`
-// legacy.match() returns the last match criteria
+// stuff.data() now returns the stuff data from the last `load`
+// stuff.match() returns the last match criteria
 ```
 
 Call `make()` to create a fresh instance with the same configuration

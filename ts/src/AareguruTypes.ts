@@ -21,5 +21,11 @@ export interface V2018 {
 }
 
 export interface V2018LoadMatch {
+
+  // Selects a custom action instead of the plain load:
+  //   'city' | 'current' | 'history' | 'today' | 'widget'
+  // The remaining keys are that action's own payload.
+  $action?: string
+  [action: string]: any
 }
 

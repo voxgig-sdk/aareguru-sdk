@@ -5,6 +5,10 @@
       "desc": ""
     },
     "kit": {
+      "author": {
+        "name": "",
+        "url": ""
+      },
       "config": {
         "docs_order": [
           "ts",
@@ -18,6 +22,7 @@
           "content-type": "application/json"
         }
       },
+      "contributor": {},
       "entity": {
         "legacy": {
           "active": true,
@@ -55,6 +60,7 @@
                       }
                     ]
                   },
+                  "kind": "http",
                   "method": "GET",
                   "orig": "/current",
                   "parts": [
@@ -95,6 +101,7 @@
                       }
                     ]
                   },
+                  "kind": "http",
                   "method": "GET",
                   "orig": "/currentV2",
                   "parts": [
@@ -135,6 +142,7 @@
                       }
                     ]
                   },
+                  "kind": "http",
                   "method": "GET",
                   "orig": "/today",
                   "parts": [
@@ -212,6 +220,7 @@
                       }
                     ]
                   },
+                  "kind": "http",
                   "method": "GET",
                   "orig": "/logs",
                   "parts": [
@@ -263,6 +272,7 @@
                       }
                     ]
                   },
+                  "kind": "http",
                   "method": "GET",
                   "orig": "/rawdata",
                   "parts": [
@@ -283,6 +293,7 @@
                 {
                   "active": true,
                   "args": {},
+                  "kind": "http",
                   "method": "GET",
                   "orig": "/slack",
                   "parts": [
@@ -373,6 +384,7 @@
                       }
                     ]
                   },
+                  "kind": "http",
                   "method": "GET",
                   "orig": "/v2018/history",
                   "parts": [
@@ -437,6 +449,7 @@
                       }
                     ]
                   },
+                  "kind": "http",
                   "method": "GET",
                   "orig": "/v2018/current",
                   "parts": [
@@ -499,6 +512,7 @@
                       }
                     ]
                   },
+                  "kind": "http",
                   "method": "GET",
                   "orig": "/v2018/today",
                   "parts": [
@@ -552,6 +566,7 @@
                       }
                     ]
                   },
+                  "kind": "http",
                   "method": "GET",
                   "orig": "/v2018/cities",
                   "parts": [
@@ -604,6 +619,7 @@
                       }
                     ]
                   },
+                  "kind": "http",
                   "method": "GET",
                   "orig": "/v2018/widget",
                   "parts": [
@@ -817,18 +833,13 @@
         }
       },
       "info": {
-        "about_md": "\n[Aare.guru](https://aare.guru) is a community-run service that publishes\nlive measurements for the [Aare](https://en.wikipedia.org/wiki/Aare) —\nSwitzerland's longest river entirely within the country, and the river\nmany Bernese swim in on a summer afternoon. The API answers the\npractical question *\"how warm is the Aare today, and is it safe to\nswim?\"* and exposes the raw data behind it.\n\n**What you get from the API**\n\n- Current water **temperature** (°C, rounded and unrounded variants)\n- **Flow** (m³/s) and a 1-5 **danger level** (`flow_gefahrenstufe`)\n- River **height** (m above sea level)\n- Air temperature, precipitation, sunshine and forecast **weather symbols**\n- Plain-text descriptions (`text`, `temperature_text`) suitable for UIs\n- Per-city queries for Bern, Olten, Thun, and other Aare locations\n\n**Data sources** — BAFU (Swiss Federal Office of Environment) for national\nAare measurements, [TemperAare](https://temperaare.ch) for Olten, MeteoSchweiz\nSwissMetNet for weather observations, and Meteotest for the forecast.\n\n**Operational notes** — data updates every ~10 minutes (with 10-20 min\ndelay); polling every 5 minutes is plenty. Responses are cached for 2\nminutes. CORS is wide-open (`*`) and JSONP is supported via a\n`callback` query parameter. *\"Every value could be null at any time —\ndefensive programming always pays off.\"*\n",
         "auth": false,
-        "description": "Public data API behind aare.guru. Calls should include free-form `app` and `version` query parameters (e.g. `...v2018/current?app=app.identifier.meine.app&version=1.42`). The API is public for non-commercial use. See the upstream documentation for parameter details. JSONP supported via the `callback` parameter; CORS is open.",
-        "docs_url": "https://aareguru.existenz.ch",
-        "entity_desc": {
-          "legacy": "Legacy single-location endpoints (`/current`, `/today`, `/currentV2`) — returns current Aare water and weather data without a city parameter. Kept for backwards compatibility; new code should prefer `v2018`.",
-          "stuff": "Operational data: request logs (`/logs`), Slack feed (`/slack`), and raw upstream measurements (`/rawdata`).",
-          "v2018": "The current data API. Per-city queries for current conditions, today's forecast, history, and the embeddable widget (`/v2018/current`, `/v2018/today`, `/v2018/history`, `/v2018/cities`, `/v2018/widget`)."
+        "contact": {
+          "email": "aaregurus@existenz.ch",
+          "name": "Aaregurus",
+          "url": "https://aare.guru/aare-info"
         },
-        "homepage": "https://aare.guru",
-        "license_md": "\n**Free for non-commercial use.** If you build something with this API:\n\n- link back to [https://aare.guru](https://aare.guru) and the Swiss Federal\n  Office of Environment ([BAFU](https://www.bafu.admin.ch))\n- credit the upstream data sources where you display the data\n- see the upstream site for any updated terms\n",
-        "license_short": "Free for non-commercial use, with attribution.",
+        "description": "Dienschte hinger aare.guru<p>Bei Requests auf die API bitte frei wählbare <code>app</code> und <code>version</code> mitgeben. Z.B.: <code>...v2018/current?app=app.identifier.meine.app&version=1.42</code>.<p>Diese API ist öffentlich und darf für nicht-kommerzielle Zwecke frei benutzt werden. Sag uns bitte auf <a href='mailto:aaregurus@existenz.ch'>aaregurus@existenz.ch</a> Bescheid wenn du das machst. Und setz einen Link zurück auf https://aare.guru.<p>Danke.<p>Die Erläuterung der Parameter innerhalb des Services findest du auf der <a href='https://aareguru.existenz.ch#parameter'>Aare.guru-API-Startseite.</a><p>JSONP erlaubt via callback-Parameter. CORS-Header auf <code>*</code> gesetzt.<p>Mit viel Liebe, Christian Studer (<a href='https://bureau.existenz.ch'>Bureau für digitale Existenz</a>)",
         "meta_source": "https://www.freepublicapis.com",
         "servers": [
           {
@@ -840,24 +851,47 @@
             "url": "https://aareguru-test.existenz.ch"
           }
         ],
-        "status_url": "https://status.existenz.ch",
-        "tagline": "Real-time water temperature, weather, and flow data for the Aare River in Switzerland.",
+        "summary": "Dienschte hinger aare.guru<p>Bei Requests auf die API bitte frei wählbare <code>app</code> und <code>version</code> mitgeben.",
         "title": "Aare.guru API",
-        "version": "2018"
+        "version": "2018",
+        "website": "https://aareguru.existenz.ch"
       },
       "option": {},
+      "repo": {
+        "host": "github.com",
+        "path": ""
+      },
       "target": {
         "go": {
           "active": true,
+          "author": {
+            "name": "",
+            "url": ""
+          },
           "comment": {
             "line": "//"
           },
           "deps": {},
           "ext": "go",
+          "feature": {
+            "fullset": [
+              "test/feature_test.go"
+            ],
+            "trim": true
+          },
           "module": {
-            "name": "aareguru"
+            "goversion": "",
+            "name": "aareguru",
+            "package": "",
+            "path": ""
           },
           "name": "go",
+          "output": {
+            "adopt": false,
+            "path": "",
+            "repo": "",
+            "sdkrel": ""
+          },
           "publish": {
             "registry": {
               "active": false,
@@ -879,22 +913,40 @@
                 "recipe": "github"
               },
               "via": "port"
-            }
+            },
+            "version": "0.0.1"
           },
           "srcfeature": false,
           "title": "Golang"
         },
         "go-cli": {
           "active": true,
+          "author": {
+            "name": "",
+            "url": ""
+          },
           "comment": {
             "line": "//"
           },
           "deps": {},
           "ext": "go",
+          "feature": {
+            "fullset": [],
+            "trim": true
+          },
           "module": {
-            "name": "aareguru"
+            "goversion": "",
+            "name": "aareguru",
+            "package": "",
+            "path": ""
           },
           "name": "go-cli",
+          "output": {
+            "adopt": false,
+            "path": "",
+            "repo": "",
+            "sdkrel": ""
+          },
           "phase": {
             "agentguide": {
               "active": false
@@ -933,21 +985,39 @@
                 "recipe": "github"
               },
               "via": "root"
-            }
+            },
+            "version": "0.0.1"
           },
           "title": "Go CLI"
         },
         "go-mcp": {
           "active": true,
+          "author": {
+            "name": "",
+            "url": ""
+          },
           "comment": {
             "line": "//"
           },
           "deps": {},
           "ext": "go",
+          "feature": {
+            "fullset": [],
+            "trim": true
+          },
           "module": {
-            "name": "aareguru"
+            "goversion": "",
+            "name": "aareguru",
+            "package": "",
+            "path": ""
           },
           "name": "go-mcp",
+          "output": {
+            "adopt": false,
+            "path": "",
+            "repo": "",
+            "sdkrel": ""
+          },
           "phase": {
             "agentguide": {
               "active": false
@@ -986,12 +1056,17 @@
                 "recipe": "github"
               },
               "via": "root"
-            }
+            },
+            "version": "0.0.1"
           },
           "title": "Go MCP server"
         },
         "lua": {
           "active": true,
+          "author": {
+            "name": "",
+            "url": ""
+          },
           "comment": {
             "line": "--"
           },
@@ -1003,10 +1078,23 @@
             }
           },
           "ext": "lua",
+          "feature": {
+            "fullset": [],
+            "trim": true
+          },
           "module": {
-            "name": "aareguru"
+            "goversion": "",
+            "name": "aareguru",
+            "package": "",
+            "path": ""
           },
           "name": "lua",
+          "output": {
+            "adopt": false,
+            "path": "",
+            "repo": "",
+            "sdkrel": ""
+          },
           "publish": {
             "registry": {
               "active": false,
@@ -1028,22 +1116,40 @@
                 "recipe": "github"
               },
               "via": "port"
-            }
+            },
+            "version": "0.0.1"
           },
           "srcfeature": false,
           "title": "Lua"
         },
         "php": {
           "active": true,
+          "author": {
+            "name": "",
+            "url": ""
+          },
           "comment": {
             "line": "//"
           },
           "deps": {},
           "ext": "php",
+          "feature": {
+            "fullset": [],
+            "trim": true
+          },
           "module": {
-            "name": "aareguru"
+            "goversion": "",
+            "name": "aareguru",
+            "package": "",
+            "path": ""
           },
           "name": "php",
+          "output": {
+            "adopt": false,
+            "path": "",
+            "repo": "",
+            "sdkrel": ""
+          },
           "publish": {
             "registry": {
               "active": false,
@@ -1065,13 +1171,18 @@
                 "recipe": "github"
               },
               "via": "port"
-            }
+            },
+            "version": "0.0.1"
           },
           "srcfeature": false,
           "title": "PHP"
         },
         "py": {
           "active": true,
+          "author": {
+            "name": "",
+            "url": ""
+          },
           "comment": {
             "line": "#"
           },
@@ -1083,10 +1194,23 @@
             }
           },
           "ext": "py",
+          "feature": {
+            "fullset": [],
+            "trim": true
+          },
           "module": {
-            "name": "aareguru"
+            "goversion": "",
+            "name": "aareguru",
+            "package": "",
+            "path": ""
           },
           "name": "py",
+          "output": {
+            "adopt": false,
+            "path": "",
+            "repo": "",
+            "sdkrel": ""
+          },
           "publish": {
             "registry": {
               "active": false,
@@ -1108,13 +1232,18 @@
                 "recipe": "github"
               },
               "via": "port"
-            }
+            },
+            "version": "0.0.1"
           },
           "srcfeature": false,
           "title": "Python"
         },
         "rb": {
           "active": true,
+          "author": {
+            "name": "",
+            "url": ""
+          },
           "comment": {
             "line": "#"
           },
@@ -1131,10 +1260,23 @@
             }
           },
           "ext": "rb",
+          "feature": {
+            "fullset": [],
+            "trim": true
+          },
           "module": {
-            "name": "aareguru"
+            "goversion": "",
+            "name": "aareguru",
+            "package": "",
+            "path": ""
           },
           "name": "rb",
+          "output": {
+            "adopt": false,
+            "path": "",
+            "repo": "",
+            "sdkrel": ""
+          },
           "publish": {
             "registry": {
               "active": false,
@@ -1156,13 +1298,18 @@
                 "recipe": "github"
               },
               "via": "port"
-            }
+            },
+            "version": "0.0.1"
           },
           "srcfeature": false,
           "title": "Ruby"
         },
         "ts": {
           "active": true,
+          "author": {
+            "name": "",
+            "url": ""
+          },
           "base": "node_modules/@voxgig/sdkgen/project/.sdk",
           "comment": {
             "line": "//"
@@ -1185,10 +1332,23 @@
             }
           },
           "ext": "ts",
+          "feature": {
+            "fullset": [],
+            "trim": true
+          },
           "module": {
-            "name": "aareguru"
+            "goversion": "",
+            "name": "aareguru",
+            "package": "",
+            "path": ""
           },
           "name": "ts",
+          "output": {
+            "adopt": false,
+            "path": "",
+            "repo": "",
+            "sdkrel": ""
+          },
           "publish": {
             "registry": {
               "active": false,
@@ -1210,9 +1370,17 @@
                 "recipe": "github"
               },
               "via": "port"
-            }
+            },
+            "version": "0.0.1"
           },
           "title": "TypeScript"
+        }
+      },
+      "test": {
+        "live": {
+          "app": false,
+          "base": "",
+          "strict": false
         }
       }
     }

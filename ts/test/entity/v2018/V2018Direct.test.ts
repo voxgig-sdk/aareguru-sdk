@@ -24,6 +24,10 @@ describe('V2018Direct', async () => {
 
   test('direct-exists', async () => {
     const sdk = new AareguruSDK({
+      // Concrete base: a live construction must satisfy any server
+      // variables a templated base URL declares; overriding base with a
+      // literal (as the direct flow tests do) sidesteps the requirement.
+      base: 'http://localhost:8080',
       system: { fetch: async () => ({}) }
     })
     assert('function' === typeof sdk.direct)
@@ -78,7 +82,7 @@ function directSetup(mockres?: any) {
   const calls: any[] = []
 
   const env = envOverride({
-    'AAREGURU_TEST_V_____ENTID': {},
+    'AAREGURU_TEST_V2018_ENTID': {},
     'AAREGURU_TEST_LIVE': 'FALSE',
   })
 
@@ -88,7 +92,7 @@ function directSetup(mockres?: any) {
     const client = new AareguruSDK({
     })
 
-    let idmap: any = env['AAREGURU_TEST_V_____ENTID']
+    let idmap: any = env['AAREGURU_TEST_V2018_ENTID']
     if ('string' === typeof idmap && idmap.startsWith('{')) {
       idmap = JSON.parse(idmap)
     }

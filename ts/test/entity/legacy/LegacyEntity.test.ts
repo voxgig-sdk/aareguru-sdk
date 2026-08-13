@@ -62,7 +62,7 @@ describe('LegacyEntity', async () => {
     // LOAD
     const legacy_ref01_ent = client.Legacy()
     const legacy_ref01_match_dt0: any = {}
-    const legacy_ref01_data_dt0 = await legacy_ref01_ent.load(legacy_ref01_match_dt0)
+    const legacy_ref01_data_dt0 = (await legacy_ref01_ent.load(legacy_ref01_match_dt0)).data()
     assert(null != legacy_ref01_data_dt0)
 
 

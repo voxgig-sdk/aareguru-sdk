@@ -16,11 +16,11 @@
 import pytest
 
 from aareguru_sdk import AareguruSDK
-from core.error import AareguruError
-from core.result import AareguruResult
-from core.response import AareguruResponse
-from core.spec import AareguruSpec
-from feature.base_feature import AareguruBaseFeature
+from aareguru_sdk.core.error import AareguruError
+from aareguru_sdk.core.result import AareguruResult
+from aareguru_sdk.core.response import AareguruResponse
+from aareguru_sdk.core.spec import AareguruSpec
+from aareguru_sdk.feature.base_feature import AareguruBaseFeature
 
 
 def _client():

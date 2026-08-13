@@ -1,6 +1,6 @@
 # Aareguru Ruby SDK
 
-Real-time water temperature, weather, and flow data for the Aare River in Switzerland.
+
 
 The Ruby SDK for the Aareguru API — an entity-oriented client using idiomatic Ruby conventions.
 
@@ -34,7 +34,7 @@ client = AareguruSDK.new
 
 ```ruby
 begin
-  # load returns the bare Legacy record (raises on error).
+  # load returns the ENTITY — call data_get for the Legacy record (raises on error).
   legacy = client.Legacy.load()
   puts legacy
 rescue => err
@@ -49,7 +49,7 @@ Entity operations raise on failure, so rescue them:
 
 ```ruby
 begin
-  legacy = client.Legacy.load()
+  stuff = client.Stuff.load()
 rescue => err
   warn "load failed: #{err}"
 end
@@ -117,9 +117,10 @@ Create a mock client for unit testing — no server required:
 ```ruby
 client = AareguruSDK.test
 
-# Entity ops return the bare mock record (raises on error).
-legacy = client.Legacy.load()
-puts legacy
+# Entity ops return the ENTITY (raises on error);
+# call data_get for the mock record.
+stuff = client.Stuff.load()
+puts stuff
 ```
 
 ### Use a custom fetch function
@@ -277,7 +278,7 @@ Create an instance: `legacy = client.Legacy`
 #### Example: Load
 
 ```ruby
-# load returns the bare Legacy record (raises on error).
+# load returns the ENTITY — call data_get for the Legacy record (raises on error).
 legacy = client.Legacy.load()
 ```
 
@@ -295,7 +296,7 @@ Create an instance: `stuff = client.Stuff`
 #### Example: Load
 
 ```ruby
-# load returns the bare Stuff record (raises on error).
+# load returns the ENTITY — call data_get for the Stuff record (raises on error).
 stuff = client.Stuff.load()
 ```
 
@@ -313,7 +314,7 @@ Create an instance: `v2018 = client.V2018`
 #### Example: Load
 
 ```ruby
-# load returns the bare V2018 record (raises on error).
+# load returns the ENTITY — call data_get for the V2018 record (raises on error).
 v2018 = client.V2018.load()
 ```
 
@@ -394,11 +395,11 @@ Entity instances are stateful. After a successful `load`, the entity
 stores the returned data and match criteria internally.
 
 ```ruby
-legacy = client.Legacy
-legacy.load()
+stuff = client.Stuff
+stuff.load()
 
-# legacy.data_get now returns the legacy data from the last load
-# legacy.match_get returns the last match criteria
+# stuff.data_get now returns the stuff data from the last load
+# stuff.match_get returns the last match criteria
 ```
 
 Call `make` to create a fresh instance with the same configuration

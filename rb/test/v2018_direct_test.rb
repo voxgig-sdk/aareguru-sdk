@@ -67,7 +67,7 @@ def v2018_direct_setup(mockres)
   calls = []
 
   env = Runner.env_override({
-    "AAREGURU_TEST_V_____ENTID" => {},
+    "AAREGURU_TEST_V2018_ENTID" => {},
     "AAREGURU_TEST_LIVE" => "FALSE",
   })
 

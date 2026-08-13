@@ -1,6 +1,6 @@
 # Aareguru PHP SDK
 
-Real-time water temperature, weather, and flow data for the Aare River in Switzerland.
+
 
 The PHP SDK for the Aareguru API — an entity-oriented client using PHP conventions.
 
@@ -35,7 +35,7 @@ $client = new AareguruSDK();
 
 ```php
 try {
-    // load() returns the bare Legacy record (throws on error).
+    // load() returns the ENTITY — call data_get() for the Legacy record (throws on error).
     $legacy = $client->Legacy()->load();
     print_r($legacy);
 } catch (\Throwable $err) {
@@ -51,7 +51,7 @@ Entity operations throw a `\Throwable` on failure, so wrap them in
 
 ```php
 try {
-    $legacy = $client->Legacy()->load();
+    $stuff = $client->Stuff()->load();
 } catch (\Throwable $err) {
     echo "Error: " . $err->getMessage();
 }
@@ -123,9 +123,10 @@ Create a mock client for unit testing — no server required:
 ```php
 $client = AareguruSDK::test();
 
-// Entity ops return the bare mock record (throws on error).
-$legacy = $client->Legacy()->load();
-print_r($legacy);
+// Entity ops return the ENTITY (throws on error);
+// call data_get() for the mock record.
+$stuff = $client->Stuff()->load();
+print_r($stuff);
 ```
 
 ### Use a custom fetch function
@@ -224,7 +225,7 @@ All entities share the same interface.
 
 ### Result shape
 
-Entity operations return the bare result data (an `array` for single-entity
+Entity operations return the ENTITY (call data_get() for the record) (an `array` for single-entity
 ops, a `list` for `list`) and throw on error. Wrap calls in
 `try`/`catch` to handle failures.
 
@@ -287,7 +288,7 @@ Create an instance: `$legacy = $client->Legacy();`
 #### Example: Load
 
 ```php
-// load() returns the bare Legacy record (throws on error).
+// load() returns the ENTITY — call data_get() for the Legacy record (throws on error).
 $legacy = $client->Legacy()->load();
 ```
 
@@ -305,7 +306,7 @@ Create an instance: `$stuff = $client->Stuff();`
 #### Example: Load
 
 ```php
-// load() returns the bare Stuff record (throws on error).
+// load() returns the ENTITY — call data_get() for the Stuff record (throws on error).
 $stuff = $client->Stuff()->load();
 ```
 
@@ -323,7 +324,7 @@ Create an instance: `$v2018 = $client->V2018();`
 #### Example: Load
 
 ```php
-// load() returns the bare V2018 record (throws on error).
+// load() returns the ENTITY — call data_get() for the V2018 record (throws on error).
 $v2018 = $client->V2018()->load();
 ```
 
@@ -404,11 +405,11 @@ Entity instances are stateful. After a successful `load`, the entity
 stores the returned data and match criteria internally.
 
 ```php
-$legacy = $client->Legacy();
-$legacy->load();
+$stuff = $client->Stuff();
+$stuff->load();
 
-// $legacy->data_get() now returns the legacy data from the last load
-// $legacy->match_get() returns the last match criteria
+// $stuff->data_get() now returns the stuff data from the last load
+// $stuff->match_get() returns the last match criteria
 ```
 
 Call `make()` to create a fresh instance with the same configuration

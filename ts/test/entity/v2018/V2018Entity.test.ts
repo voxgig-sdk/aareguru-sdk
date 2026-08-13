@@ -48,7 +48,7 @@ describe('V2018Entity', async () => {
     // fixture (entity TestData.json). Those don't exist on the live API.
     // Skip live runs unless the user provided a real ENTID env override.
     if (setup.syntheticOnly) {
-      t.skip('live entity test uses synthetic IDs from fixture — set AAREGURU_TEST_V_____ENTID JSON to run live')
+      t.skip('live entity test uses synthetic IDs from fixture — set AAREGURU_TEST_V2018_ENTID JSON to run live')
       return
     }
     const client = setup.client
@@ -62,7 +62,7 @@ describe('V2018Entity', async () => {
     // LOAD
     const v2018_ref01_ent = client.V2018()
     const v2018_ref01_match_dt0: any = {}
-    const v2018_ref01_data_dt0 = await v2018_ref01_ent.load(v2018_ref01_match_dt0)
+    const v2018_ref01_data_dt0 = (await v2018_ref01_ent.load(v2018_ref01_match_dt0)).data()
     assert(null != v2018_ref01_data_dt0)
 
 
@@ -106,16 +106,16 @@ function basicSetup(extra?: any) {
   // basic flow consumes synthetic IDs from the fixture file; without an
   // override those synthetic IDs reach the live API and 4xx. Surface this
   // to the test so it can skip rather than fail.
-  const idmapEnvVal = process.env['AAREGURU_TEST_V_____ENTID']
+  const idmapEnvVal = process.env['AAREGURU_TEST_V2018_ENTID']
   const idmapOverridden = null != idmapEnvVal && idmapEnvVal.trim().startsWith('{')
 
   const env = envOverride({
-    'AAREGURU_TEST_V_____ENTID': idmap,
+    'AAREGURU_TEST_V2018_ENTID': idmap,
     'AAREGURU_TEST_LIVE': 'FALSE',
     'AAREGURU_TEST_EXPLAIN': 'FALSE',
   })
 
-  idmap = env['AAREGURU_TEST_V_____ENTID']
+  idmap = env['AAREGURU_TEST_V2018_ENTID']
 
   const live = 'TRUE' === env.AAREGURU_TEST_LIVE
 

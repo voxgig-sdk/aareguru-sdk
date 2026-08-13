@@ -26,7 +26,7 @@ class V2018EntityTest < Minitest::Test
     # The basic flow consumes synthetic IDs from the fixture. In live mode
     # without an *_ENTID env override, those IDs hit the live API and 4xx.
     if setup[:synthetic_only]
-      skip "live entity test uses synthetic IDs from fixture — set AAREGURU_TEST_V_____ENTID JSON to run live"
+      skip "live entity test uses synthetic IDs from fixture — set AAREGURU_TEST_V2018_ENTID JSON to run live"
       return
     end
     client = setup[:client]
@@ -74,17 +74,17 @@ def v2018_basic_setup(extra)
   # Detect ENTID env override before envOverride consumes it. When live
   # mode is on without a real override, the basic test runs against synthetic
   # IDs from the fixture and 4xx's. Surface this so the test can skip.
-  entid_env_raw = ENV["AAREGURU_TEST_V_____ENTID"]
+  entid_env_raw = ENV["AAREGURU_TEST_V2018_ENTID"]
   idmap_overridden = !entid_env_raw.nil? && entid_env_raw.strip.start_with?("{")
 
   env = Runner.env_override({
-    "AAREGURU_TEST_V_____ENTID" => idmap,
+    "AAREGURU_TEST_V2018_ENTID" => idmap,
     "AAREGURU_TEST_LIVE" => "FALSE",
     "AAREGURU_TEST_EXPLAIN" => "FALSE",
   })
 
   idmap_resolved = Helpers.to_map(
-    env["AAREGURU_TEST_V_____ENTID"])
+    env["AAREGURU_TEST_V2018_ENTID"])
   if idmap_resolved.nil?
     idmap_resolved = Helpers.to_map(idmap)
   end

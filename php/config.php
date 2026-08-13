@@ -62,6 +62,7 @@ class AareguruConfig
                       ],
                     ],
                   ],
+                  'kind' => 'http',
                   'method' => 'GET',
                   'orig' => '/current',
                   'parts' => [
@@ -103,6 +104,7 @@ class AareguruConfig
                       ],
                     ],
                   ],
+                  'kind' => 'http',
                   'method' => 'GET',
                   'orig' => '/currentV2',
                   'parts' => [
@@ -144,6 +146,7 @@ class AareguruConfig
                       ],
                     ],
                   ],
+                  'kind' => 'http',
                   'method' => 'GET',
                   'orig' => '/today',
                   'parts' => [
@@ -219,6 +222,7 @@ class AareguruConfig
                       ],
                     ],
                   ],
+                  'kind' => 'http',
                   'method' => 'GET',
                   'orig' => '/logs',
                   'parts' => [
@@ -271,6 +275,7 @@ class AareguruConfig
                       ],
                     ],
                   ],
+                  'kind' => 'http',
                   'method' => 'GET',
                   'orig' => '/rawdata',
                   'parts' => [
@@ -292,6 +297,7 @@ class AareguruConfig
                 [
                   'active' => true,
                   'args' => [],
+                  'kind' => 'http',
                   'method' => 'GET',
                   'orig' => '/slack',
                   'parts' => [
@@ -380,6 +386,7 @@ class AareguruConfig
                       ],
                     ],
                   ],
+                  'kind' => 'http',
                   'method' => 'GET',
                   'orig' => '/v2018/history',
                   'parts' => [
@@ -445,6 +452,7 @@ class AareguruConfig
                       ],
                     ],
                   ],
+                  'kind' => 'http',
                   'method' => 'GET',
                   'orig' => '/v2018/current',
                   'parts' => [
@@ -508,6 +516,7 @@ class AareguruConfig
                       ],
                     ],
                   ],
+                  'kind' => 'http',
                   'method' => 'GET',
                   'orig' => '/v2018/today',
                   'parts' => [
@@ -562,6 +571,7 @@ class AareguruConfig
                       ],
                     ],
                   ],
+                  'kind' => 'http',
                   'method' => 'GET',
                   'orig' => '/v2018/cities',
                   'parts' => [
@@ -615,6 +625,7 @@ class AareguruConfig
                       ],
                     ],
                   ],
+                  'kind' => 'http',
                   'method' => 'GET',
                   'orig' => '/v2018/widget',
                   'parts' => [

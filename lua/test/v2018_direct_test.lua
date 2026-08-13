@@ -68,7 +68,7 @@ function v2018_direct_setup(mockres)
   local calls = {}
 
   local env = runner.env_override({
-    ["AAREGURU_TEST_V_____ENTID"] = {},
+    ["AAREGURU_TEST_V2018_ENTID"] = {},
     ["AAREGURU_TEST_LIVE"] = "FALSE",
   })
 
