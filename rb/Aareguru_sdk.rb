@@ -28,7 +28,7 @@ class AareguruSDK
     utility = AareguruUtility.new
     @_utility = utility
 
-    config = AareguruConfig.make_config
+    config = AareguruConfig.shared_config
 
     @_rootctx = utility.make_context.call({
       "client" => self,

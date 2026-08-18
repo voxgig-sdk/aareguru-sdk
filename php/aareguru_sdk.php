@@ -40,7 +40,7 @@ class AareguruSDK
         $utility = new AareguruUtility();
         $this->_utility = $utility;
 
-        $config = AareguruConfig::make_config();
+        $config = AareguruConfig::shared_config();
 
         $this->_rootctx = ($utility->make_context)([
             "client" => $this,

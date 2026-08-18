@@ -1,6 +1,20 @@
 # Aareguru SDK configuration
 
 module AareguruConfig
+  # Return the process-wide config, built once on first use. The SDK reads
+  # the config on every request and never writes to it, so one instance is
+  # shared by every client rather than rebuilt per client.
+  #
+  # The returned hash is shared: treat it as read-only. Callers that need to
+  # mutate should use make_config, which always returns a fresh copy.
+  def self.shared_config
+    @shared_config ||= make_config
+  end
+
+
+  # Build a fresh, fully materialised config hash. Every call rebuilds the
+  # whole structure, so prefer shared_config unless you need a private copy
+  # you intend to mutate.
   def self.make_config
     {
       "main" => {
@@ -34,25 +48,20 @@ module AareguruConfig
               "name" => "load",
               "points" => [
                 {
-                  "active" => true,
                   "args" => {
                     "query" => [
                       {
-                        "active" => true,
                         "example" => "my.app.ch",
                         "kind" => "query",
                         "name" => "app",
                         "orig" => "app",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                       {
-                        "active" => true,
                         "example" => "1.0.42",
                         "kind" => "query",
                         "name" => "version",
                         "orig" => "version",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                     ],
@@ -73,28 +82,22 @@ module AareguruConfig
                     "req" => "`reqdata`",
                     "res" => "`body`",
                   },
-                  "index$" => 0,
                 },
                 {
-                  "active" => true,
                   "args" => {
                     "query" => [
                       {
-                        "active" => true,
                         "example" => "my.app.ch",
                         "kind" => "query",
                         "name" => "app",
                         "orig" => "app",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                       {
-                        "active" => true,
                         "example" => "1.0.42",
                         "kind" => "query",
                         "name" => "version",
                         "orig" => "version",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                     ],
@@ -115,28 +118,22 @@ module AareguruConfig
                     "req" => "`reqdata`",
                     "res" => "`body`",
                   },
-                  "index$" => 1,
                 },
                 {
-                  "active" => true,
                   "args" => {
                     "query" => [
                       {
-                        "active" => true,
                         "example" => "my.app.ch",
                         "kind" => "query",
                         "name" => "app",
                         "orig" => "app",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                       {
-                        "active" => true,
                         "example" => "1.0.42",
                         "kind" => "query",
                         "name" => "version",
                         "orig" => "version",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                     ],
@@ -157,10 +154,8 @@ module AareguruConfig
                     "req" => "`reqdata`",
                     "res" => "`body`",
                   },
-                  "index$" => 2,
                 },
               ],
-              "key$" => "load",
             },
           },
           "relations" => {
@@ -176,29 +171,23 @@ module AareguruConfig
               "name" => "load",
               "points" => [
                 {
-                  "active" => true,
                   "args" => {
                     "query" => [
                       {
-                        "active" => true,
                         "example" => "my.app.ch",
                         "kind" => "query",
                         "name" => "app",
                         "orig" => "app",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                       {
-                        "active" => true,
                         "example" => 12,
                         "kind" => "query",
                         "name" => "line",
                         "orig" => "line",
-                        "reqd" => false,
                         "type" => "`$INTEGER`",
                       },
                       {
-                        "active" => true,
                         "example" => "v2018_bueber",
                         "kind" => "query",
                         "name" => "service",
@@ -207,12 +196,10 @@ module AareguruConfig
                         "type" => "`$STRING`",
                       },
                       {
-                        "active" => true,
                         "example" => "1.0.42",
                         "kind" => "query",
                         "name" => "version",
                         "orig" => "version",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                     ],
@@ -235,23 +222,18 @@ module AareguruConfig
                     "req" => "`reqdata`",
                     "res" => "`body`",
                   },
-                  "index$" => 0,
                 },
                 {
-                  "active" => true,
                   "args" => {
                     "query" => [
                       {
-                        "active" => true,
                         "example" => "my.app.ch",
                         "kind" => "query",
                         "name" => "app",
                         "orig" => "app",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                       {
-                        "active" => true,
                         "example" => "v2018_bueber",
                         "kind" => "query",
                         "name" => "service",
@@ -260,12 +242,10 @@ module AareguruConfig
                         "type" => "`$STRING`",
                       },
                       {
-                        "active" => true,
                         "example" => "1.0.42",
                         "kind" => "query",
                         "name" => "version",
                         "orig" => "version",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                     ],
@@ -287,10 +267,8 @@ module AareguruConfig
                     "req" => "`reqdata`",
                     "res" => "`body`",
                   },
-                  "index$" => 1,
                 },
                 {
-                  "active" => true,
                   "args" => {},
                   "kind" => "http",
                   "method" => "GET",
@@ -303,10 +281,8 @@ module AareguruConfig
                     "req" => "`reqdata`",
                     "res" => "`body`",
                   },
-                  "index$" => 2,
                 },
               ],
-              "key$" => "load",
             },
           },
           "relations" => {
@@ -322,20 +298,16 @@ module AareguruConfig
               "name" => "load",
               "points" => [
                 {
-                  "active" => true,
                   "args" => {
                     "query" => [
                       {
-                        "active" => true,
                         "example" => "my.app.ch",
                         "kind" => "query",
                         "name" => "app",
                         "orig" => "app",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                       {
-                        "active" => true,
                         "example" => "bern",
                         "kind" => "query",
                         "name" => "city",
@@ -344,7 +316,6 @@ module AareguruConfig
                         "type" => "`$STRING`",
                       },
                       {
-                        "active" => true,
                         "example" => "2025-02-13",
                         "kind" => "query",
                         "name" => "end",
@@ -353,7 +324,6 @@ module AareguruConfig
                         "type" => "`$STRING`",
                       },
                       {
-                        "active" => true,
                         "example" => "2025-01-01",
                         "kind" => "query",
                         "name" => "start",
@@ -362,21 +332,17 @@ module AareguruConfig
                         "type" => "`$STRING`",
                       },
                       {
-                        "active" => true,
                         "example" => nil,
                         "kind" => "query",
                         "name" => "value",
                         "orig" => "value",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                       {
-                        "active" => true,
                         "example" => "1.0.42",
                         "kind" => "query",
                         "name" => "version",
                         "orig" => "version",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                     ],
@@ -403,46 +369,36 @@ module AareguruConfig
                     "req" => "`reqdata`",
                     "res" => "`body`",
                   },
-                  "index$" => 0,
                 },
                 {
-                  "active" => true,
                   "args" => {
                     "query" => [
                       {
-                        "active" => true,
                         "example" => "my.app.ch",
                         "kind" => "query",
                         "name" => "app",
                         "orig" => "app",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                       {
-                        "active" => true,
                         "example" => "bern",
                         "kind" => "query",
                         "name" => "city",
                         "orig" => "city",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                       {
-                        "active" => true,
                         "example" => nil,
                         "kind" => "query",
                         "name" => "value",
                         "orig" => "value",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                       {
-                        "active" => true,
                         "example" => "1.0.42",
                         "kind" => "query",
                         "name" => "version",
                         "orig" => "version",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                     ],
@@ -467,46 +423,36 @@ module AareguruConfig
                     "req" => "`reqdata`",
                     "res" => "`body`",
                   },
-                  "index$" => 1,
                 },
                 {
-                  "active" => true,
                   "args" => {
                     "query" => [
                       {
-                        "active" => true,
                         "example" => "my.app.ch",
                         "kind" => "query",
                         "name" => "app",
                         "orig" => "app",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                       {
-                        "active" => true,
                         "example" => "bern",
                         "kind" => "query",
                         "name" => "city",
                         "orig" => "city",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                       {
-                        "active" => true,
                         "example" => nil,
                         "kind" => "query",
                         "name" => "value",
                         "orig" => "value",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                       {
-                        "active" => true,
                         "example" => "1.0.42",
                         "kind" => "query",
                         "name" => "version",
                         "orig" => "version",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                     ],
@@ -531,37 +477,29 @@ module AareguruConfig
                     "req" => "`reqdata`",
                     "res" => "`body`",
                   },
-                  "index$" => 2,
                 },
                 {
-                  "active" => true,
                   "args" => {
                     "query" => [
                       {
-                        "active" => true,
                         "example" => "my.app.ch",
                         "kind" => "query",
                         "name" => "app",
                         "orig" => "app",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                       {
-                        "active" => true,
                         "example" => nil,
                         "kind" => "query",
                         "name" => "value",
                         "orig" => "value",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                       {
-                        "active" => true,
                         "example" => "1.0.42",
                         "kind" => "query",
                         "name" => "version",
                         "orig" => "version",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                     ],
@@ -585,37 +523,29 @@ module AareguruConfig
                     "req" => "`reqdata`",
                     "res" => "`body`",
                   },
-                  "index$" => 3,
                 },
                 {
-                  "active" => true,
                   "args" => {
                     "query" => [
                       {
-                        "active" => true,
                         "example" => "my.app.ch",
                         "kind" => "query",
                         "name" => "app",
                         "orig" => "app",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                       {
-                        "active" => true,
                         "example" => nil,
                         "kind" => "query",
                         "name" => "value",
                         "orig" => "value",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                       {
-                        "active" => true,
                         "example" => "1.0.42",
                         "kind" => "query",
                         "name" => "version",
                         "orig" => "version",
-                        "reqd" => false,
                         "type" => "`$STRING`",
                       },
                     ],
@@ -639,10 +569,8 @@ module AareguruConfig
                     "req" => "`reqdata`",
                     "res" => "`body`",
                   },
-                  "index$" => 4,
                 },
               ],
-              "key$" => "load",
             },
           },
           "relations" => {

@@ -36,7 +36,7 @@ class Config {
 
 
   options = {
-    base: 'https://aareguru.existenz.ch',
+    base: "https://aareguru.existenz.ch",
 
     headers: {
       "content-type": "application/json"
@@ -67,25 +67,20 @@ class Config {
           "name": "load",
           "points": [
             {
-              "active": true,
               "args": {
                 "query": [
                   {
-                    "active": true,
                     "example": "my.app.ch",
                     "kind": "query",
                     "name": "app",
                     "orig": "app",
-                    "reqd": false,
                     "type": "`$STRING`"
                   },
                   {
-                    "active": true,
                     "example": "1.0.42",
                     "kind": "query",
                     "name": "version",
                     "orig": "version",
-                    "reqd": false,
                     "type": "`$STRING`"
                   }
                 ]
@@ -105,29 +100,23 @@ class Config {
               "transform": {
                 "req": "`reqdata`",
                 "res": "`body`"
-              },
-              "index$": 0
+              }
             },
             {
-              "active": true,
               "args": {
                 "query": [
                   {
-                    "active": true,
                     "example": "my.app.ch",
                     "kind": "query",
                     "name": "app",
                     "orig": "app",
-                    "reqd": false,
                     "type": "`$STRING`"
                   },
                   {
-                    "active": true,
                     "example": "1.0.42",
                     "kind": "query",
                     "name": "version",
                     "orig": "version",
-                    "reqd": false,
                     "type": "`$STRING`"
                   }
                 ]
@@ -147,29 +136,23 @@ class Config {
               "transform": {
                 "req": "`reqdata`",
                 "res": "`body`"
-              },
-              "index$": 1
+              }
             },
             {
-              "active": true,
               "args": {
                 "query": [
                   {
-                    "active": true,
                     "example": "my.app.ch",
                     "kind": "query",
                     "name": "app",
                     "orig": "app",
-                    "reqd": false,
                     "type": "`$STRING`"
                   },
                   {
-                    "active": true,
                     "example": "1.0.42",
                     "kind": "query",
                     "name": "version",
                     "orig": "version",
-                    "reqd": false,
                     "type": "`$STRING`"
                   }
                 ]
@@ -189,11 +172,9 @@ class Config {
               "transform": {
                 "req": "`reqdata`",
                 "res": "`body`"
-              },
-              "index$": 2
+              }
             }
-          ],
-          "key$": "load"
+          ]
         }
       },
       "relations": {
@@ -209,29 +190,23 @@ class Config {
           "name": "load",
           "points": [
             {
-              "active": true,
               "args": {
                 "query": [
                   {
-                    "active": true,
                     "example": "my.app.ch",
                     "kind": "query",
                     "name": "app",
                     "orig": "app",
-                    "reqd": false,
                     "type": "`$STRING`"
                   },
                   {
-                    "active": true,
                     "example": 12,
                     "kind": "query",
                     "name": "line",
                     "orig": "line",
-                    "reqd": false,
                     "type": "`$INTEGER`"
                   },
                   {
-                    "active": true,
                     "example": "v2018_bueber",
                     "kind": "query",
                     "name": "service",
@@ -240,12 +215,10 @@ class Config {
                     "type": "`$STRING`"
                   },
                   {
-                    "active": true,
                     "example": "1.0.42",
                     "kind": "query",
                     "name": "version",
                     "orig": "version",
-                    "reqd": false,
                     "type": "`$STRING`"
                   }
                 ]
@@ -267,24 +240,19 @@ class Config {
               "transform": {
                 "req": "`reqdata`",
                 "res": "`body`"
-              },
-              "index$": 0
+              }
             },
             {
-              "active": true,
               "args": {
                 "query": [
                   {
-                    "active": true,
                     "example": "my.app.ch",
                     "kind": "query",
                     "name": "app",
                     "orig": "app",
-                    "reqd": false,
                     "type": "`$STRING`"
                   },
                   {
-                    "active": true,
                     "example": "v2018_bueber",
                     "kind": "query",
                     "name": "service",
@@ -293,12 +261,10 @@ class Config {
                     "type": "`$STRING`"
                   },
                   {
-                    "active": true,
                     "example": "1.0.42",
                     "kind": "query",
                     "name": "version",
                     "orig": "version",
-                    "reqd": false,
                     "type": "`$STRING`"
                   }
                 ]
@@ -319,11 +285,9 @@ class Config {
               "transform": {
                 "req": "`reqdata`",
                 "res": "`body`"
-              },
-              "index$": 1
+              }
             },
             {
-              "active": true,
               "args": {},
               "kind": "http",
               "method": "GET",
@@ -335,11 +299,9 @@ class Config {
               "transform": {
                 "req": "`reqdata`",
                 "res": "`body`"
-              },
-              "index$": 2
+              }
             }
-          ],
-          "key$": "load"
+          ]
         }
       },
       "relations": {
@@ -355,20 +317,16 @@ class Config {
           "name": "load",
           "points": [
             {
-              "active": true,
               "args": {
                 "query": [
                   {
-                    "active": true,
                     "example": "my.app.ch",
                     "kind": "query",
                     "name": "app",
                     "orig": "app",
-                    "reqd": false,
                     "type": "`$STRING`"
                   },
                   {
-                    "active": true,
                     "example": "bern",
                     "kind": "query",
                     "name": "city",
@@ -377,7 +335,6 @@ class Config {
                     "type": "`$STRING`"
                   },
                   {
-                    "active": true,
                     "example": "2025-02-13",
                     "kind": "query",
                     "name": "end",
@@ -386,7 +343,6 @@ class Config {
                     "type": "`$STRING`"
                   },
                   {
-                    "active": true,
                     "example": "2025-01-01",
                     "kind": "query",
                     "name": "start",
@@ -395,21 +351,17 @@ class Config {
                     "type": "`$STRING`"
                   },
                   {
-                    "active": true,
                     "example": null,
                     "kind": "query",
                     "name": "value",
                     "orig": "value",
-                    "reqd": false,
                     "type": "`$STRING`"
                   },
                   {
-                    "active": true,
                     "example": "1.0.42",
                     "kind": "query",
                     "name": "version",
                     "orig": "version",
-                    "reqd": false,
                     "type": "`$STRING`"
                   }
                 ]
@@ -435,47 +387,37 @@ class Config {
               "transform": {
                 "req": "`reqdata`",
                 "res": "`body`"
-              },
-              "index$": 0
+              }
             },
             {
-              "active": true,
               "args": {
                 "query": [
                   {
-                    "active": true,
                     "example": "my.app.ch",
                     "kind": "query",
                     "name": "app",
                     "orig": "app",
-                    "reqd": false,
                     "type": "`$STRING`"
                   },
                   {
-                    "active": true,
                     "example": "bern",
                     "kind": "query",
                     "name": "city",
                     "orig": "city",
-                    "reqd": false,
                     "type": "`$STRING`"
                   },
                   {
-                    "active": true,
                     "example": null,
                     "kind": "query",
                     "name": "value",
                     "orig": "value",
-                    "reqd": false,
                     "type": "`$STRING`"
                   },
                   {
-                    "active": true,
                     "example": "1.0.42",
                     "kind": "query",
                     "name": "version",
                     "orig": "version",
-                    "reqd": false,
                     "type": "`$STRING`"
                   }
                 ]
@@ -499,47 +441,37 @@ class Config {
               "transform": {
                 "req": "`reqdata`",
                 "res": "`body`"
-              },
-              "index$": 1
+              }
             },
             {
-              "active": true,
               "args": {
                 "query": [
                   {
-                    "active": true,
                     "example": "my.app.ch",
                     "kind": "query",
                     "name": "app",
                     "orig": "app",
-                    "reqd": false,
                     "type": "`$STRING`"
                   },
                   {
-                    "active": true,
                     "example": "bern",
                     "kind": "query",
                     "name": "city",
                     "orig": "city",
-                    "reqd": false,
                     "type": "`$STRING`"
                   },
                   {
-                    "active": true,
                     "example": null,
                     "kind": "query",
                     "name": "value",
                     "orig": "value",
-                    "reqd": false,
                     "type": "`$STRING`"
                   },
                   {
-                    "active": true,
                     "example": "1.0.42",
                     "kind": "query",
                     "name": "version",
                     "orig": "version",
-                    "reqd": false,
                     "type": "`$STRING`"
                   }
                 ]
@@ -563,38 +495,30 @@ class Config {
               "transform": {
                 "req": "`reqdata`",
                 "res": "`body`"
-              },
-              "index$": 2
+              }
             },
             {
-              "active": true,
               "args": {
                 "query": [
                   {
-                    "active": true,
                     "example": "my.app.ch",
                     "kind": "query",
                     "name": "app",
                     "orig": "app",
-                    "reqd": false,
                     "type": "`$STRING`"
                   },
                   {
-                    "active": true,
                     "example": null,
                     "kind": "query",
                     "name": "value",
                     "orig": "value",
-                    "reqd": false,
                     "type": "`$STRING`"
                   },
                   {
-                    "active": true,
                     "example": "1.0.42",
                     "kind": "query",
                     "name": "version",
                     "orig": "version",
-                    "reqd": false,
                     "type": "`$STRING`"
                   }
                 ]
@@ -617,38 +541,30 @@ class Config {
               "transform": {
                 "req": "`reqdata`",
                 "res": "`body`"
-              },
-              "index$": 3
+              }
             },
             {
-              "active": true,
               "args": {
                 "query": [
                   {
-                    "active": true,
                     "example": "my.app.ch",
                     "kind": "query",
                     "name": "app",
                     "orig": "app",
-                    "reqd": false,
                     "type": "`$STRING`"
                   },
                   {
-                    "active": true,
                     "example": null,
                     "kind": "query",
                     "name": "value",
                     "orig": "value",
-                    "reqd": false,
                     "type": "`$STRING`"
                   },
                   {
-                    "active": true,
                     "example": "1.0.42",
                     "kind": "query",
                     "name": "version",
                     "orig": "version",
-                    "reqd": false,
                     "type": "`$STRING`"
                   }
                 ]
@@ -671,11 +587,9 @@ class Config {
               "transform": {
                 "req": "`reqdata`",
                 "res": "`body`"
-              },
-              "index$": 4
+              }
             }
-          ],
-          "key$": "load"
+          ]
         }
       },
       "relations": {
