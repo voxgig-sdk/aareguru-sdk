@@ -33,6 +33,9 @@ class AareguruConfig
         return [
             "main" => [
                 "name" => "Aareguru",
+                "slug" => "aareguru",
+                "version" => "0.0.1",
+                "target" => "php",
             ],
             "feature" => [
                 "test" => [

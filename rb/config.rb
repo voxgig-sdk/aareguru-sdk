@@ -19,6 +19,9 @@ module AareguruConfig
     {
       "main" => {
         "name" => "Aareguru",
+        "slug" => "aareguru",
+        "version" => "0.0.1",
+        "target" => "rb",
       },
       "feature" => {
         "test" => {
