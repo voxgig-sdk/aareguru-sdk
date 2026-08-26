@@ -43,7 +43,8 @@ class StuffEntity extends AareguruEntityBase<Stuff> {
     const {
       makeContext,
       done,
-      error,
+      // The registry name is `makeError`; `error` is the local alias.
+      makeError: error,
       featureHook,
       makePoint,
       makeRequest,

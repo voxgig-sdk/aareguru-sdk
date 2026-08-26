@@ -43,7 +43,8 @@ class V2018Entity extends AareguruEntityBase<V2018> {
     const {
       makeContext,
       done,
-      error,
+      // The registry name is `makeError`; `error` is the local alias.
+      makeError: error,
       featureHook,
       makePoint,
       makeRequest,
