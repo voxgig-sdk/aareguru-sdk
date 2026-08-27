@@ -20,6 +20,8 @@ class Legacy
 /** Request payload for Legacy#load. */
 class LegacyLoadMatch
 {
+    public ?string $app = null;
+    public ?string $version = null;
 }
 
 /** Stuff entity data model. */
@@ -30,6 +32,10 @@ class Stuff
 /** Request payload for Stuff#load. */
 class StuffLoadMatch
 {
+    public ?string $app = null;
+    public ?int $line = null;
+    public string $service;
+    public ?string $version = null;
 }
 
 /** V2018 entity data model. */
@@ -40,5 +46,11 @@ class V2018
 /** Request payload for V2018#load. */
 class V2018LoadMatch
 {
+    public ?string $app = null;
+    public string $city;
+    public string $end;
+    public string $start;
+    public ?string $value = null;
+    public ?string $version = null;
 }
 

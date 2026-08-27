@@ -18,6 +18,8 @@ type Legacy struct {
 
 // LegacyLoadMatch is the typed request payload for Legacy.LoadTyped.
 type LegacyLoadMatch struct {
+	App *string `json:"app,omitempty"`
+	Version *string `json:"version,omitempty"`
 }
 
 // Stuff is the typed data model for the stuff entity.
@@ -26,6 +28,10 @@ type Stuff struct {
 
 // StuffLoadMatch is the typed request payload for Stuff.LoadTyped.
 type StuffLoadMatch struct {
+	App *string `json:"app,omitempty"`
+	Line *int `json:"line,omitempty"`
+	Service string `json:"service"`
+	Version *string `json:"version,omitempty"`
 }
 
 // V2018 is the typed data model for the v2018 entity.
@@ -34,6 +40,12 @@ type V2018 struct {
 
 // V2018LoadMatch is the typed request payload for V2018.LoadTyped.
 type V2018LoadMatch struct {
+	App *string `json:"app,omitempty"`
+	City string `json:"city"`
+	End string `json:"end"`
+	Start string `json:"start"`
+	Value *string `json:"value,omitempty"`
+	Version *string `json:"version,omitempty"`
 }
 
 // asMap turns a typed request/data struct into the map[string]any the

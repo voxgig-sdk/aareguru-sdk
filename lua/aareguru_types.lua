@@ -9,14 +9,26 @@
 ---@class Legacy
 
 ---@class LegacyLoadMatch
+---@field app? string
+---@field version? string
 
 ---@class Stuff
 
 ---@class StuffLoadMatch
+---@field app? string
+---@field line? number
+---@field service string
+---@field version? string
 
 ---@class V2018
 
 ---@class V2018LoadMatch
+---@field app? string
+---@field city string
+---@field end string
+---@field start string
+---@field value? string
+---@field version? string
 
 local M = {}
 

@@ -49,7 +49,7 @@ Entity operations raise on failure, so rescue them:
 
 ```ruby
 begin
-  stuff = client.Stuff.load()
+  stuff = client.Stuff.load({ "service" => "example" })
 rescue => err
   warn "load failed: #{err}"
 end
@@ -119,7 +119,7 @@ client = AareguruSDK.test
 
 # Entity ops return the ENTITY (raises on error);
 # call data_get for the mock record.
-stuff = client.Stuff.load()
+stuff = client.Stuff.load({ "service" => "example" })
 puts stuff
 ```
 
@@ -297,7 +297,7 @@ Create an instance: `stuff = client.Stuff`
 
 ```ruby
 # load returns the ENTITY — call data_get for the Stuff record (raises on error).
-stuff = client.Stuff.load()
+stuff = client.Stuff.load({ "service" => "service" })
 ```
 
 
@@ -315,8 +315,31 @@ Create an instance: `v2018 = client.V2018`
 
 ```ruby
 # load returns the ENTITY — call data_get for the V2018 record (raises on error).
-v2018 = client.V2018.load()
+v2018 = client.V2018.load({ "city" => "city", "end" => "end", "start" => "start" })
 ```
+
+## Features
+
+This SDK ships 1 optional features. Each is **inactive until you
+switch it on**, so an SDK you have not configured behaves exactly as if none of
+them existed — no retries, no cache, no logging, no measurable overhead.
+
+Activate a feature by name in the client options, alongside the options shown
+above:
+
+| Feature | What it does |
+|---|---|
+| [`test`](#test) | In-memory mock transport for testing without a live server |
+
+### test
+
+In-memory mock transport for testing without a live server.
+
+| Option | Default |
+|---|---|
+| `active` | `false` |
+
+Set `feature.test.active` to enable it, then override any of the options above.
 
 
 ## Advanced
@@ -396,7 +419,7 @@ stores the returned data and match criteria internally.
 
 ```ruby
 stuff = client.Stuff
-stuff.load()
+stuff.load({ "service" => "example" })
 
 # stuff.data_get now returns the stuff data from the last load
 # stuff.match_get returns the last match criteria

@@ -20,21 +20,36 @@ class Legacy(TypedDict):
     pass
 
 
-class LegacyLoadMatch(TypedDict):
-    pass
+class LegacyLoadMatch(TypedDict, total=False):
+    app: str
+    version: str
 
 
 class Stuff(TypedDict):
     pass
 
 
-class StuffLoadMatch(TypedDict):
-    pass
+class StuffLoadMatchRequired(TypedDict):
+    service: str
+
+
+class StuffLoadMatch(StuffLoadMatchRequired, total=False):
+    app: str
+    line: int
+    version: str
 
 
 class V2018(TypedDict):
     pass
 
 
-class V2018LoadMatch(TypedDict):
-    pass
+class V2018LoadMatchRequired(TypedDict):
+    city: str
+    end: str
+    start: str
+
+
+class V2018LoadMatch(V2018LoadMatchRequired, total=False):
+    app: str
+    value: str
+    version: str

@@ -53,7 +53,7 @@ Entity operations reject on failure, so wrap them in `try` / `catch`:
 
 ```ts
 try {
-  const stuff = await client.Stuff().load()
+  const stuff = await client.Stuff().load({ service: "example" })
   console.log(stuff)
 } catch (err) {
   console.error('load failed:', err)
@@ -120,7 +120,7 @@ Create a mock client for unit testing — no server required:
 ```ts
 const client = AareguruSDK.test()
 
-const stuff = await client.Stuff().load()
+const stuff = await client.Stuff().load({ service: 'example_service' })
 // stuff is the entity, populated with mock response data
 // — call stuff.data() for the record itself
 console.log(stuff)
@@ -141,7 +141,7 @@ Entity instances remember their last match and data:
 const entity = client.Stuff()
 
 // First call runs the operation and stores its result
-await entity.load()
+await entity.load({ service: 'example_service' })
 
 // Subsequent calls reuse the stored state
 const data = entity.data()
@@ -345,7 +345,7 @@ Create an instance: `const stuff = client.Stuff()`
 #### Example: Load
 
 ```ts
-const stuff = await client.Stuff().load()
+const stuff = await client.Stuff().load({ service: 'service' })
 ```
 
 
@@ -362,8 +362,31 @@ Create an instance: `const v2018 = client.V2018()`
 #### Example: Load
 
 ```ts
-const v2018 = await client.V2018().load()
+const v2018 = await client.V2018().load({ city: 'city', end: 'end', start: 'start' })
 ```
+
+## Features
+
+This SDK ships 1 optional features. Each is **inactive until you
+switch it on**, so an SDK you have not configured behaves exactly as if none of
+them existed — no retries, no cache, no logging, no measurable overhead.
+
+Activate a feature by name in the client options, alongside the options shown
+above:
+
+| Feature | What it does |
+|---|---|
+| [`test`](#test) | In-memory mock transport for testing without a live server |
+
+### test
+
+In-memory mock transport for testing without a live server.
+
+| Option | Default |
+|---|---|
+| `active` | `false` |
+
+Set `feature.test.active` to enable it, then override any of the options above.
 
 
 ## Advanced
@@ -436,7 +459,7 @@ calls on the same instance can rely on this state.
 
 ```ts
 const stuff = client.Stuff()
-await stuff.load()
+await stuff.load({ service: "example" })
 
 // stuff.data() now returns the stuff data from the last `load`
 // stuff.match() returns the last match criteria

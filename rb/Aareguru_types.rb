@@ -13,22 +13,73 @@ class Legacy
 end
 
 # Request payload for Legacy#load.
-class LegacyLoadMatch
-end
+#
+# @!attribute [rw] app
+#   @return [String, nil]
+#
+# @!attribute [rw] version
+#   @return [String, nil]
+LegacyLoadMatch = Struct.new(
+  :app,
+  :version,
+  keyword_init: true
+)
 
 # Stuff entity data model.
 class Stuff
 end
 
 # Request payload for Stuff#load.
-class StuffLoadMatch
-end
+#
+# @!attribute [rw] app
+#   @return [String, nil]
+#
+# @!attribute [rw] line
+#   @return [Integer, nil]
+#
+# @!attribute [rw] service
+#   @return [String]
+#
+# @!attribute [rw] version
+#   @return [String, nil]
+StuffLoadMatch = Struct.new(
+  :app,
+  :line,
+  :service,
+  :version,
+  keyword_init: true
+)
 
 # V2018 entity data model.
 class V2018
 end
 
 # Request payload for V2018#load.
-class V2018LoadMatch
-end
+#
+# @!attribute [rw] app
+#   @return [String, nil]
+#
+# @!attribute [rw] city
+#   @return [String]
+#
+# @!attribute [rw] end
+#   @return [String]
+#
+# @!attribute [rw] start
+#   @return [String]
+#
+# @!attribute [rw] value
+#   @return [String, nil]
+#
+# @!attribute [rw] version
+#   @return [String, nil]
+V2018LoadMatch = Struct.new(
+  :app,
+  :city,
+  :end,
+  :start,
+  :value,
+  :version,
+  keyword_init: true
+)
 

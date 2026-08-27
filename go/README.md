@@ -66,7 +66,7 @@ Every entity operation returns `(value, error)`. Check `err` before
 using the value — there is no exception to catch:
 
 ```go
-stuff, err := client.Stuff(nil).Load(nil, nil)
+stuff, err := client.Stuff(nil).Load(map[string]any{"service": "example"}, nil)
 if err != nil {
     // handle err
     return
@@ -136,7 +136,7 @@ Create a mock client for unit testing — no server required:
 client := sdk.Test()
 
 stuff, err := client.Stuff(nil).Load(
-    nil, nil,
+    map[string]any{"service": "example"}, nil,
 )
 if err != nil {
     panic(err)
@@ -322,7 +322,7 @@ Create an instance: `stuff := client.Stuff(nil)`
 #### Example: Load
 
 ```go
-stuff, err := client.Stuff(nil).Load(nil, nil)
+stuff, err := client.Stuff(nil).Load(map[string]any{"service": "service"}, nil)
 if err != nil {
     panic(err)
 }
@@ -343,12 +343,35 @@ Create an instance: `v2018 := client.V2018(nil)`
 #### Example: Load
 
 ```go
-v2018, err := client.V2018(nil).Load(nil, nil)
+v2018, err := client.V2018(nil).Load(map[string]any{"city": "city", "end": "end", "start": "start"}, nil)
 if err != nil {
     panic(err)
 }
 fmt.Println(v2018) // the loaded record
 ```
+
+## Features
+
+This SDK ships 1 optional features. Each is **inactive until you
+switch it on**, so an SDK you have not configured behaves exactly as if none of
+them existed — no retries, no cache, no logging, no measurable overhead.
+
+Activate a feature by name in the client options, alongside the options shown
+above:
+
+| Feature | What it does |
+|---|---|
+| [`test`](#test) | In-memory mock transport for testing without a live server |
+
+### test
+
+In-memory mock transport for testing without a live server.
+
+| Option | Default |
+|---|---|
+| `active` | `false` |
+
+Set `feature.test.active` to enable it, then override any of the options above.
 
 
 ## Advanced
@@ -425,7 +448,7 @@ stores the returned data and match criteria internally.
 
 ```go
 stuff := client.Stuff(nil)
-stuff.Load(nil, nil)
+stuff.Load(map[string]any{"service": "example"}, nil)
 
 // stuff.Data() now returns the stuff data from the last load
 // stuff.Match() returns the last match criteria
