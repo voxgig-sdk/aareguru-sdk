@@ -87,8 +87,10 @@ class AareguruConfig
                   'kind' => 'http',
                   'method' => 'GET',
                   'orig' => '/current',
-                  'parts' => [
-                    'current',
+                  'segments' => [
+                    [
+                      'lit' => 'current',
+                    ],
                   ],
                   'select' => [
                     'exist' => [
@@ -99,6 +101,9 @@ class AareguruConfig
                   'transform' => [
                     'req' => '`reqdata`',
                     'res' => '`body`',
+                  ],
+                  'parts' => [
+                    'current',
                   ],
                 ],
                 [
@@ -123,8 +128,10 @@ class AareguruConfig
                   'kind' => 'http',
                   'method' => 'GET',
                   'orig' => '/currentV2',
-                  'parts' => [
-                    'currentV2',
+                  'segments' => [
+                    [
+                      'lit' => 'currentV2',
+                    ],
                   ],
                   'select' => [
                     'exist' => [
@@ -135,6 +142,9 @@ class AareguruConfig
                   'transform' => [
                     'req' => '`reqdata`',
                     'res' => '`body`',
+                  ],
+                  'parts' => [
+                    'currentV2',
                   ],
                 ],
                 [
@@ -159,8 +169,10 @@ class AareguruConfig
                   'kind' => 'http',
                   'method' => 'GET',
                   'orig' => '/today',
-                  'parts' => [
-                    'today',
+                  'segments' => [
+                    [
+                      'lit' => 'today',
+                    ],
                   ],
                   'select' => [
                     'exist' => [
@@ -171,6 +183,9 @@ class AareguruConfig
                   'transform' => [
                     'req' => '`reqdata`',
                     'res' => '`body`',
+                  ],
+                  'parts' => [
+                    'today',
                   ],
                 ],
               ],
@@ -225,8 +240,10 @@ class AareguruConfig
                   'kind' => 'http',
                   'method' => 'GET',
                   'orig' => '/logs',
-                  'parts' => [
-                    'logs',
+                  'segments' => [
+                    [
+                      'lit' => 'logs',
+                    ],
                   ],
                   'select' => [
                     'exist' => [
@@ -239,6 +256,9 @@ class AareguruConfig
                   'transform' => [
                     'req' => '`reqdata`',
                     'res' => '`body`',
+                  ],
+                  'parts' => [
+                    'logs',
                   ],
                 ],
                 [
@@ -271,8 +291,10 @@ class AareguruConfig
                   'kind' => 'http',
                   'method' => 'GET',
                   'orig' => '/rawdata',
-                  'parts' => [
-                    'rawdata',
+                  'segments' => [
+                    [
+                      'lit' => 'rawdata',
+                    ],
                   ],
                   'select' => [
                     'exist' => [
@@ -285,19 +307,27 @@ class AareguruConfig
                     'req' => '`reqdata`',
                     'res' => '`body`',
                   ],
+                  'parts' => [
+                    'rawdata',
+                  ],
                 ],
                 [
                   'args' => [],
                   'kind' => 'http',
                   'method' => 'GET',
                   'orig' => '/slack',
-                  'parts' => [
-                    'slack',
+                  'segments' => [
+                    [
+                      'lit' => 'slack',
+                    ],
                   ],
                   'select' => [],
                   'transform' => [
                     'req' => '`reqdata`',
                     'res' => '`body`',
+                  ],
+                  'parts' => [
+                    'slack',
                   ],
                 ],
               ],
@@ -368,9 +398,13 @@ class AareguruConfig
                   'kind' => 'http',
                   'method' => 'GET',
                   'orig' => '/v2018/history',
-                  'parts' => [
-                    'v2018',
-                    'history',
+                  'segments' => [
+                    [
+                      'lit' => 'v2018',
+                    ],
+                    [
+                      'lit' => 'history',
+                    ],
                   ],
                   'select' => [
                     '$action' => 'history',
@@ -386,6 +420,10 @@ class AareguruConfig
                   'transform' => [
                     'req' => '`reqdata`',
                     'res' => '`body`',
+                  ],
+                  'parts' => [
+                    'v2018',
+                    'history',
                   ],
                 ],
                 [
@@ -424,9 +462,13 @@ class AareguruConfig
                   'kind' => 'http',
                   'method' => 'GET',
                   'orig' => '/v2018/current',
-                  'parts' => [
-                    'v2018',
-                    'current',
+                  'segments' => [
+                    [
+                      'lit' => 'v2018',
+                    ],
+                    [
+                      'lit' => 'current',
+                    ],
                   ],
                   'select' => [
                     '$action' => 'current',
@@ -440,6 +482,10 @@ class AareguruConfig
                   'transform' => [
                     'req' => '`reqdata`',
                     'res' => '`body`',
+                  ],
+                  'parts' => [
+                    'v2018',
+                    'current',
                   ],
                 ],
                 [
@@ -478,9 +524,13 @@ class AareguruConfig
                   'kind' => 'http',
                   'method' => 'GET',
                   'orig' => '/v2018/today',
-                  'parts' => [
-                    'v2018',
-                    'today',
+                  'segments' => [
+                    [
+                      'lit' => 'v2018',
+                    ],
+                    [
+                      'lit' => 'today',
+                    ],
                   ],
                   'select' => [
                     '$action' => 'today',
@@ -494,6 +544,10 @@ class AareguruConfig
                   'transform' => [
                     'req' => '`reqdata`',
                     'res' => '`body`',
+                  ],
+                  'parts' => [
+                    'v2018',
+                    'today',
                   ],
                 ],
                 [
@@ -525,9 +579,13 @@ class AareguruConfig
                   'kind' => 'http',
                   'method' => 'GET',
                   'orig' => '/v2018/cities',
-                  'parts' => [
-                    'v2018',
-                    'cities',
+                  'segments' => [
+                    [
+                      'lit' => 'v2018',
+                    ],
+                    [
+                      'lit' => 'cities',
+                    ],
                   ],
                   'select' => [
                     '$action' => 'city',
@@ -540,6 +598,10 @@ class AareguruConfig
                   'transform' => [
                     'req' => '`reqdata`',
                     'res' => '`body`',
+                  ],
+                  'parts' => [
+                    'v2018',
+                    'cities',
                   ],
                 ],
                 [
@@ -571,9 +633,13 @@ class AareguruConfig
                   'kind' => 'http',
                   'method' => 'GET',
                   'orig' => '/v2018/widget',
-                  'parts' => [
-                    'v2018',
-                    'widget',
+                  'segments' => [
+                    [
+                      'lit' => 'v2018',
+                    ],
+                    [
+                      'lit' => 'widget',
+                    ],
                   ],
                   'select' => [
                     '$action' => 'widget',
@@ -586,6 +652,10 @@ class AareguruConfig
                   'transform' => [
                     'req' => '`reqdata`',
                     'res' => '`body`',
+                  ],
+                  'parts' => [
+                    'v2018',
+                    'widget',
                   ],
                 ],
               ],

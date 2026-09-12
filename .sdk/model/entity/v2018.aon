@@ -64,9 +64,13 @@ main: kit: entity: v2018: {
           }
           method: "GET"
           orig: "/v2018/history"
-          parts: [
-            "v2018"
-            "history"
+          segments: [
+            {
+              lit: "v2018"
+            }
+            {
+              lit: "history"
+            }
           ]
           select: {
             "$action": "history"
@@ -123,9 +127,13 @@ main: kit: entity: v2018: {
           }
           method: "GET"
           orig: "/v2018/current"
-          parts: [
-            "v2018"
-            "current"
+          segments: [
+            {
+              lit: "v2018"
+            }
+            {
+              lit: "current"
+            }
           ]
           select: {
             "$action": "current"
@@ -180,9 +188,13 @@ main: kit: entity: v2018: {
           }
           method: "GET"
           orig: "/v2018/today"
-          parts: [
-            "v2018"
-            "today"
+          segments: [
+            {
+              lit: "v2018"
+            }
+            {
+              lit: "today"
+            }
           ]
           select: {
             "$action": "today"
@@ -229,9 +241,13 @@ main: kit: entity: v2018: {
           }
           method: "GET"
           orig: "/v2018/cities"
-          parts: [
-            "v2018"
-            "cities"
+          segments: [
+            {
+              lit: "v2018"
+            }
+            {
+              lit: "cities"
+            }
           ]
           select: {
             "$action": "city"
@@ -277,9 +293,13 @@ main: kit: entity: v2018: {
           }
           method: "GET"
           orig: "/v2018/widget"
-          parts: [
-            "v2018"
-            "widget"
+          segments: [
+            {
+              lit: "v2018"
+            }
+            {
+              lit: "widget"
+            }
           ]
           select: {
             "$action": "widget"

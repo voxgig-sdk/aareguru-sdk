@@ -302,7 +302,7 @@ Create an instance: `local v2018 = client:V2018(nil)`
 #### Example: Load
 
 ```lua
-local v2018, err = client:V2018():load({ city = "city", end = "end", start = "start" })
+local v2018, err = client:V2018():load({ city = "city", ["end"] = "end", start = "start" })
 ```
 
 ## Features

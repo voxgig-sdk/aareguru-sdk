@@ -61,8 +61,10 @@ local function make_config()
                 ["kind"] = "http",
                 ["method"] = "GET",
                 ["orig"] = "/current",
-                ["parts"] = {
-                  "current",
+                ["segments"] = {
+                  {
+                    ["lit"] = "current",
+                  },
                 },
                 ["select"] = {
                   ["exist"] = {
@@ -73,6 +75,9 @@ local function make_config()
                 ["transform"] = {
                   ["req"] = "`reqdata`",
                   ["res"] = "`body`",
+                },
+                ["parts"] = {
+                  "current",
                 },
               },
               {
@@ -97,8 +102,10 @@ local function make_config()
                 ["kind"] = "http",
                 ["method"] = "GET",
                 ["orig"] = "/currentV2",
-                ["parts"] = {
-                  "currentV2",
+                ["segments"] = {
+                  {
+                    ["lit"] = "currentV2",
+                  },
                 },
                 ["select"] = {
                   ["exist"] = {
@@ -109,6 +116,9 @@ local function make_config()
                 ["transform"] = {
                   ["req"] = "`reqdata`",
                   ["res"] = "`body`",
+                },
+                ["parts"] = {
+                  "currentV2",
                 },
               },
               {
@@ -133,8 +143,10 @@ local function make_config()
                 ["kind"] = "http",
                 ["method"] = "GET",
                 ["orig"] = "/today",
-                ["parts"] = {
-                  "today",
+                ["segments"] = {
+                  {
+                    ["lit"] = "today",
+                  },
                 },
                 ["select"] = {
                   ["exist"] = {
@@ -145,6 +157,9 @@ local function make_config()
                 ["transform"] = {
                   ["req"] = "`reqdata`",
                   ["res"] = "`body`",
+                },
+                ["parts"] = {
+                  "today",
                 },
               },
             },
@@ -199,8 +214,10 @@ local function make_config()
                 ["kind"] = "http",
                 ["method"] = "GET",
                 ["orig"] = "/logs",
-                ["parts"] = {
-                  "logs",
+                ["segments"] = {
+                  {
+                    ["lit"] = "logs",
+                  },
                 },
                 ["select"] = {
                   ["exist"] = {
@@ -213,6 +230,9 @@ local function make_config()
                 ["transform"] = {
                   ["req"] = "`reqdata`",
                   ["res"] = "`body`",
+                },
+                ["parts"] = {
+                  "logs",
                 },
               },
               {
@@ -245,8 +265,10 @@ local function make_config()
                 ["kind"] = "http",
                 ["method"] = "GET",
                 ["orig"] = "/rawdata",
-                ["parts"] = {
-                  "rawdata",
+                ["segments"] = {
+                  {
+                    ["lit"] = "rawdata",
+                  },
                 },
                 ["select"] = {
                   ["exist"] = {
@@ -259,19 +281,27 @@ local function make_config()
                   ["req"] = "`reqdata`",
                   ["res"] = "`body`",
                 },
+                ["parts"] = {
+                  "rawdata",
+                },
               },
               {
                 ["args"] = {},
                 ["kind"] = "http",
                 ["method"] = "GET",
                 ["orig"] = "/slack",
-                ["parts"] = {
-                  "slack",
+                ["segments"] = {
+                  {
+                    ["lit"] = "slack",
+                  },
                 },
                 ["select"] = {},
                 ["transform"] = {
                   ["req"] = "`reqdata`",
                   ["res"] = "`body`",
+                },
+                ["parts"] = {
+                  "slack",
                 },
               },
             },
@@ -342,9 +372,13 @@ local function make_config()
                 ["kind"] = "http",
                 ["method"] = "GET",
                 ["orig"] = "/v2018/history",
-                ["parts"] = {
-                  "v2018",
-                  "history",
+                ["segments"] = {
+                  {
+                    ["lit"] = "v2018",
+                  },
+                  {
+                    ["lit"] = "history",
+                  },
                 },
                 ["select"] = {
                   ["$action"] = "history",
@@ -360,6 +394,10 @@ local function make_config()
                 ["transform"] = {
                   ["req"] = "`reqdata`",
                   ["res"] = "`body`",
+                },
+                ["parts"] = {
+                  "v2018",
+                  "history",
                 },
               },
               {
@@ -398,9 +436,13 @@ local function make_config()
                 ["kind"] = "http",
                 ["method"] = "GET",
                 ["orig"] = "/v2018/current",
-                ["parts"] = {
-                  "v2018",
-                  "current",
+                ["segments"] = {
+                  {
+                    ["lit"] = "v2018",
+                  },
+                  {
+                    ["lit"] = "current",
+                  },
                 },
                 ["select"] = {
                   ["$action"] = "current",
@@ -414,6 +456,10 @@ local function make_config()
                 ["transform"] = {
                   ["req"] = "`reqdata`",
                   ["res"] = "`body`",
+                },
+                ["parts"] = {
+                  "v2018",
+                  "current",
                 },
               },
               {
@@ -452,9 +498,13 @@ local function make_config()
                 ["kind"] = "http",
                 ["method"] = "GET",
                 ["orig"] = "/v2018/today",
-                ["parts"] = {
-                  "v2018",
-                  "today",
+                ["segments"] = {
+                  {
+                    ["lit"] = "v2018",
+                  },
+                  {
+                    ["lit"] = "today",
+                  },
                 },
                 ["select"] = {
                   ["$action"] = "today",
@@ -468,6 +518,10 @@ local function make_config()
                 ["transform"] = {
                   ["req"] = "`reqdata`",
                   ["res"] = "`body`",
+                },
+                ["parts"] = {
+                  "v2018",
+                  "today",
                 },
               },
               {
@@ -499,9 +553,13 @@ local function make_config()
                 ["kind"] = "http",
                 ["method"] = "GET",
                 ["orig"] = "/v2018/cities",
-                ["parts"] = {
-                  "v2018",
-                  "cities",
+                ["segments"] = {
+                  {
+                    ["lit"] = "v2018",
+                  },
+                  {
+                    ["lit"] = "cities",
+                  },
                 },
                 ["select"] = {
                   ["$action"] = "city",
@@ -514,6 +572,10 @@ local function make_config()
                 ["transform"] = {
                   ["req"] = "`reqdata`",
                   ["res"] = "`body`",
+                },
+                ["parts"] = {
+                  "v2018",
+                  "cities",
                 },
               },
               {
@@ -545,9 +607,13 @@ local function make_config()
                 ["kind"] = "http",
                 ["method"] = "GET",
                 ["orig"] = "/v2018/widget",
-                ["parts"] = {
-                  "v2018",
-                  "widget",
+                ["segments"] = {
+                  {
+                    ["lit"] = "v2018",
+                  },
+                  {
+                    ["lit"] = "widget",
+                  },
                 },
                 ["select"] = {
                   ["$action"] = "widget",
@@ -560,6 +626,10 @@ local function make_config()
                 ["transform"] = {
                   ["req"] = "`reqdata`",
                   ["res"] = "`body`",
+                },
+                ["parts"] = {
+                  "v2018",
+                  "widget",
                 },
               },
             },

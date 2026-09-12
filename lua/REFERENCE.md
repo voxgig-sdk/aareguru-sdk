@@ -193,7 +193,7 @@ local v2018 = client:V2018(nil)
 Load a single entity matching the given criteria.
 
 ```lua
-local result, err = client:V2018():load({ city = "city", end = "end", start = "start" })
+local result, err = client:V2018():load({ city = "city", ["end"] = "end", start = "start" })
 ```
 
 ### Common Methods

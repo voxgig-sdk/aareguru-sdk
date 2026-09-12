@@ -73,8 +73,10 @@ module AareguruConfig
                   "kind" => "http",
                   "method" => "GET",
                   "orig" => "/current",
-                  "parts" => [
-                    "current",
+                  "segments" => [
+                    {
+                      "lit" => "current",
+                    },
                   ],
                   "select" => {
                     "exist" => [
@@ -86,6 +88,9 @@ module AareguruConfig
                     "req" => "`reqdata`",
                     "res" => "`body`",
                   },
+                  "parts" => [
+                    "current",
+                  ],
                 },
                 {
                   "args" => {
@@ -109,8 +114,10 @@ module AareguruConfig
                   "kind" => "http",
                   "method" => "GET",
                   "orig" => "/currentV2",
-                  "parts" => [
-                    "currentV2",
+                  "segments" => [
+                    {
+                      "lit" => "currentV2",
+                    },
                   ],
                   "select" => {
                     "exist" => [
@@ -122,6 +129,9 @@ module AareguruConfig
                     "req" => "`reqdata`",
                     "res" => "`body`",
                   },
+                  "parts" => [
+                    "currentV2",
+                  ],
                 },
                 {
                   "args" => {
@@ -145,8 +155,10 @@ module AareguruConfig
                   "kind" => "http",
                   "method" => "GET",
                   "orig" => "/today",
-                  "parts" => [
-                    "today",
+                  "segments" => [
+                    {
+                      "lit" => "today",
+                    },
                   ],
                   "select" => {
                     "exist" => [
@@ -158,6 +170,9 @@ module AareguruConfig
                     "req" => "`reqdata`",
                     "res" => "`body`",
                   },
+                  "parts" => [
+                    "today",
+                  ],
                 },
               ],
             },
@@ -211,8 +226,10 @@ module AareguruConfig
                   "kind" => "http",
                   "method" => "GET",
                   "orig" => "/logs",
-                  "parts" => [
-                    "logs",
+                  "segments" => [
+                    {
+                      "lit" => "logs",
+                    },
                   ],
                   "select" => {
                     "exist" => [
@@ -226,6 +243,9 @@ module AareguruConfig
                     "req" => "`reqdata`",
                     "res" => "`body`",
                   },
+                  "parts" => [
+                    "logs",
+                  ],
                 },
                 {
                   "args" => {
@@ -257,8 +277,10 @@ module AareguruConfig
                   "kind" => "http",
                   "method" => "GET",
                   "orig" => "/rawdata",
-                  "parts" => [
-                    "rawdata",
+                  "segments" => [
+                    {
+                      "lit" => "rawdata",
+                    },
                   ],
                   "select" => {
                     "exist" => [
@@ -271,20 +293,28 @@ module AareguruConfig
                     "req" => "`reqdata`",
                     "res" => "`body`",
                   },
+                  "parts" => [
+                    "rawdata",
+                  ],
                 },
                 {
                   "args" => {},
                   "kind" => "http",
                   "method" => "GET",
                   "orig" => "/slack",
-                  "parts" => [
-                    "slack",
+                  "segments" => [
+                    {
+                      "lit" => "slack",
+                    },
                   ],
                   "select" => {},
                   "transform" => {
                     "req" => "`reqdata`",
                     "res" => "`body`",
                   },
+                  "parts" => [
+                    "slack",
+                  ],
                 },
               ],
             },
@@ -354,9 +384,13 @@ module AareguruConfig
                   "kind" => "http",
                   "method" => "GET",
                   "orig" => "/v2018/history",
-                  "parts" => [
-                    "v2018",
-                    "history",
+                  "segments" => [
+                    {
+                      "lit" => "v2018",
+                    },
+                    {
+                      "lit" => "history",
+                    },
                   ],
                   "select" => {
                     "$action" => "history",
@@ -373,6 +407,10 @@ module AareguruConfig
                     "req" => "`reqdata`",
                     "res" => "`body`",
                   },
+                  "parts" => [
+                    "v2018",
+                    "history",
+                  ],
                 },
                 {
                   "args" => {
@@ -410,9 +448,13 @@ module AareguruConfig
                   "kind" => "http",
                   "method" => "GET",
                   "orig" => "/v2018/current",
-                  "parts" => [
-                    "v2018",
-                    "current",
+                  "segments" => [
+                    {
+                      "lit" => "v2018",
+                    },
+                    {
+                      "lit" => "current",
+                    },
                   ],
                   "select" => {
                     "$action" => "current",
@@ -427,6 +469,10 @@ module AareguruConfig
                     "req" => "`reqdata`",
                     "res" => "`body`",
                   },
+                  "parts" => [
+                    "v2018",
+                    "current",
+                  ],
                 },
                 {
                   "args" => {
@@ -464,9 +510,13 @@ module AareguruConfig
                   "kind" => "http",
                   "method" => "GET",
                   "orig" => "/v2018/today",
-                  "parts" => [
-                    "v2018",
-                    "today",
+                  "segments" => [
+                    {
+                      "lit" => "v2018",
+                    },
+                    {
+                      "lit" => "today",
+                    },
                   ],
                   "select" => {
                     "$action" => "today",
@@ -481,6 +531,10 @@ module AareguruConfig
                     "req" => "`reqdata`",
                     "res" => "`body`",
                   },
+                  "parts" => [
+                    "v2018",
+                    "today",
+                  ],
                 },
                 {
                   "args" => {
@@ -511,9 +565,13 @@ module AareguruConfig
                   "kind" => "http",
                   "method" => "GET",
                   "orig" => "/v2018/cities",
-                  "parts" => [
-                    "v2018",
-                    "cities",
+                  "segments" => [
+                    {
+                      "lit" => "v2018",
+                    },
+                    {
+                      "lit" => "cities",
+                    },
                   ],
                   "select" => {
                     "$action" => "city",
@@ -527,6 +585,10 @@ module AareguruConfig
                     "req" => "`reqdata`",
                     "res" => "`body`",
                   },
+                  "parts" => [
+                    "v2018",
+                    "cities",
+                  ],
                 },
                 {
                   "args" => {
@@ -557,9 +619,13 @@ module AareguruConfig
                   "kind" => "http",
                   "method" => "GET",
                   "orig" => "/v2018/widget",
-                  "parts" => [
-                    "v2018",
-                    "widget",
+                  "segments" => [
+                    {
+                      "lit" => "v2018",
+                    },
+                    {
+                      "lit" => "widget",
+                    },
                   ],
                   "select" => {
                     "$action" => "widget",
@@ -573,6 +639,10 @@ module AareguruConfig
                     "req" => "`reqdata`",
                     "res" => "`body`",
                   },
+                  "parts" => [
+                    "v2018",
+                    "widget",
+                  ],
                 },
               ],
             },

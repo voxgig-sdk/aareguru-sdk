@@ -48,8 +48,10 @@ main: kit: entity: stuff: {
           }
           method: "GET"
           orig: "/logs"
-          parts: [
-            "logs"
+          segments: [
+            {
+              lit: "logs"
+            }
           ]
           select: {
             exist: [
@@ -95,8 +97,10 @@ main: kit: entity: stuff: {
           }
           method: "GET"
           orig: "/rawdata"
-          parts: [
-            "rawdata"
+          segments: [
+            {
+              lit: "rawdata"
+            }
           ]
           select: {
             exist: [
@@ -113,8 +117,10 @@ main: kit: entity: stuff: {
         {
           method: "GET"
           orig: "/slack"
-          parts: [
-            "slack"
+          segments: [
+            {
+              lit: "slack"
+            }
           ]
           transform: {
             req: "`reqdata`"

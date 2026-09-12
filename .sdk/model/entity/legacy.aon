@@ -32,8 +32,10 @@ main: kit: entity: legacy: {
           }
           method: "GET"
           orig: "/current"
-          parts: [
-            "current"
+          segments: [
+            {
+              lit: "current"
+            }
           ]
           select: {
             exist: [
@@ -69,8 +71,10 @@ main: kit: entity: legacy: {
           }
           method: "GET"
           orig: "/currentV2"
-          parts: [
-            "currentV2"
+          segments: [
+            {
+              lit: "currentV2"
+            }
           ]
           select: {
             exist: [
@@ -106,8 +110,10 @@ main: kit: entity: legacy: {
           }
           method: "GET"
           orig: "/today"
-          parts: [
-            "today"
+          segments: [
+            {
+              lit: "today"
+            }
           ]
           select: {
             exist: [
