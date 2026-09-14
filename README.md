@@ -105,7 +105,7 @@ local result, err = client:Stuff():load({ service = "example" })
 
 | Language | Package | Install |
 | --- | --- | --- |
-| TypeScript | `@voxgig-sdk/aareguru` | publish pending — [install from git tag](https://github.com/voxgig-sdk/aareguru-sdk/releases) |
+| TypeScript | `@voxgig-sdk/aareguru-sdk` | publish pending — [install from git tag](https://github.com/voxgig-sdk/aareguru-sdk/releases) |
 | Python | `voxgig-sdk-aareguru` | publish pending — [install from git tag](https://github.com/voxgig-sdk/aareguru-sdk/releases) |
 | PHP | `voxgig-sdk/aareguru` | publish pending — [install from git tag](https://github.com/voxgig-sdk/aareguru-sdk/releases) |
 | Golang | `github.com/voxgig-sdk/aareguru-sdk/go` | `go get github.com/voxgig-sdk/aareguru-sdk/go@latest` |
@@ -119,7 +119,7 @@ local result, err = client:Stuff():load({ service = "example" })
 ### TypeScript
 
 ```ts
-import { AareguruSDK } from '@voxgig-sdk/aareguru'
+import { AareguruSDK } from '@voxgig-sdk/aareguru-sdk'
 
 const client = new AareguruSDK()
 

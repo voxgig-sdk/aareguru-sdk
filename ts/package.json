@@ -1,5 +1,5 @@
 {
-  "name": "@voxgig-sdk/aareguru",
+  "name": "@voxgig-sdk/aareguru-sdk",
   "version": "0.0.1",
   "description": "Unofficial generated TypeScript SDK for the Aare.guru public API. Not affiliated with or endorsed by the upstream API provider.",
   "keywords": [

@@ -28,7 +28,7 @@ loading a specific record.
 ### 1. Create a client
 
 ```ts
-import { AareguruSDK } from '@voxgig-sdk/aareguru'
+import { AareguruSDK } from '@voxgig-sdk/aareguru-sdk'
 
 const client = new AareguruSDK()
 ```
@@ -448,7 +448,7 @@ aareguru/
 Import the SDK from the package root:
 
 ```ts
-import { AareguruSDK } from '@voxgig-sdk/aareguru'
+import { AareguruSDK } from '@voxgig-sdk/aareguru-sdk'
 ```
 
 ### Entity state
