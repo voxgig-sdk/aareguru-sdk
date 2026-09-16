@@ -1,12 +1,18 @@
 # Aareguru SDK feature factory
 
 from aareguru_sdk.feature.base_feature import AareguruBaseFeature
+from aareguru_sdk.feature.ratelimit_feature import AareguruRatelimitFeature
+from aareguru_sdk.feature.retry_feature import AareguruRetryFeature
 from aareguru_sdk.feature.test_feature import AareguruTestFeature
+from aareguru_sdk.feature.timeout_feature import AareguruTimeoutFeature
 
 
 _FEATURES = {
     "base": lambda: AareguruBaseFeature(),
+    "ratelimit": lambda: AareguruRatelimitFeature(),
+    "retry": lambda: AareguruRetryFeature(),
     "test": lambda: AareguruTestFeature(),
+    "timeout": lambda: AareguruTimeoutFeature(),
 }
 
 

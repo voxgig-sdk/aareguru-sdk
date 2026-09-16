@@ -2,6 +2,7 @@
 
 import { test, describe, afterEach } from 'node:test'
 import assert from 'node:assert'
+import { createLiveTransport } from '../../live-runner'
 
 
 import { AareguruSDK } from '../../..'
@@ -43,6 +44,7 @@ describe('V2018Direct', async () => {
 
 
   test('direct-load-v2018', async (t: any) => {
+    if (liveScenariosActive()) { t.skip('Covered by live operation scenarios'); return }
     const setup = directSetup({ id: 'direct01' })
     if (maybeSkipControl(t, 'direct', 'direct-load-v2018', setup.live)) return
     const { client, calls } = setup
@@ -65,12 +67,18 @@ describe('V2018Direct', async () => {
     })
 
     if (setup.live) {
-      // Live mode is lenient: synthetic IDs frequently 4xx. Skip rather
-      // than fail when the load endpoint isn't reachable with the IDs we
-      // can construct from setup.idmap.
-      if (!result.ok || result.status < 200 || result.status >= 300) {
-        return
-      }
+      // STRICT live mode: a non-2xx is a real failure - this project owns
+      // the server it points at, so there is nothing to be lenient about.
+      //
+      // What is NOT asserted here is the MOCK's own fixtures. `direct01`
+      // is a scripted id and `calls` records the mock transport; neither
+      // exists on a live run, so asserting them made strict mode mean
+      // "compare the live server against the mock's script" - a suite that
+      // could not pass against any real API, including this project's own.
+      assert(result.ok === true,
+        'Live request failed: HTTP ' + result.status)
+      assert(result.status >= 200 && result.status < 300)
+      assert(null != result.data)
     } else {
       assert(result.ok === true)
       assert(result.status === 200)
@@ -85,6 +93,7 @@ describe('V2018Direct', async () => {
 
 
 
+function liveScenariosActive() { return false && process.env.AAREGURU_TEST_LIVE === 'TRUE' }
 function directSetup(mockres?: any) {
   const calls: any[] = []
 
@@ -96,10 +105,11 @@ function directSetup(mockres?: any) {
   const live = 'TRUE' === env.AAREGURU_TEST_LIVE
 
   if (live) {
+    const transport = createLiveTransport()
     // Merged so the generated fields win: sdk-test-control.json's
     // test.client.options adds to the live client, it does not redirect it.
     const client = new AareguruSDK(
-      Object.assign({}, liveClientOptions(), {
+      Object.assign({}, liveClientOptions(), { system: { fetch: transport.fetch },
       }))
 
     let idmap: any = env['AAREGURU_TEST_V2018_ENTID']
@@ -107,7 +117,7 @@ function directSetup(mockres?: any) {
       idmap = JSON.parse(idmap)
     }
 
-    return { client, calls, live, idmap }
+    return { client, calls, live, idmap, transport }
   }
 
   const mockFetch = async (url: string, init: any) => {

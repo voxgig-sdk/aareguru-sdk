@@ -16,5 +16,103 @@
     "legacy": {
       "legacy_ref01": {}
     }
+  },
+  "requests": {
+    "GET /current": {
+      "provenance": "operation-contract",
+      "contract": {
+        "parameters": [
+          {
+            "description": "Optionaler App-Name.",
+            "example": "my.app.ch",
+            "in": "query",
+            "name": "app",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Optionale Versionsnummer für diese App.",
+            "example": "1.0.42",
+            "in": "query",
+            "name": "version",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "protocol": "http",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "securitySource": "unspecified"
+      }
+    },
+    "GET /currentV2": {
+      "provenance": "operation-contract",
+      "contract": {
+        "parameters": [
+          {
+            "description": "Optionaler App-Name.",
+            "example": "my.app.ch",
+            "in": "query",
+            "name": "app",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Optionale Versionsnummer für diese App.",
+            "example": "1.0.42",
+            "in": "query",
+            "name": "version",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "protocol": "http",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "securitySource": "unspecified"
+      }
+    },
+    "GET /today": {
+      "provenance": "operation-contract",
+      "contract": {
+        "parameters": [
+          {
+            "description": "Optionaler App-Name.",
+            "example": "my.app.ch",
+            "in": "query",
+            "name": "app",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Optionale Versionsnummer für diese App.",
+            "example": "1.0.42",
+            "in": "query",
+            "name": "version",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "protocol": "http",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "securitySource": "unspecified"
+      }
+    }
   }
 }

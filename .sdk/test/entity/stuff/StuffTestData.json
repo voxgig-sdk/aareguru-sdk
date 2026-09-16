@@ -16,5 +16,114 @@
     "stuff": {
       "stuff_ref01": {}
     }
+  },
+  "requests": {
+    "GET /logs": {
+      "provenance": "operation-contract",
+      "contract": {
+        "parameters": [
+          {
+            "description": "Interner Servicename",
+            "example": "v2018_bueber",
+            "in": "query",
+            "name": "service",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Anzahl Zeilen",
+            "in": "query",
+            "name": "lines",
+            "required": false,
+            "schema": {
+              "default": 12,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Optionaler App-Name.",
+            "example": "my.app.ch",
+            "in": "query",
+            "name": "app",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Optionale Versionsnummer für diese App.",
+            "example": "1.0.42",
+            "in": "query",
+            "name": "version",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "protocol": "http",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "securitySource": "unspecified"
+      }
+    },
+    "GET /rawdata": {
+      "provenance": "operation-contract",
+      "contract": {
+        "parameters": [
+          {
+            "description": "Interner Servicename",
+            "example": "v2018_bueber",
+            "in": "query",
+            "name": "service",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Optionaler App-Name.",
+            "example": "my.app.ch",
+            "in": "query",
+            "name": "app",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Optionale Versionsnummer für diese App.",
+            "example": "1.0.42",
+            "in": "query",
+            "name": "version",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "protocol": "http",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "securitySource": "unspecified"
+      }
+    },
+    "GET /slack": {
+      "provenance": "operation-contract",
+      "contract": {
+        "parameters": [],
+        "protocol": "http",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "securitySource": "unspecified"
+      }
+    }
   }
 }
