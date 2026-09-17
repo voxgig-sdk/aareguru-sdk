@@ -127,15 +127,15 @@ class Config {
 
     entity: {
       
-      legacy: {
-      },
-
-      stuff: {
-      },
-
-      v2018: {
-      },
-
+        legacy: {
+        },
+  
+        stuff: {
+        },
+  
+        v2018: {
+        },
+  
     }
   }
 
