@@ -24,13 +24,79 @@
         "repr": "auto"
       },
       "contributor": {},
+      "doc": {
+        "active": true,
+        "assets": {
+          "path": ".sdk/doc/assets"
+        },
+        "brand": {
+          "label": "",
+          "notice": "",
+          "shortNotice": "",
+          "url": ""
+        },
+        "ci": {
+          "active": true,
+          "branch": "main"
+        },
+        "content": {
+          "path": ".sdk/doc/content"
+        },
+        "edition": {
+          "summary": {
+            "active": true,
+            "base": "node_modules/@voxgig/docgen/project/.sdk",
+            "brand": {},
+            "filter": {
+              "entities": [],
+              "features": [],
+              "targets": []
+            },
+            "kind": "summary",
+            "name": "summary",
+            "origname": "",
+            "output": {
+              "path": "SUMMARY.md"
+            },
+            "package": "@voxgig/docgen",
+            "published": false,
+            "site": {
+              "active": true
+            },
+            "style": {},
+            "title": ""
+          }
+        },
+        "qa": {
+          "vocabulary": []
+        },
+        "style": {
+          "color": {
+            "accent": "#00c6d8",
+            "background": "#f5f5f9",
+            "darkBackground": "#0f1117",
+            "darkText": "#e6edf3",
+            "primary": "#e70042",
+            "text": "#0a0a0a"
+          },
+          "font": "Nunito, system-ui, sans-serif",
+          "fontFile": "",
+          "headingFont": "Nunito, system-ui, sans-serif",
+          "headingFontFile": "",
+          "logo": "",
+          "mode": "light",
+          "mono": "ui-monospace, monospace",
+          "monoFile": ""
+        },
+        "target": {}
+      },
       "entity": {
         "legacy": {
           "active": true,
           "alias": {
             "field": {}
           },
-          "fields": [],
+          "fields": {},
           "name": "legacy",
           "op": {
             "load": {
@@ -38,148 +104,148 @@
               "name": "load",
               "points": [
                 {
-                  "active": true,
-                  "args": {
+                  "a": true,
+                  "co": {
+                    "id": "GET /current",
+                    "source": "openapi3",
+                    "version": 2
+                  },
+                  "g": {
                     "query": [
                       {
-                        "active": true,
-                        "example": "my.app.ch",
-                        "kind": "query",
-                        "name": "app",
-                        "orig": "app",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "my.app.ch",
+                        "k": "query",
+                        "n": "app",
+                        "or": "app",
+                        "r": false,
+                        "t": "`$STRING`"
                       },
                       {
-                        "active": true,
-                        "example": "1.0.42",
-                        "kind": "query",
-                        "name": "version",
-                        "orig": "version",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "1.0.42",
+                        "k": "query",
+                        "n": "version",
+                        "or": "version",
+                        "r": false,
+                        "t": "`$STRING`"
                       }
                     ]
                   },
-                  "contract": {
-                    "id": "GET /current",
-                    "json": "{\"parameters\":[{\"description\":\"Optionaler App-Name.\",\"example\":\"my.app.ch\",\"in\":\"query\",\"name\":\"app\",\"schema\":{\"type\":\"string\"}},{\"description\":\"Optionale Versionsnummer für diese App.\",\"example\":\"1.0.42\",\"in\":\"query\",\"name\":\"version\",\"schema\":{\"type\":\"string\"}}],\"protocol\":\"http\",\"responses\":{\"200\":{\"description\":\"OK\"}},\"securitySource\":\"unspecified\"}",
-                    "source": "openapi3",
-                    "version": 1
+                  "k": "http",
+                  "m": "GET",
+                  "o": "/current",
+                  "q": {
+                    "exist": [
+                      "app",
+                      "version"
+                    ]
                   },
-                  "kind": "http",
-                  "method": "GET",
-                  "orig": "/current",
-                  "segments": [
+                  "r": {},
+                  "s": [
                     {
                       "lit": "current"
                     }
                   ],
-                  "select": {
-                    "exist": [
-                      "app",
-                      "version"
-                    ]
-                  },
-                  "transform": {
+                  "t": {
                     "req": "`reqdata`",
                     "res": "`body`"
                   }
                 },
                 {
-                  "active": true,
-                  "args": {
+                  "a": true,
+                  "co": {
+                    "id": "GET /currentV2",
+                    "source": "openapi3",
+                    "version": 2
+                  },
+                  "g": {
                     "query": [
                       {
-                        "active": true,
-                        "example": "my.app.ch",
-                        "kind": "query",
-                        "name": "app",
-                        "orig": "app",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "my.app.ch",
+                        "k": "query",
+                        "n": "app",
+                        "or": "app",
+                        "r": false,
+                        "t": "`$STRING`"
                       },
                       {
-                        "active": true,
-                        "example": "1.0.42",
-                        "kind": "query",
-                        "name": "version",
-                        "orig": "version",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "1.0.42",
+                        "k": "query",
+                        "n": "version",
+                        "or": "version",
+                        "r": false,
+                        "t": "`$STRING`"
                       }
                     ]
                   },
-                  "contract": {
-                    "id": "GET /currentV2",
-                    "json": "{\"parameters\":[{\"description\":\"Optionaler App-Name.\",\"example\":\"my.app.ch\",\"in\":\"query\",\"name\":\"app\",\"schema\":{\"type\":\"string\"}},{\"description\":\"Optionale Versionsnummer für diese App.\",\"example\":\"1.0.42\",\"in\":\"query\",\"name\":\"version\",\"schema\":{\"type\":\"string\"}}],\"protocol\":\"http\",\"responses\":{\"200\":{\"description\":\"OK\"}},\"securitySource\":\"unspecified\"}",
-                    "source": "openapi3",
-                    "version": 1
+                  "k": "http",
+                  "m": "GET",
+                  "o": "/currentV2",
+                  "q": {
+                    "exist": [
+                      "app",
+                      "version"
+                    ]
                   },
-                  "kind": "http",
-                  "method": "GET",
-                  "orig": "/currentV2",
-                  "segments": [
+                  "r": {},
+                  "s": [
                     {
                       "lit": "currentV2"
                     }
                   ],
-                  "select": {
-                    "exist": [
-                      "app",
-                      "version"
-                    ]
-                  },
-                  "transform": {
+                  "t": {
                     "req": "`reqdata`",
                     "res": "`body`"
                   }
                 },
                 {
-                  "active": true,
-                  "args": {
+                  "a": true,
+                  "co": {
+                    "id": "GET /today",
+                    "source": "openapi3",
+                    "version": 2
+                  },
+                  "g": {
                     "query": [
                       {
-                        "active": true,
-                        "example": "my.app.ch",
-                        "kind": "query",
-                        "name": "app",
-                        "orig": "app",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "my.app.ch",
+                        "k": "query",
+                        "n": "app",
+                        "or": "app",
+                        "r": false,
+                        "t": "`$STRING`"
                       },
                       {
-                        "active": true,
-                        "example": "1.0.42",
-                        "kind": "query",
-                        "name": "version",
-                        "orig": "version",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "1.0.42",
+                        "k": "query",
+                        "n": "version",
+                        "or": "version",
+                        "r": false,
+                        "t": "`$STRING`"
                       }
                     ]
                   },
-                  "contract": {
-                    "id": "GET /today",
-                    "json": "{\"parameters\":[{\"description\":\"Optionaler App-Name.\",\"example\":\"my.app.ch\",\"in\":\"query\",\"name\":\"app\",\"schema\":{\"type\":\"string\"}},{\"description\":\"Optionale Versionsnummer für diese App.\",\"example\":\"1.0.42\",\"in\":\"query\",\"name\":\"version\",\"schema\":{\"type\":\"string\"}}],\"protocol\":\"http\",\"responses\":{\"200\":{\"description\":\"OK\"}},\"securitySource\":\"unspecified\"}",
-                    "source": "openapi3",
-                    "version": 1
-                  },
-                  "kind": "http",
-                  "method": "GET",
-                  "orig": "/today",
-                  "segments": [
-                    {
-                      "lit": "today"
-                    }
-                  ],
-                  "select": {
+                  "k": "http",
+                  "m": "GET",
+                  "o": "/today",
+                  "q": {
                     "exist": [
                       "app",
                       "version"
                     ]
                   },
-                  "transform": {
+                  "r": {},
+                  "s": [
+                    {
+                      "lit": "today"
+                    }
+                  ],
+                  "t": {
                     "req": "`reqdata`",
                     "res": "`body`"
                   }
@@ -196,7 +262,7 @@
           "alias": {
             "field": {}
           },
-          "fields": [],
+          "fields": {},
           "name": "stuff",
           "op": {
             "load": {
@@ -204,62 +270,56 @@
               "name": "load",
               "points": [
                 {
-                  "active": true,
-                  "args": {
+                  "a": true,
+                  "co": {
+                    "id": "GET /logs",
+                    "source": "openapi3",
+                    "version": 2
+                  },
+                  "g": {
                     "query": [
                       {
-                        "active": true,
-                        "example": "my.app.ch",
-                        "kind": "query",
-                        "name": "app",
-                        "orig": "app",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "my.app.ch",
+                        "k": "query",
+                        "n": "app",
+                        "or": "app",
+                        "r": false,
+                        "t": "`$STRING`"
                       },
                       {
-                        "active": true,
-                        "example": 12,
-                        "kind": "query",
-                        "name": "line",
-                        "orig": "line",
-                        "reqd": false,
-                        "type": "`$INTEGER`"
+                        "a": true,
+                        "ex": 12,
+                        "k": "query",
+                        "n": "line",
+                        "or": "line",
+                        "r": false,
+                        "t": "`$INTEGER`"
                       },
                       {
-                        "active": true,
-                        "example": "v2018_bueber",
-                        "kind": "query",
-                        "name": "service",
-                        "orig": "service",
-                        "reqd": true,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "v2018_bueber",
+                        "k": "query",
+                        "n": "service",
+                        "or": "service",
+                        "r": true,
+                        "t": "`$STRING`"
                       },
                       {
-                        "active": true,
-                        "example": "1.0.42",
-                        "kind": "query",
-                        "name": "version",
-                        "orig": "version",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "1.0.42",
+                        "k": "query",
+                        "n": "version",
+                        "or": "version",
+                        "r": false,
+                        "t": "`$STRING`"
                       }
                     ]
                   },
-                  "contract": {
-                    "id": "GET /logs",
-                    "json": "{\"parameters\":[{\"description\":\"Interner Servicename\",\"example\":\"v2018_bueber\",\"in\":\"query\",\"name\":\"service\",\"required\":true,\"schema\":{\"type\":\"string\"}},{\"description\":\"Anzahl Zeilen\",\"in\":\"query\",\"name\":\"lines\",\"required\":false,\"schema\":{\"default\":12,\"type\":\"integer\"}},{\"description\":\"Optionaler App-Name.\",\"example\":\"my.app.ch\",\"in\":\"query\",\"name\":\"app\",\"schema\":{\"type\":\"string\"}},{\"description\":\"Optionale Versionsnummer für diese App.\",\"example\":\"1.0.42\",\"in\":\"query\",\"name\":\"version\",\"schema\":{\"type\":\"string\"}}],\"protocol\":\"http\",\"responses\":{\"200\":{\"description\":\"OK\"}},\"securitySource\":\"unspecified\"}",
-                    "source": "openapi3",
-                    "version": 1
-                  },
-                  "kind": "http",
-                  "method": "GET",
-                  "orig": "/logs",
-                  "segments": [
-                    {
-                      "lit": "logs"
-                    }
-                  ],
-                  "select": {
+                  "k": "http",
+                  "m": "GET",
+                  "o": "/logs",
+                  "q": {
                     "exist": [
                       "app",
                       "line",
@@ -267,89 +327,95 @@
                       "version"
                     ]
                   },
-                  "transform": {
+                  "r": {},
+                  "s": [
+                    {
+                      "lit": "logs"
+                    }
+                  ],
+                  "t": {
                     "req": "`reqdata`",
                     "res": "`body`"
                   }
                 },
                 {
-                  "active": true,
-                  "args": {
+                  "a": true,
+                  "co": {
+                    "id": "GET /rawdata",
+                    "source": "openapi3",
+                    "version": 2
+                  },
+                  "g": {
                     "query": [
                       {
-                        "active": true,
-                        "example": "my.app.ch",
-                        "kind": "query",
-                        "name": "app",
-                        "orig": "app",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "my.app.ch",
+                        "k": "query",
+                        "n": "app",
+                        "or": "app",
+                        "r": false,
+                        "t": "`$STRING`"
                       },
                       {
-                        "active": true,
-                        "example": "v2018_bueber",
-                        "kind": "query",
-                        "name": "service",
-                        "orig": "service",
-                        "reqd": true,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "v2018_bueber",
+                        "k": "query",
+                        "n": "service",
+                        "or": "service",
+                        "r": true,
+                        "t": "`$STRING`"
                       },
                       {
-                        "active": true,
-                        "example": "1.0.42",
-                        "kind": "query",
-                        "name": "version",
-                        "orig": "version",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "1.0.42",
+                        "k": "query",
+                        "n": "version",
+                        "or": "version",
+                        "r": false,
+                        "t": "`$STRING`"
                       }
                     ]
                   },
-                  "contract": {
-                    "id": "GET /rawdata",
-                    "json": "{\"parameters\":[{\"description\":\"Interner Servicename\",\"example\":\"v2018_bueber\",\"in\":\"query\",\"name\":\"service\",\"required\":true,\"schema\":{\"type\":\"string\"}},{\"description\":\"Optionaler App-Name.\",\"example\":\"my.app.ch\",\"in\":\"query\",\"name\":\"app\",\"schema\":{\"type\":\"string\"}},{\"description\":\"Optionale Versionsnummer für diese App.\",\"example\":\"1.0.42\",\"in\":\"query\",\"name\":\"version\",\"schema\":{\"type\":\"string\"}}],\"protocol\":\"http\",\"responses\":{\"200\":{\"description\":\"OK\"}},\"securitySource\":\"unspecified\"}",
-                    "source": "openapi3",
-                    "version": 1
-                  },
-                  "kind": "http",
-                  "method": "GET",
-                  "orig": "/rawdata",
-                  "segments": [
-                    {
-                      "lit": "rawdata"
-                    }
-                  ],
-                  "select": {
+                  "k": "http",
+                  "m": "GET",
+                  "o": "/rawdata",
+                  "q": {
                     "exist": [
                       "app",
                       "service",
                       "version"
                     ]
                   },
-                  "transform": {
+                  "r": {},
+                  "s": [
+                    {
+                      "lit": "rawdata"
+                    }
+                  ],
+                  "t": {
                     "req": "`reqdata`",
                     "res": "`body`"
                   }
                 },
                 {
-                  "active": true,
-                  "args": {},
-                  "contract": {
+                  "a": true,
+                  "co": {
                     "id": "GET /slack",
-                    "json": "{\"parameters\":[],\"protocol\":\"http\",\"responses\":{\"200\":{\"description\":\"OK\"}},\"securitySource\":\"unspecified\"}",
                     "source": "openapi3",
-                    "version": 1
+                    "version": 2
                   },
-                  "kind": "http",
-                  "method": "GET",
-                  "orig": "/slack",
-                  "segments": [
+                  "g": {},
+                  "k": "http",
+                  "m": "GET",
+                  "o": "/slack",
+                  "q": {},
+                  "r": {},
+                  "s": [
                     {
                       "lit": "slack"
                     }
                   ],
-                  "select": {},
-                  "transform": {
+                  "t": {
                     "req": "`reqdata`",
                     "res": "`body`"
                   }
@@ -366,7 +432,7 @@
           "alias": {
             "field": {}
           },
-          "fields": [],
+          "fields": {},
           "name": "v2018",
           "op": {
             "load": {
@@ -374,83 +440,74 @@
               "name": "load",
               "points": [
                 {
-                  "active": true,
-                  "args": {
+                  "a": true,
+                  "co": {
+                    "id": "GET /v2018/history",
+                    "source": "openapi3",
+                    "version": 2
+                  },
+                  "g": {
                     "query": [
                       {
-                        "active": true,
-                        "example": "my.app.ch",
-                        "kind": "query",
-                        "name": "app",
-                        "orig": "app",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "my.app.ch",
+                        "k": "query",
+                        "n": "app",
+                        "or": "app",
+                        "r": false,
+                        "t": "`$STRING`"
                       },
                       {
-                        "active": true,
-                        "example": "bern",
-                        "kind": "query",
-                        "name": "city",
-                        "orig": "city",
-                        "reqd": true,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "bern",
+                        "k": "query",
+                        "n": "city",
+                        "or": "city",
+                        "r": true,
+                        "t": "`$STRING`"
                       },
                       {
-                        "active": true,
-                        "example": "2025-02-13",
-                        "kind": "query",
-                        "name": "end",
-                        "orig": "end",
-                        "reqd": true,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "2025-02-13",
+                        "k": "query",
+                        "n": "end",
+                        "or": "end",
+                        "r": true,
+                        "t": "`$STRING`"
                       },
                       {
-                        "active": true,
-                        "example": "2025-01-01",
-                        "kind": "query",
-                        "name": "start",
-                        "orig": "start",
-                        "reqd": true,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "2025-01-01",
+                        "k": "query",
+                        "n": "start",
+                        "or": "start",
+                        "r": true,
+                        "t": "`$STRING`"
                       },
                       {
-                        "active": true,
-                        "example": null,
-                        "kind": "query",
-                        "name": "value",
-                        "orig": "value",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": null,
+                        "k": "query",
+                        "n": "value",
+                        "or": "value",
+                        "r": false,
+                        "t": "`$STRING`"
                       },
                       {
-                        "active": true,
-                        "example": "1.0.42",
-                        "kind": "query",
-                        "name": "version",
-                        "orig": "version",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "1.0.42",
+                        "k": "query",
+                        "n": "version",
+                        "or": "version",
+                        "r": false,
+                        "t": "`$STRING`"
                       }
                     ]
                   },
-                  "contract": {
-                    "id": "GET /v2018/history",
-                    "json": "{\"parameters\":[{\"description\":\"Orts-Identifikator aus der Ortsliste. (Hier obligatorisch.)\",\"example\":\"bern\",\"in\":\"query\",\"name\":\"city\",\"required\":true,\"schema\":{\"type\":\"string\"}},{\"description\":\"Startdatum und -Zeit (UTC) in irgendeinem Format (ISO, Timestamp, yesterday, -1 day).\",\"examples\":{\"Datum\":{\"value\":\"2025-01-01\"},\"Vor einem Tag\":{\"value\":\"-1 day\"},\"Zeitstempel\":{\"value\":1234567890}},\"in\":\"query\",\"name\":\"start\",\"required\":true,\"schema\":{\"type\":\"string\"}},{\"description\":\"Enddatum und -Zeit (UTC) in irgendeinem Format (ISO, Timestamp, now).\",\"examples\":{\"Datum\":{\"value\":\"2025-02-13\"},\"Jetzt\":{\"value\":\"now\"},\"Zeitstempel\":{\"value\":1234567891}},\"in\":\"query\",\"name\":\"end\",\"required\":true,\"schema\":{\"type\":\"string\"}},{\"description\":\"Optionaler App-Name.\",\"example\":\"my.app.ch\",\"in\":\"query\",\"name\":\"app\",\"schema\":{\"type\":\"string\"}},{\"description\":\"Optionale Versionsnummer für diese App.\",\"example\":\"1.0.42\",\"in\":\"query\",\"name\":\"version\",\"schema\":{\"type\":\"string\"}},{\"description\":\"Optional kommata-separierte Wertenamen, adressiert mit gepunkteten Strings. Damit werden nur einzelne Werte (einer pro Zeile) extrahiert und die ganze Response als Text zurückgegeben.\",\"examples\":{\"Einzelner Wert\":{\"description\":\"Einzelner Wert (Für Methode current)\",\"value\":\"aare.temperature\"},\"Mehrere Werte\":{\"description\":\"Mehrere Werte (Für Methode current)\",\"value\":\"aare.temperature,aare.temperature_text,sun.sunlocations.0.timeleft\"},\"none\":{\"value\":null}},\"in\":\"query\",\"name\":\"values\",\"required\":false,\"schema\":{\"type\":\"string\"}}],\"protocol\":\"http\",\"responses\":{\"200\":{\"description\":\"OK\"}},\"securitySource\":\"unspecified\"}",
-                    "source": "openapi3",
-                    "version": 1
-                  },
-                  "kind": "http",
-                  "method": "GET",
-                  "orig": "/v2018/history",
-                  "segments": [
-                    {
-                      "lit": "v2018"
-                    },
-                    {
-                      "lit": "history"
-                    }
-                  ],
-                  "select": {
+                  "k": "http",
+                  "m": "GET",
+                  "o": "/v2018/history",
+                  "q": {
                     "$action": "history",
                     "exist": [
                       "app",
@@ -461,71 +518,71 @@
                       "version"
                     ]
                   },
-                  "transform": {
+                  "r": {},
+                  "s": [
+                    {
+                      "lit": "v2018"
+                    },
+                    {
+                      "lit": "history"
+                    }
+                  ],
+                  "t": {
                     "req": "`reqdata`",
                     "res": "`body`"
                   }
                 },
                 {
-                  "active": true,
-                  "args": {
+                  "a": true,
+                  "co": {
+                    "id": "GET /v2018/current",
+                    "source": "openapi3",
+                    "version": 2
+                  },
+                  "g": {
                     "query": [
                       {
-                        "active": true,
-                        "example": "my.app.ch",
-                        "kind": "query",
-                        "name": "app",
-                        "orig": "app",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "my.app.ch",
+                        "k": "query",
+                        "n": "app",
+                        "or": "app",
+                        "r": false,
+                        "t": "`$STRING`"
                       },
                       {
-                        "active": true,
-                        "example": "bern",
-                        "kind": "query",
-                        "name": "city",
-                        "orig": "city",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "bern",
+                        "k": "query",
+                        "n": "city",
+                        "or": "city",
+                        "r": false,
+                        "t": "`$STRING`"
                       },
                       {
-                        "active": true,
-                        "example": null,
-                        "kind": "query",
-                        "name": "value",
-                        "orig": "value",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": null,
+                        "k": "query",
+                        "n": "value",
+                        "or": "value",
+                        "r": false,
+                        "t": "`$STRING`"
                       },
                       {
-                        "active": true,
-                        "example": "1.0.42",
-                        "kind": "query",
-                        "name": "version",
-                        "orig": "version",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "1.0.42",
+                        "k": "query",
+                        "n": "version",
+                        "or": "version",
+                        "r": false,
+                        "t": "`$STRING`"
                       }
                     ]
                   },
-                  "contract": {
-                    "id": "GET /v2018/current",
-                    "json": "{\"parameters\":[{\"description\":\"Orts-Identifikator aus der Ortsliste.\",\"example\":\"bern\",\"in\":\"query\",\"name\":\"city\",\"schema\":{\"default\":\"bern\",\"type\":\"string\"}},{\"description\":\"Optionaler App-Name.\",\"example\":\"my.app.ch\",\"in\":\"query\",\"name\":\"app\",\"schema\":{\"type\":\"string\"}},{\"description\":\"Optionale Versionsnummer für diese App.\",\"example\":\"1.0.42\",\"in\":\"query\",\"name\":\"version\",\"schema\":{\"type\":\"string\"}},{\"description\":\"Optional kommata-separierte Wertenamen, adressiert mit gepunkteten Strings. Damit werden nur einzelne Werte (einer pro Zeile) extrahiert und die ganze Response als Text zurückgegeben.\",\"examples\":{\"Einzelner Wert\":{\"description\":\"Einzelner Wert (Für Methode current)\",\"value\":\"aare.temperature\"},\"Mehrere Werte\":{\"description\":\"Mehrere Werte (Für Methode current)\",\"value\":\"aare.temperature,aare.temperature_text,sun.sunlocations.0.timeleft\"},\"none\":{\"value\":null}},\"in\":\"query\",\"name\":\"values\",\"required\":false,\"schema\":{\"type\":\"string\"}}],\"protocol\":\"http\",\"responses\":{\"200\":{\"description\":\"OK\"}},\"securitySource\":\"unspecified\"}",
-                    "source": "openapi3",
-                    "version": 1
-                  },
-                  "kind": "http",
-                  "method": "GET",
-                  "orig": "/v2018/current",
-                  "segments": [
-                    {
-                      "lit": "v2018"
-                    },
-                    {
-                      "lit": "current"
-                    }
-                  ],
-                  "select": {
+                  "k": "http",
+                  "m": "GET",
+                  "o": "/v2018/current",
+                  "q": {
                     "$action": "current",
                     "exist": [
                       "app",
@@ -534,71 +591,71 @@
                       "version"
                     ]
                   },
-                  "transform": {
+                  "r": {},
+                  "s": [
+                    {
+                      "lit": "v2018"
+                    },
+                    {
+                      "lit": "current"
+                    }
+                  ],
+                  "t": {
                     "req": "`reqdata`",
                     "res": "`body`"
                   }
                 },
                 {
-                  "active": true,
-                  "args": {
+                  "a": true,
+                  "co": {
+                    "id": "GET /v2018/today",
+                    "source": "openapi3",
+                    "version": 2
+                  },
+                  "g": {
                     "query": [
                       {
-                        "active": true,
-                        "example": "my.app.ch",
-                        "kind": "query",
-                        "name": "app",
-                        "orig": "app",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "my.app.ch",
+                        "k": "query",
+                        "n": "app",
+                        "or": "app",
+                        "r": false,
+                        "t": "`$STRING`"
                       },
                       {
-                        "active": true,
-                        "example": "bern",
-                        "kind": "query",
-                        "name": "city",
-                        "orig": "city",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "bern",
+                        "k": "query",
+                        "n": "city",
+                        "or": "city",
+                        "r": false,
+                        "t": "`$STRING`"
                       },
                       {
-                        "active": true,
-                        "example": null,
-                        "kind": "query",
-                        "name": "value",
-                        "orig": "value",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": null,
+                        "k": "query",
+                        "n": "value",
+                        "or": "value",
+                        "r": false,
+                        "t": "`$STRING`"
                       },
                       {
-                        "active": true,
-                        "example": "1.0.42",
-                        "kind": "query",
-                        "name": "version",
-                        "orig": "version",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "1.0.42",
+                        "k": "query",
+                        "n": "version",
+                        "or": "version",
+                        "r": false,
+                        "t": "`$STRING`"
                       }
                     ]
                   },
-                  "contract": {
-                    "id": "GET /v2018/today",
-                    "json": "{\"parameters\":[{\"description\":\"Orts-Identifikator aus der Ortsliste.\",\"example\":\"bern\",\"in\":\"query\",\"name\":\"city\",\"schema\":{\"default\":\"bern\",\"type\":\"string\"}},{\"description\":\"Optionaler App-Name.\",\"example\":\"my.app.ch\",\"in\":\"query\",\"name\":\"app\",\"schema\":{\"type\":\"string\"}},{\"description\":\"Optionale Versionsnummer für diese App.\",\"example\":\"1.0.42\",\"in\":\"query\",\"name\":\"version\",\"schema\":{\"type\":\"string\"}},{\"description\":\"Optional kommata-separierte Wertenamen, adressiert mit gepunkteten Strings. Damit werden nur einzelne Werte (einer pro Zeile) extrahiert und die ganze Response als Text zurückgegeben.\",\"examples\":{\"Einzelner Wert\":{\"description\":\"Einzelner Wert (Für Methode current)\",\"value\":\"aare.temperature\"},\"Mehrere Werte\":{\"description\":\"Mehrere Werte (Für Methode current)\",\"value\":\"aare.temperature,aare.temperature_text,sun.sunlocations.0.timeleft\"},\"none\":{\"value\":null}},\"in\":\"query\",\"name\":\"values\",\"required\":false,\"schema\":{\"type\":\"string\"}}],\"protocol\":\"http\",\"responses\":{\"200\":{\"description\":\"OK\"}},\"securitySource\":\"unspecified\"}",
-                    "source": "openapi3",
-                    "version": 1
-                  },
-                  "kind": "http",
-                  "method": "GET",
-                  "orig": "/v2018/today",
-                  "segments": [
-                    {
-                      "lit": "v2018"
-                    },
-                    {
-                      "lit": "today"
-                    }
-                  ],
-                  "select": {
+                  "k": "http",
+                  "m": "GET",
+                  "o": "/v2018/today",
+                  "q": {
                     "$action": "today",
                     "exist": [
                       "app",
@@ -607,62 +664,62 @@
                       "version"
                     ]
                   },
-                  "transform": {
+                  "r": {},
+                  "s": [
+                    {
+                      "lit": "v2018"
+                    },
+                    {
+                      "lit": "today"
+                    }
+                  ],
+                  "t": {
                     "req": "`reqdata`",
                     "res": "`body`"
                   }
                 },
                 {
-                  "active": true,
-                  "args": {
+                  "a": true,
+                  "co": {
+                    "id": "GET /v2018/cities",
+                    "source": "openapi3",
+                    "version": 2
+                  },
+                  "g": {
                     "query": [
                       {
-                        "active": true,
-                        "example": "my.app.ch",
-                        "kind": "query",
-                        "name": "app",
-                        "orig": "app",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "my.app.ch",
+                        "k": "query",
+                        "n": "app",
+                        "or": "app",
+                        "r": false,
+                        "t": "`$STRING`"
                       },
                       {
-                        "active": true,
-                        "example": null,
-                        "kind": "query",
-                        "name": "value",
-                        "orig": "value",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": null,
+                        "k": "query",
+                        "n": "value",
+                        "or": "value",
+                        "r": false,
+                        "t": "`$STRING`"
                       },
                       {
-                        "active": true,
-                        "example": "1.0.42",
-                        "kind": "query",
-                        "name": "version",
-                        "orig": "version",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "1.0.42",
+                        "k": "query",
+                        "n": "version",
+                        "or": "version",
+                        "r": false,
+                        "t": "`$STRING`"
                       }
                     ]
                   },
-                  "contract": {
-                    "id": "GET /v2018/cities",
-                    "json": "{\"parameters\":[{\"description\":\"Optionaler App-Name.\",\"example\":\"my.app.ch\",\"in\":\"query\",\"name\":\"app\",\"schema\":{\"type\":\"string\"}},{\"description\":\"Optionale Versionsnummer für diese App.\",\"example\":\"1.0.42\",\"in\":\"query\",\"name\":\"version\",\"schema\":{\"type\":\"string\"}},{\"description\":\"Optional kommata-separierte Wertenamen, adressiert mit gepunkteten Strings. Damit werden nur einzelne Werte (einer pro Zeile) extrahiert und die ganze Response als Text zurückgegeben.\",\"examples\":{\"Einzelner Wert\":{\"description\":\"Einzelner Wert (Für Methode current)\",\"value\":\"aare.temperature\"},\"Mehrere Werte\":{\"description\":\"Mehrere Werte (Für Methode current)\",\"value\":\"aare.temperature,aare.temperature_text,sun.sunlocations.0.timeleft\"},\"none\":{\"value\":null}},\"in\":\"query\",\"name\":\"values\",\"required\":false,\"schema\":{\"type\":\"string\"}}],\"protocol\":\"http\",\"responses\":{\"200\":{\"description\":\"OK\"}},\"securitySource\":\"unspecified\"}",
-                    "source": "openapi3",
-                    "version": 1
-                  },
-                  "kind": "http",
-                  "method": "GET",
-                  "orig": "/v2018/cities",
-                  "segments": [
-                    {
-                      "lit": "v2018"
-                    },
-                    {
-                      "lit": "cities"
-                    }
-                  ],
-                  "select": {
+                  "k": "http",
+                  "m": "GET",
+                  "o": "/v2018/cities",
+                  "q": {
                     "$action": "city",
                     "exist": [
                       "app",
@@ -670,62 +727,62 @@
                       "version"
                     ]
                   },
-                  "transform": {
+                  "r": {},
+                  "s": [
+                    {
+                      "lit": "v2018"
+                    },
+                    {
+                      "lit": "cities"
+                    }
+                  ],
+                  "t": {
                     "req": "`reqdata`",
                     "res": "`body`"
                   }
                 },
                 {
-                  "active": true,
-                  "args": {
+                  "a": true,
+                  "co": {
+                    "id": "GET /v2018/widget",
+                    "source": "openapi3",
+                    "version": 2
+                  },
+                  "g": {
                     "query": [
                       {
-                        "active": true,
-                        "example": "my.app.ch",
-                        "kind": "query",
-                        "name": "app",
-                        "orig": "app",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "my.app.ch",
+                        "k": "query",
+                        "n": "app",
+                        "or": "app",
+                        "r": false,
+                        "t": "`$STRING`"
                       },
                       {
-                        "active": true,
-                        "example": null,
-                        "kind": "query",
-                        "name": "value",
-                        "orig": "value",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": null,
+                        "k": "query",
+                        "n": "value",
+                        "or": "value",
+                        "r": false,
+                        "t": "`$STRING`"
                       },
                       {
-                        "active": true,
-                        "example": "1.0.42",
-                        "kind": "query",
-                        "name": "version",
-                        "orig": "version",
-                        "reqd": false,
-                        "type": "`$STRING`"
+                        "a": true,
+                        "ex": "1.0.42",
+                        "k": "query",
+                        "n": "version",
+                        "or": "version",
+                        "r": false,
+                        "t": "`$STRING`"
                       }
                     ]
                   },
-                  "contract": {
-                    "id": "GET /v2018/widget",
-                    "json": "{\"parameters\":[{\"description\":\"Optionaler App-Name.\",\"example\":\"my.app.ch\",\"in\":\"query\",\"name\":\"app\",\"schema\":{\"type\":\"string\"}},{\"description\":\"Optionale Versionsnummer für diese App.\",\"example\":\"1.0.42\",\"in\":\"query\",\"name\":\"version\",\"schema\":{\"type\":\"string\"}},{\"description\":\"Optional kommata-separierte Wertenamen, adressiert mit gepunkteten Strings. Damit werden nur einzelne Werte (einer pro Zeile) extrahiert und die ganze Response als Text zurückgegeben.\",\"examples\":{\"Einzelner Wert\":{\"description\":\"Einzelner Wert (Für Methode current)\",\"value\":\"aare.temperature\"},\"Mehrere Werte\":{\"description\":\"Mehrere Werte (Für Methode current)\",\"value\":\"aare.temperature,aare.temperature_text,sun.sunlocations.0.timeleft\"},\"none\":{\"value\":null}},\"in\":\"query\",\"name\":\"values\",\"required\":false,\"schema\":{\"type\":\"string\"}}],\"protocol\":\"http\",\"responses\":{\"200\":{\"description\":\"OK\"}},\"securitySource\":\"unspecified\"}",
-                    "source": "openapi3",
-                    "version": 1
-                  },
-                  "kind": "http",
-                  "method": "GET",
-                  "orig": "/v2018/widget",
-                  "segments": [
-                    {
-                      "lit": "v2018"
-                    },
-                    {
-                      "lit": "widget"
-                    }
-                  ],
-                  "select": {
+                  "k": "http",
+                  "m": "GET",
+                  "o": "/v2018/widget",
+                  "q": {
                     "$action": "widget",
                     "exist": [
                       "app",
@@ -733,7 +790,16 @@
                       "version"
                     ]
                   },
-                  "transform": {
+                  "r": {},
+                  "s": [
+                    {
+                      "lit": "v2018"
+                    },
+                    {
+                      "lit": "widget"
+                    }
+                  ],
+                  "t": {
                     "req": "`reqdata`",
                     "res": "`body`"
                   }
@@ -1162,17 +1228,17 @@
           "param": {},
           "step": [
             {
-              "active": true,
-              "data": {},
-              "input": {
+              "a": true,
+              "d": {},
+              "i": {
                 "ref": "legacy_ref01",
                 "srcdatavar": "legacy_ref01_data",
                 "suffix": "_dt0"
               },
-              "match": {},
-              "op": "load",
-              "spec": [],
-              "valid": [
+              "m": {},
+              "o": "load",
+              "s": [],
+              "v": [
                 {
                   "apply": "TextFieldMark",
                   "def": {
@@ -1192,17 +1258,17 @@
           "param": {},
           "step": [
             {
-              "active": true,
-              "data": {},
-              "input": {
+              "a": true,
+              "d": {},
+              "i": {
                 "ref": "stuff_ref01",
                 "srcdatavar": "stuff_ref01_data",
                 "suffix": "_dt0"
               },
-              "match": {},
-              "op": "load",
-              "spec": [],
-              "valid": [
+              "m": {},
+              "o": "load",
+              "s": [],
+              "v": [
                 {
                   "apply": "TextFieldMark",
                   "def": {
@@ -1222,17 +1288,17 @@
           "param": {},
           "step": [
             {
-              "active": true,
-              "data": {},
-              "input": {
+              "a": true,
+              "d": {},
+              "i": {
                 "ref": "v2018_ref01",
                 "srcdatavar": "v2018_ref01_data",
                 "suffix": "_dt0"
               },
-              "match": {},
-              "op": "load",
-              "spec": [],
-              "valid": [
+              "m": {},
+              "o": "load",
+              "s": [],
+              "v": [
                 {
                   "apply": "TextFieldMark",
                   "def": {

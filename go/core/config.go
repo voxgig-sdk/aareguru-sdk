@@ -98,24 +98,6 @@ func MakeConfig() map[string]any {
 						"name": "load",
 						"points": []any{
 							map[string]any{
-								"args": map[string]any{
-									"query": []any{
-										map[string]any{
-											"example": "my.app.ch",
-											"kind": "query",
-											"name": "app",
-											"orig": "app",
-											"type": "`$STRING`",
-										},
-										map[string]any{
-											"example": "1.0.42",
-											"kind": "query",
-											"name": "version",
-											"orig": "version",
-											"type": "`$STRING`",
-										},
-									},
-								},
 								"kind": "http",
 								"method": "GET",
 								"orig": "/current",
@@ -124,39 +106,40 @@ func MakeConfig() map[string]any {
 										"lit": "current",
 									},
 								},
+								"parts": []any{
+									"current",
+								},
+								"rename": map[string]any{},
+								"transform": map[string]any{
+									"req": "`reqdata`",
+									"res": "`body`",
+								},
+								"args": map[string]any{
+									"query": []any{
+										map[string]any{
+											"name": "app",
+											"orig": "app",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": "my.app.ch",
+										},
+										map[string]any{
+											"name": "version",
+											"orig": "version",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": "1.0.42",
+										},
+									},
+								},
 								"select": map[string]any{
 									"exist": []any{
 										"app",
 										"version",
 									},
 								},
-								"transform": map[string]any{
-									"req": "`reqdata`",
-									"res": "`body`",
-								},
-								"parts": []any{
-									"current",
-								},
 							},
 							map[string]any{
-								"args": map[string]any{
-									"query": []any{
-										map[string]any{
-											"example": "my.app.ch",
-											"kind": "query",
-											"name": "app",
-											"orig": "app",
-											"type": "`$STRING`",
-										},
-										map[string]any{
-											"example": "1.0.42",
-											"kind": "query",
-											"name": "version",
-											"orig": "version",
-											"type": "`$STRING`",
-										},
-									},
-								},
 								"kind": "http",
 								"method": "GET",
 								"orig": "/currentV2",
@@ -165,39 +148,40 @@ func MakeConfig() map[string]any {
 										"lit": "currentV2",
 									},
 								},
+								"parts": []any{
+									"currentV2",
+								},
+								"rename": map[string]any{},
+								"transform": map[string]any{
+									"req": "`reqdata`",
+									"res": "`body`",
+								},
+								"args": map[string]any{
+									"query": []any{
+										map[string]any{
+											"name": "app",
+											"orig": "app",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": "my.app.ch",
+										},
+										map[string]any{
+											"name": "version",
+											"orig": "version",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": "1.0.42",
+										},
+									},
+								},
 								"select": map[string]any{
 									"exist": []any{
 										"app",
 										"version",
 									},
 								},
-								"transform": map[string]any{
-									"req": "`reqdata`",
-									"res": "`body`",
-								},
-								"parts": []any{
-									"currentV2",
-								},
 							},
 							map[string]any{
-								"args": map[string]any{
-									"query": []any{
-										map[string]any{
-											"example": "my.app.ch",
-											"kind": "query",
-											"name": "app",
-											"orig": "app",
-											"type": "`$STRING`",
-										},
-										map[string]any{
-											"example": "1.0.42",
-											"kind": "query",
-											"name": "version",
-											"orig": "version",
-											"type": "`$STRING`",
-										},
-									},
-								},
 								"kind": "http",
 								"method": "GET",
 								"orig": "/today",
@@ -206,18 +190,37 @@ func MakeConfig() map[string]any {
 										"lit": "today",
 									},
 								},
+								"parts": []any{
+									"today",
+								},
+								"rename": map[string]any{},
+								"transform": map[string]any{
+									"req": "`reqdata`",
+									"res": "`body`",
+								},
+								"args": map[string]any{
+									"query": []any{
+										map[string]any{
+											"name": "app",
+											"orig": "app",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": "my.app.ch",
+										},
+										map[string]any{
+											"name": "version",
+											"orig": "version",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": "1.0.42",
+										},
+									},
+								},
 								"select": map[string]any{
 									"exist": []any{
 										"app",
 										"version",
 									},
-								},
-								"transform": map[string]any{
-									"req": "`reqdata`",
-									"res": "`body`",
-								},
-								"parts": []any{
-									"today",
 								},
 							},
 						},
@@ -236,45 +239,53 @@ func MakeConfig() map[string]any {
 						"name": "load",
 						"points": []any{
 							map[string]any{
-								"args": map[string]any{
-									"query": []any{
-										map[string]any{
-											"example": "my.app.ch",
-											"kind": "query",
-											"name": "app",
-											"orig": "app",
-											"type": "`$STRING`",
-										},
-										map[string]any{
-											"example": 12,
-											"kind": "query",
-											"name": "line",
-											"orig": "line",
-											"type": "`$INTEGER`",
-										},
-										map[string]any{
-											"example": "v2018_bueber",
-											"kind": "query",
-											"name": "service",
-											"orig": "service",
-											"reqd": true,
-											"type": "`$STRING`",
-										},
-										map[string]any{
-											"example": "1.0.42",
-											"kind": "query",
-											"name": "version",
-											"orig": "version",
-											"type": "`$STRING`",
-										},
-									},
-								},
 								"kind": "http",
 								"method": "GET",
 								"orig": "/logs",
 								"segments": []any{
 									map[string]any{
 										"lit": "logs",
+									},
+								},
+								"parts": []any{
+									"logs",
+								},
+								"rename": map[string]any{},
+								"transform": map[string]any{
+									"req": "`reqdata`",
+									"res": "`body`",
+								},
+								"args": map[string]any{
+									"query": []any{
+										map[string]any{
+											"name": "app",
+											"orig": "app",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": "my.app.ch",
+										},
+										map[string]any{
+											"name": "line",
+											"orig": "line",
+											"type": "`$INTEGER`",
+											"kind": "query",
+											"example": 12,
+										},
+										map[string]any{
+											"name": "service",
+											"orig": "service",
+											"type": "`$STRING`",
+											"kind": "query",
+											"reqd": true,
+											"example": "v2018_bueber",
+										},
+										map[string]any{
+											"name": "version",
+											"orig": "version",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": "1.0.42",
+										},
 									},
 								},
 								"select": map[string]any{
@@ -285,47 +296,48 @@ func MakeConfig() map[string]any {
 										"version",
 									},
 								},
-								"transform": map[string]any{
-									"req": "`reqdata`",
-									"res": "`body`",
-								},
-								"parts": []any{
-									"logs",
-								},
 							},
 							map[string]any{
-								"args": map[string]any{
-									"query": []any{
-										map[string]any{
-											"example": "my.app.ch",
-											"kind": "query",
-											"name": "app",
-											"orig": "app",
-											"type": "`$STRING`",
-										},
-										map[string]any{
-											"example": "v2018_bueber",
-											"kind": "query",
-											"name": "service",
-											"orig": "service",
-											"reqd": true,
-											"type": "`$STRING`",
-										},
-										map[string]any{
-											"example": "1.0.42",
-											"kind": "query",
-											"name": "version",
-											"orig": "version",
-											"type": "`$STRING`",
-										},
-									},
-								},
 								"kind": "http",
 								"method": "GET",
 								"orig": "/rawdata",
 								"segments": []any{
 									map[string]any{
 										"lit": "rawdata",
+									},
+								},
+								"parts": []any{
+									"rawdata",
+								},
+								"rename": map[string]any{},
+								"transform": map[string]any{
+									"req": "`reqdata`",
+									"res": "`body`",
+								},
+								"args": map[string]any{
+									"query": []any{
+										map[string]any{
+											"name": "app",
+											"orig": "app",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": "my.app.ch",
+										},
+										map[string]any{
+											"name": "service",
+											"orig": "service",
+											"type": "`$STRING`",
+											"kind": "query",
+											"reqd": true,
+											"example": "v2018_bueber",
+										},
+										map[string]any{
+											"name": "version",
+											"orig": "version",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": "1.0.42",
+										},
 									},
 								},
 								"select": map[string]any{
@@ -335,16 +347,8 @@ func MakeConfig() map[string]any {
 										"version",
 									},
 								},
-								"transform": map[string]any{
-									"req": "`reqdata`",
-									"res": "`body`",
-								},
-								"parts": []any{
-									"rawdata",
-								},
 							},
 							map[string]any{
-								"args": map[string]any{},
 								"kind": "http",
 								"method": "GET",
 								"orig": "/slack",
@@ -353,14 +357,16 @@ func MakeConfig() map[string]any {
 										"lit": "slack",
 									},
 								},
-								"select": map[string]any{},
+								"parts": []any{
+									"slack",
+								},
+								"rename": map[string]any{},
 								"transform": map[string]any{
 									"req": "`reqdata`",
 									"res": "`body`",
 								},
-								"parts": []any{
-									"slack",
-								},
+								"args": map[string]any{},
+								"select": map[string]any{},
 							},
 						},
 					},
@@ -378,55 +384,6 @@ func MakeConfig() map[string]any {
 						"name": "load",
 						"points": []any{
 							map[string]any{
-								"args": map[string]any{
-									"query": []any{
-										map[string]any{
-											"example": "my.app.ch",
-											"kind": "query",
-											"name": "app",
-											"orig": "app",
-											"type": "`$STRING`",
-										},
-										map[string]any{
-											"example": "bern",
-											"kind": "query",
-											"name": "city",
-											"orig": "city",
-											"reqd": true,
-											"type": "`$STRING`",
-										},
-										map[string]any{
-											"example": "2025-02-13",
-											"kind": "query",
-											"name": "end",
-											"orig": "end",
-											"reqd": true,
-											"type": "`$STRING`",
-										},
-										map[string]any{
-											"example": "2025-01-01",
-											"kind": "query",
-											"name": "start",
-											"orig": "start",
-											"reqd": true,
-											"type": "`$STRING`",
-										},
-										map[string]any{
-											"example": nil,
-											"kind": "query",
-											"name": "value",
-											"orig": "value",
-											"type": "`$STRING`",
-										},
-										map[string]any{
-											"example": "1.0.42",
-											"kind": "query",
-											"name": "version",
-											"orig": "version",
-											"type": "`$STRING`",
-										},
-									},
-								},
 								"kind": "http",
 								"method": "GET",
 								"orig": "/v2018/history",
@@ -436,6 +393,64 @@ func MakeConfig() map[string]any {
 									},
 									map[string]any{
 										"lit": "history",
+									},
+								},
+								"parts": []any{
+									"v2018",
+									"history",
+								},
+								"rename": map[string]any{},
+								"transform": map[string]any{
+									"req": "`reqdata`",
+									"res": "`body`",
+								},
+								"args": map[string]any{
+									"query": []any{
+										map[string]any{
+											"name": "app",
+											"orig": "app",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": "my.app.ch",
+										},
+										map[string]any{
+											"name": "city",
+											"orig": "city",
+											"type": "`$STRING`",
+											"kind": "query",
+											"reqd": true,
+											"example": "bern",
+										},
+										map[string]any{
+											"name": "end",
+											"orig": "end",
+											"type": "`$STRING`",
+											"kind": "query",
+											"reqd": true,
+											"example": "2025-02-13",
+										},
+										map[string]any{
+											"name": "start",
+											"orig": "start",
+											"type": "`$STRING`",
+											"kind": "query",
+											"reqd": true,
+											"example": "2025-01-01",
+										},
+										map[string]any{
+											"name": "value",
+											"orig": "value",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": nil,
+										},
+										map[string]any{
+											"name": "version",
+											"orig": "version",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": "1.0.42",
+										},
 									},
 								},
 								"select": map[string]any{
@@ -449,48 +464,8 @@ func MakeConfig() map[string]any {
 										"version",
 									},
 								},
-								"transform": map[string]any{
-									"req": "`reqdata`",
-									"res": "`body`",
-								},
-								"parts": []any{
-									"v2018",
-									"history",
-								},
 							},
 							map[string]any{
-								"args": map[string]any{
-									"query": []any{
-										map[string]any{
-											"example": "my.app.ch",
-											"kind": "query",
-											"name": "app",
-											"orig": "app",
-											"type": "`$STRING`",
-										},
-										map[string]any{
-											"example": "bern",
-											"kind": "query",
-											"name": "city",
-											"orig": "city",
-											"type": "`$STRING`",
-										},
-										map[string]any{
-											"example": nil,
-											"kind": "query",
-											"name": "value",
-											"orig": "value",
-											"type": "`$STRING`",
-										},
-										map[string]any{
-											"example": "1.0.42",
-											"kind": "query",
-											"name": "version",
-											"orig": "version",
-											"type": "`$STRING`",
-										},
-									},
-								},
 								"kind": "http",
 								"method": "GET",
 								"orig": "/v2018/current",
@@ -502,6 +477,47 @@ func MakeConfig() map[string]any {
 										"lit": "current",
 									},
 								},
+								"parts": []any{
+									"v2018",
+									"current",
+								},
+								"rename": map[string]any{},
+								"transform": map[string]any{
+									"req": "`reqdata`",
+									"res": "`body`",
+								},
+								"args": map[string]any{
+									"query": []any{
+										map[string]any{
+											"name": "app",
+											"orig": "app",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": "my.app.ch",
+										},
+										map[string]any{
+											"name": "city",
+											"orig": "city",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": "bern",
+										},
+										map[string]any{
+											"name": "value",
+											"orig": "value",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": nil,
+										},
+										map[string]any{
+											"name": "version",
+											"orig": "version",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": "1.0.42",
+										},
+									},
+								},
 								"select": map[string]any{
 									"$action": "current",
 									"exist": []any{
@@ -511,48 +527,8 @@ func MakeConfig() map[string]any {
 										"version",
 									},
 								},
-								"transform": map[string]any{
-									"req": "`reqdata`",
-									"res": "`body`",
-								},
-								"parts": []any{
-									"v2018",
-									"current",
-								},
 							},
 							map[string]any{
-								"args": map[string]any{
-									"query": []any{
-										map[string]any{
-											"example": "my.app.ch",
-											"kind": "query",
-											"name": "app",
-											"orig": "app",
-											"type": "`$STRING`",
-										},
-										map[string]any{
-											"example": "bern",
-											"kind": "query",
-											"name": "city",
-											"orig": "city",
-											"type": "`$STRING`",
-										},
-										map[string]any{
-											"example": nil,
-											"kind": "query",
-											"name": "value",
-											"orig": "value",
-											"type": "`$STRING`",
-										},
-										map[string]any{
-											"example": "1.0.42",
-											"kind": "query",
-											"name": "version",
-											"orig": "version",
-											"type": "`$STRING`",
-										},
-									},
-								},
 								"kind": "http",
 								"method": "GET",
 								"orig": "/v2018/today",
@@ -564,6 +540,47 @@ func MakeConfig() map[string]any {
 										"lit": "today",
 									},
 								},
+								"parts": []any{
+									"v2018",
+									"today",
+								},
+								"rename": map[string]any{},
+								"transform": map[string]any{
+									"req": "`reqdata`",
+									"res": "`body`",
+								},
+								"args": map[string]any{
+									"query": []any{
+										map[string]any{
+											"name": "app",
+											"orig": "app",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": "my.app.ch",
+										},
+										map[string]any{
+											"name": "city",
+											"orig": "city",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": "bern",
+										},
+										map[string]any{
+											"name": "value",
+											"orig": "value",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": nil,
+										},
+										map[string]any{
+											"name": "version",
+											"orig": "version",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": "1.0.42",
+										},
+									},
+								},
 								"select": map[string]any{
 									"$action": "today",
 									"exist": []any{
@@ -573,41 +590,8 @@ func MakeConfig() map[string]any {
 										"version",
 									},
 								},
-								"transform": map[string]any{
-									"req": "`reqdata`",
-									"res": "`body`",
-								},
-								"parts": []any{
-									"v2018",
-									"today",
-								},
 							},
 							map[string]any{
-								"args": map[string]any{
-									"query": []any{
-										map[string]any{
-											"example": "my.app.ch",
-											"kind": "query",
-											"name": "app",
-											"orig": "app",
-											"type": "`$STRING`",
-										},
-										map[string]any{
-											"example": nil,
-											"kind": "query",
-											"name": "value",
-											"orig": "value",
-											"type": "`$STRING`",
-										},
-										map[string]any{
-											"example": "1.0.42",
-											"kind": "query",
-											"name": "version",
-											"orig": "version",
-											"type": "`$STRING`",
-										},
-									},
-								},
 								"kind": "http",
 								"method": "GET",
 								"orig": "/v2018/cities",
@@ -619,6 +603,40 @@ func MakeConfig() map[string]any {
 										"lit": "cities",
 									},
 								},
+								"parts": []any{
+									"v2018",
+									"cities",
+								},
+								"rename": map[string]any{},
+								"transform": map[string]any{
+									"req": "`reqdata`",
+									"res": "`body`",
+								},
+								"args": map[string]any{
+									"query": []any{
+										map[string]any{
+											"name": "app",
+											"orig": "app",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": "my.app.ch",
+										},
+										map[string]any{
+											"name": "value",
+											"orig": "value",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": nil,
+										},
+										map[string]any{
+											"name": "version",
+											"orig": "version",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": "1.0.42",
+										},
+									},
+								},
 								"select": map[string]any{
 									"$action": "city",
 									"exist": []any{
@@ -627,41 +645,8 @@ func MakeConfig() map[string]any {
 										"version",
 									},
 								},
-								"transform": map[string]any{
-									"req": "`reqdata`",
-									"res": "`body`",
-								},
-								"parts": []any{
-									"v2018",
-									"cities",
-								},
 							},
 							map[string]any{
-								"args": map[string]any{
-									"query": []any{
-										map[string]any{
-											"example": "my.app.ch",
-											"kind": "query",
-											"name": "app",
-											"orig": "app",
-											"type": "`$STRING`",
-										},
-										map[string]any{
-											"example": nil,
-											"kind": "query",
-											"name": "value",
-											"orig": "value",
-											"type": "`$STRING`",
-										},
-										map[string]any{
-											"example": "1.0.42",
-											"kind": "query",
-											"name": "version",
-											"orig": "version",
-											"type": "`$STRING`",
-										},
-									},
-								},
 								"kind": "http",
 								"method": "GET",
 								"orig": "/v2018/widget",
@@ -673,6 +658,40 @@ func MakeConfig() map[string]any {
 										"lit": "widget",
 									},
 								},
+								"parts": []any{
+									"v2018",
+									"widget",
+								},
+								"rename": map[string]any{},
+								"transform": map[string]any{
+									"req": "`reqdata`",
+									"res": "`body`",
+								},
+								"args": map[string]any{
+									"query": []any{
+										map[string]any{
+											"name": "app",
+											"orig": "app",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": "my.app.ch",
+										},
+										map[string]any{
+											"name": "value",
+											"orig": "value",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": nil,
+										},
+										map[string]any{
+											"name": "version",
+											"orig": "version",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": "1.0.42",
+										},
+									},
+								},
 								"select": map[string]any{
 									"$action": "widget",
 									"exist": []any{
@@ -680,14 +699,6 @@ func MakeConfig() map[string]any {
 										"value",
 										"version",
 									},
-								},
-								"transform": map[string]any{
-									"req": "`reqdata`",
-									"res": "`body`",
-								},
-								"parts": []any{
-									"v2018",
-									"widget",
 								},
 							},
 						},

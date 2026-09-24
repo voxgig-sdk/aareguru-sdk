@@ -1,0 +1,28 @@
+# BasicLegacyFlow
+
+main: kit: flow: BasicLegacyFlow:
+{
+  entity: "legacy",
+  kind: "basic",
+  name: "BasicLegacyFlow",
+  step: [
+    {
+      i: {
+        ref: "legacy_ref01",
+        srcdatavar: "legacy_ref01_data",
+        suffix: "_dt0"
+      }
+
+      o: "load",
+      v: [
+        {
+          apply: "TextFieldMark",
+          def: {
+            mark: "Mark01-legacy_ref01"
+          }
+        }
+      ]
+    }
+  ],
+  "key$": "BasicLegacyFlow"
+}

@@ -1,0 +1,351 @@
+# Entity: v2018
+
+main: kit: entity: v2018: {
+
+  alias: field: {}
+
+  name: "v2018"
+  op: {
+    load: {
+      name: "load"
+      points: [
+        {
+          co: {
+            id: "GET /v2018/history"
+            source: "openapi3"
+            version: 2
+          }
+          g: {
+            query: [
+              {
+                ex: "my.app.ch"
+                k: "query"
+                n: "app"
+                or: "app"
+                r: false
+                t: "`$STRING`"
+              }
+              {
+                ex: "bern"
+                k: "query"
+                n: "city"
+                or: "city"
+                r: true
+                t: "`$STRING`"
+              }
+              {
+                ex: "2025-02-13"
+                k: "query"
+                n: "end"
+                or: "end"
+                r: true
+                t: "`$STRING`"
+              }
+              {
+                ex: "2025-01-01"
+                k: "query"
+                n: "start"
+                or: "start"
+                r: true
+                t: "`$STRING`"
+              }
+              {
+                ex: null
+                k: "query"
+                n: "value"
+                or: "value"
+                r: false
+                t: "`$STRING`"
+              }
+              {
+                ex: "1.0.42"
+                k: "query"
+                n: "version"
+                or: "version"
+                r: false
+                t: "`$STRING`"
+              }
+            ]
+          }
+          m: "GET"
+          o: "/v2018/history"
+          q: {
+            "$action": "history"
+            exist: [
+              "app"
+              "city"
+              "end"
+              "start"
+              "value"
+              "version"
+            ]
+          }
+          s: [
+            {
+              lit: "v2018"
+            }
+            {
+              lit: "history"
+            }
+          ]
+          t: {
+            req: "`reqdata`"
+            res: "`body`"
+          }
+        }
+        {
+          co: {
+            id: "GET /v2018/current"
+            source: "openapi3"
+            version: 2
+          }
+          g: {
+            query: [
+              {
+                ex: "my.app.ch"
+                k: "query"
+                n: "app"
+                or: "app"
+                r: false
+                t: "`$STRING`"
+              }
+              {
+                ex: "bern"
+                k: "query"
+                n: "city"
+                or: "city"
+                r: false
+                t: "`$STRING`"
+              }
+              {
+                ex: null
+                k: "query"
+                n: "value"
+                or: "value"
+                r: false
+                t: "`$STRING`"
+              }
+              {
+                ex: "1.0.42"
+                k: "query"
+                n: "version"
+                or: "version"
+                r: false
+                t: "`$STRING`"
+              }
+            ]
+          }
+          m: "GET"
+          o: "/v2018/current"
+          q: {
+            "$action": "current"
+            exist: [
+              "app"
+              "city"
+              "value"
+              "version"
+            ]
+          }
+          s: [
+            {
+              lit: "v2018"
+            }
+            {
+              lit: "current"
+            }
+          ]
+          t: {
+            req: "`reqdata`"
+            res: "`body`"
+          }
+        }
+        {
+          co: {
+            id: "GET /v2018/today"
+            source: "openapi3"
+            version: 2
+          }
+          g: {
+            query: [
+              {
+                ex: "my.app.ch"
+                k: "query"
+                n: "app"
+                or: "app"
+                r: false
+                t: "`$STRING`"
+              }
+              {
+                ex: "bern"
+                k: "query"
+                n: "city"
+                or: "city"
+                r: false
+                t: "`$STRING`"
+              }
+              {
+                ex: null
+                k: "query"
+                n: "value"
+                or: "value"
+                r: false
+                t: "`$STRING`"
+              }
+              {
+                ex: "1.0.42"
+                k: "query"
+                n: "version"
+                or: "version"
+                r: false
+                t: "`$STRING`"
+              }
+            ]
+          }
+          m: "GET"
+          o: "/v2018/today"
+          q: {
+            "$action": "today"
+            exist: [
+              "app"
+              "city"
+              "value"
+              "version"
+            ]
+          }
+          s: [
+            {
+              lit: "v2018"
+            }
+            {
+              lit: "today"
+            }
+          ]
+          t: {
+            req: "`reqdata`"
+            res: "`body`"
+          }
+        }
+        {
+          co: {
+            id: "GET /v2018/cities"
+            source: "openapi3"
+            version: 2
+          }
+          g: {
+            query: [
+              {
+                ex: "my.app.ch"
+                k: "query"
+                n: "app"
+                or: "app"
+                r: false
+                t: "`$STRING`"
+              }
+              {
+                ex: null
+                k: "query"
+                n: "value"
+                or: "value"
+                r: false
+                t: "`$STRING`"
+              }
+              {
+                ex: "1.0.42"
+                k: "query"
+                n: "version"
+                or: "version"
+                r: false
+                t: "`$STRING`"
+              }
+            ]
+          }
+          m: "GET"
+          o: "/v2018/cities"
+          q: {
+            "$action": "city"
+            exist: [
+              "app"
+              "value"
+              "version"
+            ]
+          }
+          s: [
+            {
+              lit: "v2018"
+            }
+            {
+              lit: "cities"
+            }
+          ]
+          t: {
+            req: "`reqdata`"
+            res: "`body`"
+          }
+        }
+        {
+          co: {
+            id: "GET /v2018/widget"
+            source: "openapi3"
+            version: 2
+          }
+          g: {
+            query: [
+              {
+                ex: "my.app.ch"
+                k: "query"
+                n: "app"
+                or: "app"
+                r: false
+                t: "`$STRING`"
+              }
+              {
+                ex: null
+                k: "query"
+                n: "value"
+                or: "value"
+                r: false
+                t: "`$STRING`"
+              }
+              {
+                ex: "1.0.42"
+                k: "query"
+                n: "version"
+                or: "version"
+                r: false
+                t: "`$STRING`"
+              }
+            ]
+          }
+          m: "GET"
+          o: "/v2018/widget"
+          q: {
+            "$action": "widget"
+            exist: [
+              "app"
+              "value"
+              "version"
+            ]
+          }
+          s: [
+            {
+              lit: "v2018"
+            }
+            {
+              lit: "widget"
+            }
+          ]
+          t: {
+            req: "`reqdata`"
+            res: "`body`"
+          }
+        }
+      ]
+    }
+  }
+
+  fields: {
+  }
+
+
+
+}

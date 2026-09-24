@@ -1,0 +1,153 @@
+# Entity: legacy
+
+main: kit: entity: legacy: {
+
+  alias: field: {}
+
+  name: "legacy"
+  op: {
+    load: {
+      name: "load"
+      points: [
+        {
+          co: {
+            id: "GET /current"
+            source: "openapi3"
+            version: 2
+          }
+          g: {
+            query: [
+              {
+                ex: "my.app.ch"
+                k: "query"
+                n: "app"
+                or: "app"
+                r: false
+                t: "`$STRING`"
+              }
+              {
+                ex: "1.0.42"
+                k: "query"
+                n: "version"
+                or: "version"
+                r: false
+                t: "`$STRING`"
+              }
+            ]
+          }
+          m: "GET"
+          o: "/current"
+          q: {
+            exist: [
+              "app"
+              "version"
+            ]
+          }
+          s: [
+            {
+              lit: "current"
+            }
+          ]
+          t: {
+            req: "`reqdata`"
+            res: "`body`"
+          }
+        }
+        {
+          co: {
+            id: "GET /currentV2"
+            source: "openapi3"
+            version: 2
+          }
+          g: {
+            query: [
+              {
+                ex: "my.app.ch"
+                k: "query"
+                n: "app"
+                or: "app"
+                r: false
+                t: "`$STRING`"
+              }
+              {
+                ex: "1.0.42"
+                k: "query"
+                n: "version"
+                or: "version"
+                r: false
+                t: "`$STRING`"
+              }
+            ]
+          }
+          m: "GET"
+          o: "/currentV2"
+          q: {
+            exist: [
+              "app"
+              "version"
+            ]
+          }
+          s: [
+            {
+              lit: "currentV2"
+            }
+          ]
+          t: {
+            req: "`reqdata`"
+            res: "`body`"
+          }
+        }
+        {
+          co: {
+            id: "GET /today"
+            source: "openapi3"
+            version: 2
+          }
+          g: {
+            query: [
+              {
+                ex: "my.app.ch"
+                k: "query"
+                n: "app"
+                or: "app"
+                r: false
+                t: "`$STRING`"
+              }
+              {
+                ex: "1.0.42"
+                k: "query"
+                n: "version"
+                or: "version"
+                r: false
+                t: "`$STRING`"
+              }
+            ]
+          }
+          m: "GET"
+          o: "/today"
+          q: {
+            exist: [
+              "app"
+              "version"
+            ]
+          }
+          s: [
+            {
+              lit: "today"
+            }
+          ]
+          t: {
+            req: "`reqdata`"
+            res: "`body`"
+          }
+        }
+      ]
+    }
+  }
+
+  fields: {
+  }
+
+
+
+}

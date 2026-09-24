@@ -16,12 +16,6 @@ const FEATURE_CLASS: Record<string, typeof BaseFeature> = {
 }
 
 
-// Per-feature plugin DEFINITIONS (voxgig/plugin `Definition` values), from
-// the model's active plugin groups. A feature that takes a `plugins` option
-// (secrets over sekreto) reads its own entry; a feature with no plugins has
-// none. Named imports above make each definition statically reachable, so
-// an SDK carries exactly the plugin modules its model selects — the same
-// leanness the old side-effect registry imports bought, without a registry.
 const FEATURE_PLUGINS: Record<string, any[]> = {
   
 }
@@ -32,7 +26,6 @@ class Config {
   makeFeature(this: any, fn: string) {
     const fc = FEATURE_CLASS[fn]
     const fi = new fc()
-    // TODO: errors etc
     return fi
   }
 
@@ -150,24 +143,6 @@ class Config {
           "name": "load",
           "points": [
             {
-              "args": {
-                "query": [
-                  {
-                    "example": "my.app.ch",
-                    "kind": "query",
-                    "name": "app",
-                    "orig": "app",
-                    "type": "`$STRING`"
-                  },
-                  {
-                    "example": "1.0.42",
-                    "kind": "query",
-                    "name": "version",
-                    "orig": "version",
-                    "type": "`$STRING`"
-                  }
-                ]
-              },
               "kind": "http",
               "method": "GET",
               "orig": "/current",
@@ -176,39 +151,40 @@ class Config {
                   "lit": "current"
                 }
               ],
+              "parts": [
+                "current"
+              ],
+              "rename": {},
+              "transform": {
+                "req": "`reqdata`",
+                "res": "`body`"
+              },
+              "args": {
+                "query": [
+                  {
+                    "name": "app",
+                    "orig": "app",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": "my.app.ch"
+                  },
+                  {
+                    "name": "version",
+                    "orig": "version",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": "1.0.42"
+                  }
+                ]
+              },
               "select": {
                 "exist": [
                   "app",
                   "version"
                 ]
-              },
-              "transform": {
-                "req": "`reqdata`",
-                "res": "`body`"
-              },
-              "parts": [
-                "current"
-              ]
+              }
             },
             {
-              "args": {
-                "query": [
-                  {
-                    "example": "my.app.ch",
-                    "kind": "query",
-                    "name": "app",
-                    "orig": "app",
-                    "type": "`$STRING`"
-                  },
-                  {
-                    "example": "1.0.42",
-                    "kind": "query",
-                    "name": "version",
-                    "orig": "version",
-                    "type": "`$STRING`"
-                  }
-                ]
-              },
               "kind": "http",
               "method": "GET",
               "orig": "/currentV2",
@@ -217,39 +193,40 @@ class Config {
                   "lit": "currentV2"
                 }
               ],
+              "parts": [
+                "currentV2"
+              ],
+              "rename": {},
+              "transform": {
+                "req": "`reqdata`",
+                "res": "`body`"
+              },
+              "args": {
+                "query": [
+                  {
+                    "name": "app",
+                    "orig": "app",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": "my.app.ch"
+                  },
+                  {
+                    "name": "version",
+                    "orig": "version",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": "1.0.42"
+                  }
+                ]
+              },
               "select": {
                 "exist": [
                   "app",
                   "version"
                 ]
-              },
-              "transform": {
-                "req": "`reqdata`",
-                "res": "`body`"
-              },
-              "parts": [
-                "currentV2"
-              ]
+              }
             },
             {
-              "args": {
-                "query": [
-                  {
-                    "example": "my.app.ch",
-                    "kind": "query",
-                    "name": "app",
-                    "orig": "app",
-                    "type": "`$STRING`"
-                  },
-                  {
-                    "example": "1.0.42",
-                    "kind": "query",
-                    "name": "version",
-                    "orig": "version",
-                    "type": "`$STRING`"
-                  }
-                ]
-              },
               "kind": "http",
               "method": "GET",
               "orig": "/today",
@@ -258,19 +235,38 @@ class Config {
                   "lit": "today"
                 }
               ],
+              "parts": [
+                "today"
+              ],
+              "rename": {},
+              "transform": {
+                "req": "`reqdata`",
+                "res": "`body`"
+              },
+              "args": {
+                "query": [
+                  {
+                    "name": "app",
+                    "orig": "app",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": "my.app.ch"
+                  },
+                  {
+                    "name": "version",
+                    "orig": "version",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": "1.0.42"
+                  }
+                ]
+              },
               "select": {
                 "exist": [
                   "app",
                   "version"
                 ]
-              },
-              "transform": {
-                "req": "`reqdata`",
-                "res": "`body`"
-              },
-              "parts": [
-                "today"
-              ]
+              }
             }
           ]
         }
@@ -288,39 +284,6 @@ class Config {
           "name": "load",
           "points": [
             {
-              "args": {
-                "query": [
-                  {
-                    "example": "my.app.ch",
-                    "kind": "query",
-                    "name": "app",
-                    "orig": "app",
-                    "type": "`$STRING`"
-                  },
-                  {
-                    "example": 12,
-                    "kind": "query",
-                    "name": "line",
-                    "orig": "line",
-                    "type": "`$INTEGER`"
-                  },
-                  {
-                    "example": "v2018_bueber",
-                    "kind": "query",
-                    "name": "service",
-                    "orig": "service",
-                    "reqd": true,
-                    "type": "`$STRING`"
-                  },
-                  {
-                    "example": "1.0.42",
-                    "kind": "query",
-                    "name": "version",
-                    "orig": "version",
-                    "type": "`$STRING`"
-                  }
-                ]
-              },
               "kind": "http",
               "method": "GET",
               "orig": "/logs",
@@ -329,6 +292,47 @@ class Config {
                   "lit": "logs"
                 }
               ],
+              "parts": [
+                "logs"
+              ],
+              "rename": {},
+              "transform": {
+                "req": "`reqdata`",
+                "res": "`body`"
+              },
+              "args": {
+                "query": [
+                  {
+                    "name": "app",
+                    "orig": "app",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": "my.app.ch"
+                  },
+                  {
+                    "name": "line",
+                    "orig": "line",
+                    "type": "`$INTEGER`",
+                    "kind": "query",
+                    "example": 12
+                  },
+                  {
+                    "name": "service",
+                    "orig": "service",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "reqd": true,
+                    "example": "v2018_bueber"
+                  },
+                  {
+                    "name": "version",
+                    "orig": "version",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": "1.0.42"
+                  }
+                ]
+              },
               "select": {
                 "exist": [
                   "app",
@@ -336,42 +340,9 @@ class Config {
                   "service",
                   "version"
                 ]
-              },
-              "transform": {
-                "req": "`reqdata`",
-                "res": "`body`"
-              },
-              "parts": [
-                "logs"
-              ]
+              }
             },
             {
-              "args": {
-                "query": [
-                  {
-                    "example": "my.app.ch",
-                    "kind": "query",
-                    "name": "app",
-                    "orig": "app",
-                    "type": "`$STRING`"
-                  },
-                  {
-                    "example": "v2018_bueber",
-                    "kind": "query",
-                    "name": "service",
-                    "orig": "service",
-                    "reqd": true,
-                    "type": "`$STRING`"
-                  },
-                  {
-                    "example": "1.0.42",
-                    "kind": "query",
-                    "name": "version",
-                    "orig": "version",
-                    "type": "`$STRING`"
-                  }
-                ]
-              },
               "kind": "http",
               "method": "GET",
               "orig": "/rawdata",
@@ -380,23 +351,49 @@ class Config {
                   "lit": "rawdata"
                 }
               ],
+              "parts": [
+                "rawdata"
+              ],
+              "rename": {},
+              "transform": {
+                "req": "`reqdata`",
+                "res": "`body`"
+              },
+              "args": {
+                "query": [
+                  {
+                    "name": "app",
+                    "orig": "app",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": "my.app.ch"
+                  },
+                  {
+                    "name": "service",
+                    "orig": "service",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "reqd": true,
+                    "example": "v2018_bueber"
+                  },
+                  {
+                    "name": "version",
+                    "orig": "version",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": "1.0.42"
+                  }
+                ]
+              },
               "select": {
                 "exist": [
                   "app",
                   "service",
                   "version"
                 ]
-              },
-              "transform": {
-                "req": "`reqdata`",
-                "res": "`body`"
-              },
-              "parts": [
-                "rawdata"
-              ]
+              }
             },
             {
-              "args": {},
               "kind": "http",
               "method": "GET",
               "orig": "/slack",
@@ -405,14 +402,16 @@ class Config {
                   "lit": "slack"
                 }
               ],
-              "select": {},
+              "parts": [
+                "slack"
+              ],
+              "rename": {},
               "transform": {
                 "req": "`reqdata`",
                 "res": "`body`"
               },
-              "parts": [
-                "slack"
-              ]
+              "args": {},
+              "select": {}
             }
           ]
         }
@@ -430,55 +429,6 @@ class Config {
           "name": "load",
           "points": [
             {
-              "args": {
-                "query": [
-                  {
-                    "example": "my.app.ch",
-                    "kind": "query",
-                    "name": "app",
-                    "orig": "app",
-                    "type": "`$STRING`"
-                  },
-                  {
-                    "example": "bern",
-                    "kind": "query",
-                    "name": "city",
-                    "orig": "city",
-                    "reqd": true,
-                    "type": "`$STRING`"
-                  },
-                  {
-                    "example": "2025-02-13",
-                    "kind": "query",
-                    "name": "end",
-                    "orig": "end",
-                    "reqd": true,
-                    "type": "`$STRING`"
-                  },
-                  {
-                    "example": "2025-01-01",
-                    "kind": "query",
-                    "name": "start",
-                    "orig": "start",
-                    "reqd": true,
-                    "type": "`$STRING`"
-                  },
-                  {
-                    "example": null,
-                    "kind": "query",
-                    "name": "value",
-                    "orig": "value",
-                    "type": "`$STRING`"
-                  },
-                  {
-                    "example": "1.0.42",
-                    "kind": "query",
-                    "name": "version",
-                    "orig": "version",
-                    "type": "`$STRING`"
-                  }
-                ]
-              },
               "kind": "http",
               "method": "GET",
               "orig": "/v2018/history",
@@ -490,6 +440,64 @@ class Config {
                   "lit": "history"
                 }
               ],
+              "parts": [
+                "v2018",
+                "history"
+              ],
+              "rename": {},
+              "transform": {
+                "req": "`reqdata`",
+                "res": "`body`"
+              },
+              "args": {
+                "query": [
+                  {
+                    "name": "app",
+                    "orig": "app",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": "my.app.ch"
+                  },
+                  {
+                    "name": "city",
+                    "orig": "city",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "reqd": true,
+                    "example": "bern"
+                  },
+                  {
+                    "name": "end",
+                    "orig": "end",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "reqd": true,
+                    "example": "2025-02-13"
+                  },
+                  {
+                    "name": "start",
+                    "orig": "start",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "reqd": true,
+                    "example": "2025-01-01"
+                  },
+                  {
+                    "name": "value",
+                    "orig": "value",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": null
+                  },
+                  {
+                    "name": "version",
+                    "orig": "version",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": "1.0.42"
+                  }
+                ]
+              },
               "select": {
                 "$action": "history",
                 "exist": [
@@ -500,49 +508,9 @@ class Config {
                   "value",
                   "version"
                 ]
-              },
-              "transform": {
-                "req": "`reqdata`",
-                "res": "`body`"
-              },
-              "parts": [
-                "v2018",
-                "history"
-              ]
+              }
             },
             {
-              "args": {
-                "query": [
-                  {
-                    "example": "my.app.ch",
-                    "kind": "query",
-                    "name": "app",
-                    "orig": "app",
-                    "type": "`$STRING`"
-                  },
-                  {
-                    "example": "bern",
-                    "kind": "query",
-                    "name": "city",
-                    "orig": "city",
-                    "type": "`$STRING`"
-                  },
-                  {
-                    "example": null,
-                    "kind": "query",
-                    "name": "value",
-                    "orig": "value",
-                    "type": "`$STRING`"
-                  },
-                  {
-                    "example": "1.0.42",
-                    "kind": "query",
-                    "name": "version",
-                    "orig": "version",
-                    "type": "`$STRING`"
-                  }
-                ]
-              },
               "kind": "http",
               "method": "GET",
               "orig": "/v2018/current",
@@ -554,6 +522,47 @@ class Config {
                   "lit": "current"
                 }
               ],
+              "parts": [
+                "v2018",
+                "current"
+              ],
+              "rename": {},
+              "transform": {
+                "req": "`reqdata`",
+                "res": "`body`"
+              },
+              "args": {
+                "query": [
+                  {
+                    "name": "app",
+                    "orig": "app",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": "my.app.ch"
+                  },
+                  {
+                    "name": "city",
+                    "orig": "city",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": "bern"
+                  },
+                  {
+                    "name": "value",
+                    "orig": "value",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": null
+                  },
+                  {
+                    "name": "version",
+                    "orig": "version",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": "1.0.42"
+                  }
+                ]
+              },
               "select": {
                 "$action": "current",
                 "exist": [
@@ -562,49 +571,9 @@ class Config {
                   "value",
                   "version"
                 ]
-              },
-              "transform": {
-                "req": "`reqdata`",
-                "res": "`body`"
-              },
-              "parts": [
-                "v2018",
-                "current"
-              ]
+              }
             },
             {
-              "args": {
-                "query": [
-                  {
-                    "example": "my.app.ch",
-                    "kind": "query",
-                    "name": "app",
-                    "orig": "app",
-                    "type": "`$STRING`"
-                  },
-                  {
-                    "example": "bern",
-                    "kind": "query",
-                    "name": "city",
-                    "orig": "city",
-                    "type": "`$STRING`"
-                  },
-                  {
-                    "example": null,
-                    "kind": "query",
-                    "name": "value",
-                    "orig": "value",
-                    "type": "`$STRING`"
-                  },
-                  {
-                    "example": "1.0.42",
-                    "kind": "query",
-                    "name": "version",
-                    "orig": "version",
-                    "type": "`$STRING`"
-                  }
-                ]
-              },
               "kind": "http",
               "method": "GET",
               "orig": "/v2018/today",
@@ -616,6 +585,47 @@ class Config {
                   "lit": "today"
                 }
               ],
+              "parts": [
+                "v2018",
+                "today"
+              ],
+              "rename": {},
+              "transform": {
+                "req": "`reqdata`",
+                "res": "`body`"
+              },
+              "args": {
+                "query": [
+                  {
+                    "name": "app",
+                    "orig": "app",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": "my.app.ch"
+                  },
+                  {
+                    "name": "city",
+                    "orig": "city",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": "bern"
+                  },
+                  {
+                    "name": "value",
+                    "orig": "value",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": null
+                  },
+                  {
+                    "name": "version",
+                    "orig": "version",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": "1.0.42"
+                  }
+                ]
+              },
               "select": {
                 "$action": "today",
                 "exist": [
@@ -624,42 +634,9 @@ class Config {
                   "value",
                   "version"
                 ]
-              },
-              "transform": {
-                "req": "`reqdata`",
-                "res": "`body`"
-              },
-              "parts": [
-                "v2018",
-                "today"
-              ]
+              }
             },
             {
-              "args": {
-                "query": [
-                  {
-                    "example": "my.app.ch",
-                    "kind": "query",
-                    "name": "app",
-                    "orig": "app",
-                    "type": "`$STRING`"
-                  },
-                  {
-                    "example": null,
-                    "kind": "query",
-                    "name": "value",
-                    "orig": "value",
-                    "type": "`$STRING`"
-                  },
-                  {
-                    "example": "1.0.42",
-                    "kind": "query",
-                    "name": "version",
-                    "orig": "version",
-                    "type": "`$STRING`"
-                  }
-                ]
-              },
               "kind": "http",
               "method": "GET",
               "orig": "/v2018/cities",
@@ -671,6 +648,40 @@ class Config {
                   "lit": "cities"
                 }
               ],
+              "parts": [
+                "v2018",
+                "cities"
+              ],
+              "rename": {},
+              "transform": {
+                "req": "`reqdata`",
+                "res": "`body`"
+              },
+              "args": {
+                "query": [
+                  {
+                    "name": "app",
+                    "orig": "app",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": "my.app.ch"
+                  },
+                  {
+                    "name": "value",
+                    "orig": "value",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": null
+                  },
+                  {
+                    "name": "version",
+                    "orig": "version",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": "1.0.42"
+                  }
+                ]
+              },
               "select": {
                 "$action": "city",
                 "exist": [
@@ -678,42 +689,9 @@ class Config {
                   "value",
                   "version"
                 ]
-              },
-              "transform": {
-                "req": "`reqdata`",
-                "res": "`body`"
-              },
-              "parts": [
-                "v2018",
-                "cities"
-              ]
+              }
             },
             {
-              "args": {
-                "query": [
-                  {
-                    "example": "my.app.ch",
-                    "kind": "query",
-                    "name": "app",
-                    "orig": "app",
-                    "type": "`$STRING`"
-                  },
-                  {
-                    "example": null,
-                    "kind": "query",
-                    "name": "value",
-                    "orig": "value",
-                    "type": "`$STRING`"
-                  },
-                  {
-                    "example": "1.0.42",
-                    "kind": "query",
-                    "name": "version",
-                    "orig": "version",
-                    "type": "`$STRING`"
-                  }
-                ]
-              },
               "kind": "http",
               "method": "GET",
               "orig": "/v2018/widget",
@@ -725,6 +703,40 @@ class Config {
                   "lit": "widget"
                 }
               ],
+              "parts": [
+                "v2018",
+                "widget"
+              ],
+              "rename": {},
+              "transform": {
+                "req": "`reqdata`",
+                "res": "`body`"
+              },
+              "args": {
+                "query": [
+                  {
+                    "name": "app",
+                    "orig": "app",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": "my.app.ch"
+                  },
+                  {
+                    "name": "value",
+                    "orig": "value",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": null
+                  },
+                  {
+                    "name": "version",
+                    "orig": "version",
+                    "type": "`$STRING`",
+                    "kind": "query",
+                    "example": "1.0.42"
+                  }
+                ]
+              },
               "select": {
                 "$action": "widget",
                 "exist": [
@@ -732,15 +744,7 @@ class Config {
                   "value",
                   "version"
                 ]
-              },
-              "transform": {
-                "req": "`reqdata`",
-                "res": "`body`"
-              },
-              "parts": [
-                "v2018",
-                "widget"
-              ]
+              }
             }
           ]
         }

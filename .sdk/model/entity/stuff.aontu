@@ -1,0 +1,154 @@
+# Entity: stuff
+
+main: kit: entity: stuff: {
+
+  alias: field: {}
+
+  name: "stuff"
+  op: {
+    load: {
+      name: "load"
+      points: [
+        {
+          co: {
+            id: "GET /logs"
+            source: "openapi3"
+            version: 2
+          }
+          g: {
+            query: [
+              {
+                ex: "my.app.ch"
+                k: "query"
+                n: "app"
+                or: "app"
+                r: false
+                t: "`$STRING`"
+              }
+              {
+                ex: 12
+                k: "query"
+                n: "line"
+                or: "line"
+                r: false
+                t: "`$INTEGER`"
+              }
+              {
+                ex: "v2018_bueber"
+                k: "query"
+                n: "service"
+                or: "service"
+                r: true
+                t: "`$STRING`"
+              }
+              {
+                ex: "1.0.42"
+                k: "query"
+                n: "version"
+                or: "version"
+                r: false
+                t: "`$STRING`"
+              }
+            ]
+          }
+          m: "GET"
+          o: "/logs"
+          q: {
+            exist: [
+              "app"
+              "line"
+              "service"
+              "version"
+            ]
+          }
+          s: [
+            {
+              lit: "logs"
+            }
+          ]
+          t: {
+            req: "`reqdata`"
+            res: "`body`"
+          }
+        }
+        {
+          co: {
+            id: "GET /rawdata"
+            source: "openapi3"
+            version: 2
+          }
+          g: {
+            query: [
+              {
+                ex: "my.app.ch"
+                k: "query"
+                n: "app"
+                or: "app"
+                r: false
+                t: "`$STRING`"
+              }
+              {
+                ex: "v2018_bueber"
+                k: "query"
+                n: "service"
+                or: "service"
+                r: true
+                t: "`$STRING`"
+              }
+              {
+                ex: "1.0.42"
+                k: "query"
+                n: "version"
+                or: "version"
+                r: false
+                t: "`$STRING`"
+              }
+            ]
+          }
+          m: "GET"
+          o: "/rawdata"
+          q: {
+            exist: [
+              "app"
+              "service"
+              "version"
+            ]
+          }
+          s: [
+            {
+              lit: "rawdata"
+            }
+          ]
+          t: {
+            req: "`reqdata`"
+            res: "`body`"
+          }
+        }
+        {
+          co: {
+            id: "GET /slack"
+            source: "openapi3"
+            version: 2
+          }
+          m: "GET"
+          o: "/slack"
+          s: [
+            {
+              lit: "slack"
+            }
+          ]
+          t: {
+            req: "`reqdata`"
+            res: "`body`"
+          }
+        }
+      ]
+    }
+  }
+
+  fields: {
+  }
+
+
+
+}
