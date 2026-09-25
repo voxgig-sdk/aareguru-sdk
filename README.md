@@ -106,11 +106,11 @@ local result, err = client:Stuff():load({ service = "example" })
 | Language | Package | Install |
 | --- | --- | --- |
 | TypeScript | `@voxgig-sdk/aareguru-sdk` | publish pending — [install from git tag](https://github.com/voxgig-sdk/aareguru-sdk/tags) |
-| Python | `voxgig-sdk-aareguru` | publish pending — [install from git tag](https://github.com/voxgig-sdk/aareguru-sdk/tags) |
-| PHP | `voxgig-sdk/aareguru` | publish pending — [install from git tag](https://github.com/voxgig-sdk/aareguru-sdk/tags) |
+| Python | `voxgig-sdk-aareguru-sdk` | publish pending — [install from git tag](https://github.com/voxgig-sdk/aareguru-sdk/tags) |
+| PHP | `voxgig-sdk/aareguru-sdk` | publish pending — [install from git tag](https://github.com/voxgig-sdk/aareguru-sdk/tags) |
 | Golang | `github.com/voxgig-sdk/aareguru-sdk/go` | `go get github.com/voxgig-sdk/aareguru-sdk/go@latest` |
-| Ruby | `voxgig-sdk-aareguru` | publish pending — [install from git tag](https://github.com/voxgig-sdk/aareguru-sdk/tags) |
-| Lua | `voxgig-sdk-aareguru` | publish pending — [install from git tag](https://github.com/voxgig-sdk/aareguru-sdk/tags) |
+| Ruby | `voxgig-sdk-aareguru-sdk` | publish pending — [install from git tag](https://github.com/voxgig-sdk/aareguru-sdk/tags) |
+| Lua | `voxgig-sdk-aareguru-sdk` | publish pending — [install from git tag](https://github.com/voxgig-sdk/aareguru-sdk/tags) |
 | Go CLI | `github.com/voxgig-sdk/aareguru-sdk/go-cli` | `go install github.com/voxgig-sdk/aareguru-sdk/go-cli/cmd/aareguru@latest` |
 | Go MCP server | `github.com/voxgig-sdk/aareguru-sdk/go-mcp` | `go get github.com/voxgig-sdk/aareguru-sdk/go-mcp@latest` |
 
@@ -342,10 +342,10 @@ forking the SDK.
 
 | Feature | Purpose |
 | --- | --- |
-| **RatelimitFeature** | Client-side rate limiting via a token bucket |
-| **RetryFeature** | Automatic retry of transient failures with exponential backoff |
-| **TestFeature** | In-memory mock transport for testing without a live server |
-| **TimeoutFeature** | Per-request timeout with transport abort |
+| **RatelimitFeature** | Rate limiting |
+| **RetryFeature** | Retry |
+| **TestFeature** | Test transport |
+| **TimeoutFeature** | Timeout |
 
 Pass custom features via the `extend` option at construction time.
 
