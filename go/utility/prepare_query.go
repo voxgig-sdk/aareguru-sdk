@@ -17,7 +17,7 @@ func prepareQueryUtil(ctx *core.Context) map[string]any {
 	if point != nil {
 		if p := vs.GetProp(point, "params"); p != nil {
 			if pl, ok := p.([]any); ok {
-				params = pl
+				params = append([]any{}, pl...)
 			}
 		}
 	}
@@ -25,11 +25,52 @@ func prepareQueryUtil(ctx *core.Context) map[string]any {
 		params = []any{}
 	}
 
+	// A path parameter travels in the path. The generated config lists them as
+	// args.params, which prepareParams reads; params is the older list of names.
+	if point != nil {
+		if pl, ok := vs.GetPath(point, []any{"args", "params"}).([]any); ok {
+			for _, pd := range pl {
+				if name, ok := vs.GetProp(pd, "name").(string); ok {
+					params = append(params, name)
+				}
+			}
+		}
+	}
+
+	// A header parameter travels in the headers, which prepareHeaders fills.
+	if point != nil {
+		if hl, ok := vs.GetPath(point, []any{"args", "header"}).([]any); ok {
+			for _, hd := range hl {
+				if name, ok := vs.GetProp(hd, "name").(string); ok {
+					params = append(params, name)
+				}
+			}
+		}
+	}
+
+	// A query parameter travels under the name the definition gives it, its
+	// orig, which the model may have renamed for the caller.
+	wire := map[string]string{}
+	if point != nil {
+		if ql, ok := vs.GetPath(point, []any{"args", "query"}).([]any); ok {
+			for _, qd := range ql {
+				name, _ := vs.GetProp(qd, "name").(string)
+				orig, _ := vs.GetProp(qd, "orig").(string)
+				if "" != name && "" != orig {
+					wire[name] = orig
+				}
+			}
+		}
+	}
+
 	out := map[string]any{}
 	for _, item := range vs.Items(reqmatch) {
 		key, _ := item[0].(string)
 		val := item[1]
 		if val != nil && key != "$action" && !containsStr(params, key) {
+			if orig, ok := wire[key]; ok {
+				key = orig
+			}
 			out[key] = val
 		}
 	}

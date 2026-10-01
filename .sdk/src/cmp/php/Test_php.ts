@@ -9,6 +9,7 @@ import { cmp, each, Folder, File, Content, entityCollection,
 
 import { TestEntity } from './TestEntity_php'
 import { TestDirect } from './TestDirect_php'
+import { TestClean } from './TestClean_php'
 import { ReadmeExamplesTest } from './ReadmeExamplesTest_php'
 
 
@@ -20,6 +21,7 @@ const Test = cmp(function Test(props: any) {
 
     // Write-once: a project's edited control file survives regeneration.
     TestControl({ target, dir: 'test' })
+    TestClean({ target })
 
     // Generate exists test
     File({ name: 'ExistsTest.' + target.ext }, () => {

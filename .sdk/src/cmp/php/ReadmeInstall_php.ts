@@ -1,5 +1,5 @@
 
-import { cmp, Content, installCommand, isPublished, repoInfo } from '@voxgig/sdkgen'
+import { cmp, Content, installCommand, isPublished, packageName, repoInfo } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -15,12 +15,18 @@ ${installCommand(model, target.name)}
     return
   }
 
-  // Publish pending: not yet on Packagist. Install from the git release tag.
-  const { releasesUrl } = repoInfo(model)
+  // Publish pending: not yet on Packagist. Install from the git release tag,
+  // or from a clone as a Composer path repository, since a tag may not exist.
+  const { releasesUrl, repoUrl, repo } = repoInfo(model)
   Content(`This package is not yet published to Packagist. Install it from the
-GitHub release tag (\`${target.name}/vX.Y.Z\`):
+GitHub release tag (\`${target.name}/vX.Y.Z\`, see [Releases](${releasesUrl})), or
+from a clone as a Composer path repository:
 
-- Releases: [${releasesUrl}](${releasesUrl})
+\`\`\`bash
+git clone ${repoUrl}
+composer config repositories.${repo} path ./${repo}/${target.name}
+composer require ${packageName(model, target.name)}:@dev
+\`\`\`
 
 `)
 })

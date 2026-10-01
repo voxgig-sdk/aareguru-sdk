@@ -89,7 +89,13 @@ class EntityOperation {
       return done(ctx)
     }
     catch (err: any) {
-      // #PreUnexpected-Hook
+      // What a hook throws here must not escape the cleaning below.
+      try {
+        // #PreUnexpected-Hook
+      }
+      catch (hookerr: any) {
+        err = hookerr
+      }
 
       err = this._unexpected(ctx, err)
 

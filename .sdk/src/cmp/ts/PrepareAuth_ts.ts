@@ -108,19 +108,24 @@ ${cookieHelper(spec.where)}
   // query parameter or a cookie, so the branch is emitted only where it
   // can mean something.
   const basicBlock = (spec.basic && 'header' === spec.where) ? `
-  // True HTTP Basic Auth needs TWO credentials, base64-joined - a single
+  // True HTTP Basic Auth joins the two credentials, base64-encoded - a single
   // token in the header (the branch below) can never authenticate against
   // an API that actually checks \`Authorization: Basic base64(user:pass)\`.
+  // The password may be empty (RFC 7617): Lob, for one, documents the key as
+  // the user with a blank password (\`curl -u key:\`).
   if (true === options.auth.basic) {
     const secret = getprop(options, OPTION_secret, NOTFOUND)
     const noApikey = NOTFOUND === apikey || null == apikey || '' === apikey
-    const noSecret = NOTFOUND === secret || null == secret || '' === secret
+    const pass = NOTFOUND === secret || null == secret ? '' : secret
 
-    if (noApikey || noSecret) {
+    if (noApikey) {
       delprop(headers, CRED_name)
     }
     else {
-      const b64 = Buffer.from(apikey + ':' + secret).toString('base64')
+      const b64 = Buffer.from(apikey + ':' + pass).toString('base64')
+      // The joined, encoded pair is a wire form neither credential's own
+      // registration covers.
+      utility.cleanAdd(ctx, b64)
       setprop(headers, CRED_name, prefix ? prefix + ' ' + b64 : b64)
     }
 

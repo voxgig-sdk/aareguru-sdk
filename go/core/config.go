@@ -266,7 +266,7 @@ func MakeConfig() map[string]any {
 										},
 										map[string]any{
 											"name": "line",
-											"orig": "line",
+											"orig": "lines",
 											"type": "`$INTEGER`",
 											"kind": "query",
 											"example": 12,
@@ -439,7 +439,7 @@ func MakeConfig() map[string]any {
 										},
 										map[string]any{
 											"name": "value",
-											"orig": "value",
+											"orig": "values",
 											"type": "`$STRING`",
 											"kind": "query",
 											"example": nil,
@@ -504,7 +504,7 @@ func MakeConfig() map[string]any {
 										},
 										map[string]any{
 											"name": "value",
-											"orig": "value",
+											"orig": "values",
 											"type": "`$STRING`",
 											"kind": "query",
 											"example": nil,
@@ -567,7 +567,7 @@ func MakeConfig() map[string]any {
 										},
 										map[string]any{
 											"name": "value",
-											"orig": "value",
+											"orig": "values",
 											"type": "`$STRING`",
 											"kind": "query",
 											"example": nil,
@@ -623,7 +623,7 @@ func MakeConfig() map[string]any {
 										},
 										map[string]any{
 											"name": "value",
-											"orig": "value",
+											"orig": "values",
 											"type": "`$STRING`",
 											"kind": "query",
 											"example": nil,
@@ -678,7 +678,7 @@ func MakeConfig() map[string]any {
 										},
 										map[string]any{
 											"name": "value",
-											"orig": "value",
+											"orig": "values",
 											"type": "`$STRING`",
 											"kind": "query",
 											"example": nil,

@@ -128,26 +128,27 @@ ${cookieHelper(spec.where)}func prepareAuthUtil(ctx *core.Context) (*core.Spec, 
 `
 
   const basicBlock = !withBasic ? '' : `
-	// True HTTP Basic Auth needs TWO credentials, base64-joined - a single
+	// True HTTP Basic Auth joins the two credentials, base64-encoded - a single
 	// token in the header (the branch below) can never authenticate against
 	// an API that actually checks \`Authorization: Basic base64(user:pass)\`.
+	// The password may be empty (RFC 7617): Lob, for one, documents the key as
+	// the user with a blank password (\`curl -u key:\`).
 	if basicAuth, _ := vs.GetPath(options, []any{"auth", "basic"}).(bool); basicAuth {
 		secret := vs.GetProp(options, optionSecret, notFound)
 
-		noSecret := false
-		if secret == nil {
-			noSecret = true
-		} else if secretStr, ok := secret.(string); ok &&
-			(secretStr == notFound || secretStr == "") {
-			noSecret = true
+		secretVal, _ := secret.(string)
+		if secretVal == notFound {
+			secretVal = ""
 		}
 
-		if skip || noSecret {
+		if skip {
 			${clear(spec.where)}
 		} else {
 			apikeyVal, _ := apikey.(string)
-			secretVal, _ := secret.(string)
 			b64 := base64.StdEncoding.EncodeToString([]byte(apikeyVal + ":" + secretVal))
+			// The joined, encoded pair is a wire form neither credential's own
+			// registration covers.
+			ctx.Utility.CleanAdd(ctx, b64)
 
 			basicPrefix := ""
 			if ap := vs.GetPath(options, []any{"auth", "prefix"}); ap != nil {

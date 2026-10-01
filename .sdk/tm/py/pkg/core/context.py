@@ -207,3 +207,20 @@ class AareguruContext:
 
     def make_error(self, code, msg):
         return AareguruError(code, msg, self)
+
+    # The serialised context leaves the pipeline (a logger, an error dump),
+    # so it is cleaned; the live fields stay raw for the pipeline's own use.
+    def to_json(self):
+        record = {
+            "id": self.id,
+            "op": self.op,
+            "spec": self.spec,
+            "result": self.result,
+            "response": self.response,
+            "meta": self.meta,
+        }
+        clean = getattr(self.utility, "clean", None) if self.utility is not None else None
+        return clean(self, record) if callable(clean) else record
+
+    def __repr__(self):
+        return self.__class__.__name__ + "(" + repr(self.to_json()) + ")"

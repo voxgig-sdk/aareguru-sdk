@@ -29,7 +29,7 @@ main: kit: entity: stuff: {
                 ex: 12
                 k: "query"
                 n: "line"
-                or: "line"
+                or: "lines"
                 r: false
                 t: "`$INTEGER`"
               }

@@ -77,6 +77,7 @@ type TestControl = {
     skip?: {
       live?: { direct?: any[], entityOp?: any[] }
       unit?: { direct?: any[], entityOp?: any[] }
+      definition?: { direct?: any[], entityOp?: any[] }
     }
     live?: { delayMs?: number }
     client?: { options?: Record<string, any> }
@@ -105,11 +106,11 @@ function loadTestControl(): TestControl {
 
 // Returns the skip decision for a given test name from sdk-test-control.json.
 // `kind` is 'direct' (matches by `test` field) or 'entityOp' (matches by
-// `entity` + `op`). `mode` is 'live' or 'unit'.
+// `entity` + `op`). `mode` is 'live', 'unit' or 'definition'.
 function isControlSkipped(
   kind: 'direct' | 'entityOp',
   name: string,
-  mode: 'live' | 'unit'
+  mode: 'live' | 'unit' | 'definition'
 ): { skip: boolean, reason?: string } {
   const ctrl = loadTestControl()
   const list = ctrl?.test?.skip?.[mode]?.[kind] ?? []

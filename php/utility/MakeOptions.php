@@ -27,6 +27,49 @@ class AareguruMakeOptions
     {
         $options = $ctx->options ?? [];
 
+        // THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
+        //
+        // `AareguruSchema::optspec()` is built from the model:
+        // `main.kit.optspec` for the standard options, plus one entry per
+        // feature this target carries, taken from that feature's own
+        // `config.options` / `config.optspec`. Editing this file to add an
+        // option would put it back where it was — one of twenty
+        // hand-maintained copies of a schema nothing cross-checked — so add
+        // it to the model instead and every ported target validates it.
+        //
+        // Required explicitly rather than left to the classmap: the generated
+        // SDK is exercised (README examples, the compile checks) without a
+        // dumped composer autoload.
+        require_once __DIR__ . '/../schema.php';
+        require_once __DIR__ . '/../core/Context.php';
+        $optspec = AareguruSchema::optspec();
+
+        $config = $ctx->config ?? [];
+        $cfgopts = isset($config['options']) && is_array($config['options']) ? $config['options'] : [];
+
+        // The secret registry exists BEFORE validation, fed from the raw
+        // input, so the constructor's own rejection of a mistyped credential
+        // is clean too.
+        $block = function (mixed $clean): array {
+            return is_object($clean) ? get_object_vars($clean) : (is_array($clean) ? $clean : []);
+        };
+        $rawclean = $block($options['clean'] ?? null);
+        $cfgclean = $block($cfgopts['clean'] ?? null);
+        $specclean = $block(\Voxgig\Struct\Struct::getprop($optspec, 'clean'));
+        $cleancfg = AareguruClean::config(array_merge($specclean, $cfgclean, $rawclean));
+        $cleanctx = new AareguruContext([
+            'options' => ['__derived__' => ['clean' => $cleancfg]],
+        ], null);
+        $rawopts = is_object($options) ? get_object_vars($options)
+            : (is_array($options) ? $options : []);
+        unset($rawopts['clean']);
+        AareguruClean::add_options($cleanctx, $rawopts);
+        foreach ([$cfgclean, $rawclean] as $source) {
+            foreach (AareguruClean::splitvalues($source['values'] ?? null) as $raw) {
+                AareguruClean::add($cleanctx, $raw);
+            }
+        }
+
         // Merge custom utility overrides.
         //
         // A key naming a real utility member REPLACES it; anything else is
@@ -144,31 +187,17 @@ class AareguruMakeOptions
             $opts['feature'] = $fmap;
         }
 
-        $config = $ctx->config ?? [];
-        $cfgopts = isset($config['options']) && is_array($config['options']) ? $config['options'] : [];
-
-        // THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
-        //
-        // `AareguruSchema::optspec()` is built from the model:
-        // `main.kit.optspec` for the standard options, plus one entry per
-        // feature this target carries, taken from that feature's own
-        // `config.options` / `config.optspec`. Editing this file to add an
-        // option would put it back where it was — one of twenty
-        // hand-maintained copies of a schema nothing cross-checked — so add
-        // it to the model instead and every ported target validates it.
-        //
-        // Required explicitly rather than left to the classmap: the generated
-        // SDK is exercised (README examples, the compile checks) without a
-        // dumped composer autoload.
-        require_once __DIR__ . '/../schema.php';
-        $optspec = AareguruSchema::optspec();
-
         // Empty [] would be treated as a list and clobber the map under merge;
         // substitute an empty stdClass to preserve map semantics.
         $cfgopts_merge = empty($cfgopts) ? new \stdClass() : $cfgopts;
         $opts_merge = empty($opts) ? new \stdClass() : $opts;
         $merged = \Voxgig\Struct\Struct::merge([(object)[], $cfgopts_merge, $opts_merge]);
-        $validated = \Voxgig\Struct\Struct::validate($merged, $optspec);
+        try {
+            $validated = \Voxgig\Struct\Struct::validate($merged, $optspec);
+        } catch (\Throwable $err) {
+            AareguruClean::call($cleanctx, $err);
+            throw $err;
+        }
         $opts = self::to_array_deep($validated);
         if (!is_array($opts)) {
             $opts = [];
@@ -215,7 +244,7 @@ class AareguruMakeOptions
             }
             $opts['base'] = preg_replace_callback(
                 '/\{([A-Za-z0-9_]+)\}/',
-                function ($m) use ($server, $testmode, $sdkname, $base) {
+                function ($m) use ($server, $testmode, $sdkname, $base, $cleanctx) {
                     $name = $m[1];
                     $val = $server[$name] ?? '';
                     if (!is_string($val)) {
@@ -225,10 +254,11 @@ class AareguruMakeOptions
                         if ($testmode) {
                             return 'test-' . $name;
                         }
-                        throw new \InvalidArgumentException(
+                        // Its trace holds the raw options.
+                        throw AareguruClean::call($cleanctx, new \InvalidArgumentException(
                             $sdkname . ": the server variable '" . $name . "' is required: " .
                             "the API base URL is '" . $base . "' — pass " .
-                            "['server' => ['" . $name . "' => '...']] in the SDK options");
+                            "['server' => ['" . $name . "' => '...']] in the SDK options"));
                     }
                     return $val;
                 },
@@ -242,18 +272,6 @@ class AareguruMakeOptions
             }
             $opts['system']['fetch'] = $sys_fetch;
         }
-
-        $clean_keys = \Voxgig\Struct\Struct::getpath($opts, 'clean.keys');
-        if (!is_string($clean_keys)) {
-            $clean_keys = 'key,token,id';
-        }
-        $parts = array_filter(array_map('trim', explode(',', $clean_keys)), function ($p) {
-            return $p !== '';
-        });
-        $parts = array_map(function ($p) {
-            return \Voxgig\Struct\Struct::escre($p);
-        }, $parts);
-        $keyre = implode('|', $parts);
 
         // Resolve the feature add-order: an explicit list order (above) wins;
         // otherwise order the map test-first, then the remaining names sorted,
@@ -286,9 +304,15 @@ class AareguruMakeOptions
             }
         }
 
-        $derived = ['clean' => $keyre === '' ? [] : ['keyre' => $keyre]];
-        $derived['featureorder'] = $featureorder;
-        $opts['__derived__'] = $derived;
+        // Again over the merged result: the config's own defaults can carry one.
+        $merged = $opts;
+        unset($merged['clean']);
+        AareguruClean::add_options($cleanctx, $merged);
+
+        $opts['__derived__'] = [
+            'clean' => $cleancfg,
+            'featureorder' => $featureorder,
+        ];
 
         return $opts;
     }

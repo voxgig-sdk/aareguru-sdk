@@ -9,6 +9,7 @@ import { cmp, each, Folder, File, Content, entityCollection,
 
 import { TestEntity } from './TestEntity_py'
 import { TestDirect } from './TestDirect_py'
+import { TestClean } from './TestClean_py'
 import { ReadmeExamplesTest } from './ReadmeExamplesTest_py'
 
 
@@ -52,6 +53,8 @@ class TestExists:
       TestEntity({ target, entity })
       TestDirect({ target, entity })
     })
+
+    TestClean({ target })
 
     // Validate the documented python examples in the root README.
     ReadmeExamplesTest({ target })

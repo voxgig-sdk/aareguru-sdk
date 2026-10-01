@@ -18,6 +18,12 @@ function makeUrl(ctx) {
     }
     let url = join([spec.base, spec.prefix, spec.path, spec.suffix], '/', true);
     let resmatch = {};
+    // A route the definition ends with a slash keeps it: a server such as a
+    // Django REST one redirects or refuses the route without it.
+    const orig = ctx.point?.orig;
+    if ('string' === typeof orig && orig.endsWith('/') && !spec.suffix && !url.endsWith('/')) {
+        url += '/';
+    }
     const params = spec.params;
     for (let [key, val] of items(params)) {
         if (null != val) {

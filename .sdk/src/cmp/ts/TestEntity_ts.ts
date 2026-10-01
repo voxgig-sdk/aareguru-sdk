@@ -1,4 +1,4 @@
-import { pointFacts } from '@voxgig/sdkgen'
+import { boundedFacts, pointFacts } from '@voxgig/sdkgen'
 import { buildIdNames } from '@voxgig/sdkgen'
 import { flowSteps } from '@voxgig/sdkgen'
 
@@ -109,7 +109,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
         const dobasic = basicflow && true === basicflow.active
         const liveFacts = Object.fromEntries(Object.values(entity.op || {}).flatMap((op: any) =>
-          (op.points || []).map((point: any) => [point.m + ' ' + point.o, pointFacts(ctx$, point)])))
+          (op.points || []).map((point: any) => [point.m + ' ' + point.o, boundedFacts(pointFacts(ctx$, point))])))
 
         if (!dobasic) {
           return;

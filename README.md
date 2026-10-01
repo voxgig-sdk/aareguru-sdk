@@ -14,7 +14,7 @@ Metadata kindly supplied by [www.freepublicapis.com](https://www.freepublicapis.
 
 > TypeScript, Python, PHP, Golang, Ruby, Lua SDKs, a CLI with an interactive REPL, and an MCP server for AI agents — all generated from one OpenAPI spec by [@voxgig/sdkgen](https://github.com/voxgig/sdkgen).
 
-> **Features:** `undefined`, `undefined`, `undefined`, `undefined` — opt-in,
+> **Features:** `ratelimit`, `retry`, `test`, `timeout` — opt-in,
 > inactive until switched on, and configured per client. See the Features
 > section of any SDK README below for what each one does.
 
@@ -105,12 +105,12 @@ local result, err = client:Stuff():load({ service = "example" })
 
 | Language | Package | Install |
 | --- | --- | --- |
-| TypeScript | `@voxgig-sdk/aareguru-sdk` | publish pending — [install from git tag](https://github.com/voxgig-sdk/aareguru-sdk/tags) |
-| Python | `voxgig-sdk-aareguru-sdk` | publish pending — [install from git tag](https://github.com/voxgig-sdk/aareguru-sdk/tags) |
-| PHP | `voxgig-sdk/aareguru-sdk` | publish pending — [install from git tag](https://github.com/voxgig-sdk/aareguru-sdk/tags) |
+| TypeScript | `@voxgig-sdk/aareguru-sdk` | publish pending — [install from source](ts/README.md#install) |
+| Python | `voxgig-sdk-aareguru-sdk` | publish pending — [install from source](py/README.md#install) |
+| PHP | `voxgig-sdk/aareguru-sdk` | publish pending — [install from source](php/README.md#install) |
 | Golang | `github.com/voxgig-sdk/aareguru-sdk/go` | `go get github.com/voxgig-sdk/aareguru-sdk/go@latest` |
-| Ruby | `voxgig-sdk-aareguru-sdk` | publish pending — [install from git tag](https://github.com/voxgig-sdk/aareguru-sdk/tags) |
-| Lua | `voxgig-sdk-aareguru-sdk` | publish pending — [install from git tag](https://github.com/voxgig-sdk/aareguru-sdk/tags) |
+| Ruby | `voxgig-sdk-aareguru-sdk` | publish pending — [install from source](rb/README.md#install) |
+| Lua | `voxgig-sdk-aareguru-sdk` | publish pending — [install from source](lua/README.md#install) |
 | Go CLI | `github.com/voxgig-sdk/aareguru-sdk/go-cli` | `go install github.com/voxgig-sdk/aareguru-sdk/go-cli/cmd/aareguru@latest` |
 | Go MCP server | `github.com/voxgig-sdk/aareguru-sdk/go-mcp` | `go get github.com/voxgig-sdk/aareguru-sdk/go-mcp@latest` |
 

@@ -111,7 +111,14 @@ local function make_client(spec)
   local base = spec.base or "http://api.test"
   local server = spec.server or default_server
 
-  local utility = { fetcher = server }
+  -- Every feature cleans what it emits, so the fake utility carries the real
+  -- clean seam beside the transport.
+  local cleanmod = require("utility.clean")
+  local utility = {
+    fetcher = server,
+    clean = cleanmod.clean,
+    clean_add = cleanmod.clean_add,
+  }
 
   local client = {
     mode = "test",
@@ -922,7 +929,7 @@ describe("feature", function()
       local entries = h.client._debug.entries
       assert.are.equal(1, #entries) -- ring buffer capped at max
       assert.are.equal(2, #seen)
-      assert.are.equal("<redacted>", seen[1].headers.authorization)
+      assert.are.equal("[redacted]", seen[1].headers.authorization)
     end)
 
     if has_feature("netsim") then it("captures failures", function()
@@ -940,7 +947,7 @@ describe("feature", function()
       } })
       h.op({ op = "load", headers = { ["x-secret"] = "hide", ["x-ok"] = "show" } })
       local e = h.client._debug.entries[1]
-      assert.are.equal("<redacted>", e.headers["x-secret"])
+      assert.are.equal("[redacted]", e.headers["x-secret"])
       assert.are.equal("show", e.headers["x-ok"])
     end)
 

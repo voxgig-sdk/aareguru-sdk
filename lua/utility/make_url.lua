@@ -18,6 +18,14 @@ local function make_url_util(ctx)
   local url = vs.join({ spec.base, spec.prefix, spec.path, spec.suffix }, "/", true)
   local resmatch = {}
 
+  -- A route the definition ends with a slash keeps it: a server such as a
+  -- Django REST one redirects or refuses the route without it.
+  local orig = ctx.point ~= nil and vs.getprop(ctx.point, "orig") or nil
+  if type(orig) == "string" and orig:sub(-1) == "/" and (spec.suffix == nil or spec.suffix == "")
+      and url:sub(-1) ~= "/" then
+    url = url .. "/"
+  end
+
   local param_items = vs.items(spec.params)
   if param_items ~= nil then
     for _, item in ipairs(param_items) do

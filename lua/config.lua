@@ -262,7 +262,7 @@ local function make_config()
                     },
                     {
                       ["name"] = "line",
-                      ["orig"] = "line",
+                      ["orig"] = "lines",
                       ["type"] = "`$INTEGER`",
                       ["kind"] = "query",
                       ["example"] = 12,
@@ -435,7 +435,7 @@ local function make_config()
                     },
                     {
                       ["name"] = "value",
-                      ["orig"] = "value",
+                      ["orig"] = "values",
                       ["type"] = "`$STRING`",
                       ["kind"] = "query",
                       ["example"] = nil,
@@ -500,7 +500,7 @@ local function make_config()
                     },
                     {
                       ["name"] = "value",
-                      ["orig"] = "value",
+                      ["orig"] = "values",
                       ["type"] = "`$STRING`",
                       ["kind"] = "query",
                       ["example"] = nil,
@@ -563,7 +563,7 @@ local function make_config()
                     },
                     {
                       ["name"] = "value",
-                      ["orig"] = "value",
+                      ["orig"] = "values",
                       ["type"] = "`$STRING`",
                       ["kind"] = "query",
                       ["example"] = nil,
@@ -619,7 +619,7 @@ local function make_config()
                     },
                     {
                       ["name"] = "value",
-                      ["orig"] = "value",
+                      ["orig"] = "values",
                       ["type"] = "`$STRING`",
                       ["kind"] = "query",
                       ["example"] = nil,
@@ -674,7 +674,7 @@ local function make_config()
                     },
                     {
                       ["name"] = "value",
-                      ["orig"] = "value",
+                      ["orig"] = "values",
                       ["type"] = "`$STRING`",
                       ["kind"] = "query",
                       ["example"] = nil,

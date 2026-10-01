@@ -201,20 +201,25 @@ function basicBlock(spec: AuthSpec): string {
   }
 
   return `
-        // True HTTP Basic Auth needs TWO credentials, base64-joined - a
+        // True HTTP Basic Auth joins the two credentials, base64-encoded - a
         // single token in the header (the branch below) can never
         // authenticate against an API that actually checks
-        // \`Authorization: Basic base64(user:pass)\`.
+        // \`Authorization: Basic base64(user:pass)\`. The password may be
+        // empty (RFC 7617): Lob, for one, documents the key as the user with
+        // a blank password (\`curl -u key:\`).
         if (true === (\\Voxgig\\Struct\\Struct::getpath($options, 'auth.basic') ?? false)) {
             $secret = \\Voxgig\\Struct\\Struct::getprop($options, self::OPTION_SECRET, self::NOT_FOUND);
             $apikey_val = is_string($apikey) && $apikey !== self::NOT_FOUND ? $apikey : '';
             $secret_val = is_string($secret) && $secret !== self::NOT_FOUND ? $secret : '';
 
-            if ($apikey_val === '' || $secret_val === '') {
+            if ($apikey_val === '') {
                 unset($headers[self::HEADER_AUTH]);
             } else {
                 $auth_prefix = \\Voxgig\\Struct\\Struct::getpath($options, 'auth.prefix') ?? '';
                 $b64 = base64_encode("{$apikey_val}:{$secret_val}");
+                // The joined, encoded pair is a wire form neither credential's
+                // own registration covers.
+                ($ctx->utility->clean_add)($ctx, $b64);
                 $headers[self::HEADER_AUTH] = $auth_prefix === ''
                     ? $b64 : "{$auth_prefix} {$b64}";
             }

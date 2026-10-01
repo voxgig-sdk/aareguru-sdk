@@ -27,12 +27,22 @@ bundle install
     return
   }
 
-  // Publish pending: not yet on RubyGems. Install from the git release tag.
-  const { releasesUrl } = repoInfo(model)
+  // Publish pending: not yet on RubyGems. Install from the git release tag,
+  // or from a clone through Bundler, since a tag may not exist.
+  const { releasesUrl, repoUrl, repo } = repoInfo(model)
   Content(`This package is not yet published to RubyGems. Install it from the
-GitHub release tag (\`${target.name}/vX.Y.Z\`):
+GitHub release tag (\`${target.name}/vX.Y.Z\`, see [Releases](${releasesUrl})), or
+from a clone:
 
-- Releases: [${releasesUrl}](${releasesUrl})
+\`\`\`bash
+git clone ${repoUrl}
+\`\`\`
+
+Then add it to your \`Gemfile\` by path, and run \`bundle install\`:
+
+\`\`\`ruby
+gem "${packageName(model, target.name)}", path: "./${repo}/${target.name}"
+\`\`\`
 
 `)
 })

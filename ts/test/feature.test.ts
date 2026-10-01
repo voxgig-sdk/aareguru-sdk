@@ -384,7 +384,7 @@ describe('feature', () => {
       const entries = h.client._debug.entries
       strictEqual(entries.length, 1) // ring buffer capped at max
       strictEqual(seen.length, 2)
-      strictEqual(seen[0].headers.authorization, '<redacted>')
+      strictEqual(seen[0].headers.authorization, '[redacted]')
     })
 
     test('captures failures', { skip: skipWithout('netsim') }, async () => {
@@ -517,6 +517,13 @@ describe('feature', () => {
       const h = makeClient({ features: [{ name: 'proxy', options: { url: 'http://proxy:8080', noProxy: ['api.test'] } }], server: rec.server, base: 'http://api.test' })
       await h.op({ op: 'load' })
       strictEqual(rec.calls[0].fetchdef.proxy, undefined)
+    })
+
+    test('masks the credentials in the URL it reports', async () => {
+      const h = makeClient({ features: [{ name: 'proxy', options: { url: 'http://pxuser:pxs3cret@proxy:8080' } }] })
+      await h.op({ op: 'load' })
+      strictEqual(h.client._proxy.url.includes('pxs3cret'), false)
+      strictEqual(h.client._proxy.url.includes('pxuser'), false)
     })
   })
 
@@ -763,7 +770,7 @@ describe('feature', () => {
     const h = makeClient({ features: [{ name: 'debug', options: { now: () => 7, redact: ['x-secret'] } }] })
     await h.op({ op: 'load', headers: { 'x-secret': 'hide', 'x-ok': 'show' } })
     const e = h.client._debug.entries[0]
-    strictEqual(e.headers['x-secret'], '<redacted>')
+    strictEqual(e.headers['x-secret'], '[redacted]')
     strictEqual(e.headers['x-ok'], 'show')
   })
 

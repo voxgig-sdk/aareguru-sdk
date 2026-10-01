@@ -11,6 +11,13 @@ module AareguruUtilities
     url = VoxgigStruct.join([spec.base, spec.prefix, spec.path, spec.suffix], "/", true)
     resmatch = {}
 
+    # A route the definition ends with a slash keeps it: a server such as a
+    # Django REST one redirects or refuses the route without it.
+    orig = ctx.point ? VoxgigStruct.getprop(ctx.point, "orig") : nil
+    if orig.is_a?(String) && orig.end_with?("/") && spec.suffix.to_s.empty? && !url.end_with?("/")
+      url += "/"
+    end
+
     param_items = VoxgigStruct.items(spec.params)
     if param_items
       param_items.each do |item|

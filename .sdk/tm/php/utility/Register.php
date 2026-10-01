@@ -37,6 +37,8 @@ require_once __DIR__ . '/TransformResponse.php';
 
 AareguruUtility::setRegistrar(function (AareguruUtility $u): void {
     $u->clean = [AareguruClean::class, 'call'];
+    $u->clean_add = [AareguruClean::class, 'add'];
+    $u->clean_explain = [AareguruDone::class, 'clean_explain'];
     $u->done = [AareguruDone::class, 'call'];
     $u->make_error = [AareguruMakeError::class, 'call'];
     $u->feature_add = [AareguruFeatureAdd::class, 'call'];

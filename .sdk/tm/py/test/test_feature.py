@@ -572,7 +572,7 @@ class TestDebugFeature:
         entries = h.client._debug["entries"]
         assert len(entries) == 1  # ring buffer capped at max
         assert len(seen) == 2
-        assert seen[0]["headers"]["authorization"] == "<redacted>"
+        assert seen[0]["headers"]["authorization"] == "[redacted]"
 
     # Drives netsim as the simulated network: runnable only when this
     # SDK was generated with it (the harness skips absent features).
@@ -593,7 +593,7 @@ class TestDebugFeature:
                                       "redact": ["x-secret"]}}])
         h.op(op="load", headers={"x-secret": "hide", "x-ok": "show"})
         entry = h.client._debug["entries"][0]
-        assert entry["headers"]["x-secret"] == "<redacted>"
+        assert entry["headers"]["x-secret"] == "[redacted]"
         assert entry["headers"]["x-ok"] == "show"
         assert entry["durationMs"] == 0
 

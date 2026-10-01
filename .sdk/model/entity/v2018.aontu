@@ -53,7 +53,7 @@ main: kit: entity: v2018: {
                 ex: null
                 k: "query"
                 n: "value"
-                or: "value"
+                or: "values"
                 r: false
                 t: "`$STRING`"
               }
@@ -121,7 +121,7 @@ main: kit: entity: v2018: {
                 ex: null
                 k: "query"
                 n: "value"
-                or: "value"
+                or: "values"
                 r: false
                 t: "`$STRING`"
               }
@@ -187,7 +187,7 @@ main: kit: entity: v2018: {
                 ex: null
                 k: "query"
                 n: "value"
-                or: "value"
+                or: "values"
                 r: false
                 t: "`$STRING`"
               }
@@ -245,7 +245,7 @@ main: kit: entity: v2018: {
                 ex: null
                 k: "query"
                 n: "value"
-                or: "value"
+                or: "values"
                 r: false
                 t: "`$STRING`"
               }
@@ -302,7 +302,7 @@ main: kit: entity: v2018: {
                 ex: null
                 k: "query"
                 n: "value"
-                or: "value"
+                or: "values"
                 r: false
                 t: "`$STRING`"
               }

@@ -19,7 +19,12 @@ const OPTSPEC = {
     },
     "base": "http://localhost:8000",
     "clean": {
-        "keys": "key,token,id"
+        "active": true,
+        "hint": "0",
+        "keys": "key,secret,token,password,passwd,authorization,cookie,credential,signature",
+        "mask": "[redacted]",
+        "min": "4",
+        "values": ""
     },
     "entity": {
         "`$CHILD`": {

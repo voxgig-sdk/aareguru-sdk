@@ -1,5 +1,5 @@
-import { clean } from './CleanUtility';
-import { done } from './DoneUtility';
+import { clean, cleanAdd } from './CleanUtility';
+import { cleanExplain, done } from './DoneUtility';
 import { makeError } from './MakeErrorUtility';
 import { featureAdd } from './FeatureAddUtility';
 import { featureHook } from './FeatureHookUtility';
@@ -31,6 +31,8 @@ import { transformResponse } from './TransformResponseUtility';
 import { StructUtility } from './StructUtility';
 declare class Utility {
     clean: typeof clean;
+    cleanAdd: typeof cleanAdd;
+    cleanExplain: typeof cleanExplain;
     done: typeof done;
     makeError: typeof makeError;
     featureAdd: typeof featureAdd;

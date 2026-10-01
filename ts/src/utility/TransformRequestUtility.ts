@@ -15,7 +15,7 @@ function transformRequest(ctx: Context) {
   try {
     const reqform = point.transform.req
     const reqdata = isfunc(reqform) ? reqform(ctx) : transform({
-      reqdata: ctx.reqdata
+      reqdata: omit(ctx.reqdata, headerArgNames(ctx))
     }, reqform)
 
     return stripAction(reqdata)
@@ -29,17 +29,30 @@ function transformRequest(ctx: Context) {
 
 
 function stripAction(reqdata: any) {
+  return omit(reqdata, ['$action'])
+}
+
+
+// A header argument travels as a header, which prepareHeaders sends, so the
+// body is built from the request data without it.
+function headerArgNames(ctx: Context): string[] {
+  return (ctx.point?.args?.header || []).map((h: any) => h?.name)
+    .filter((name: any) => 'string' === typeof name && '' !== name)
+}
+
+
+function omit(reqdata: any, names: string[]) {
   if (null == reqdata || 'object' !== typeof reqdata || Array.isArray(reqdata)) {
     return reqdata
   }
 
-  if (!Object.prototype.hasOwnProperty.call(reqdata, '$action')) {
+  if (!names.some((name) => Object.prototype.hasOwnProperty.call(reqdata, name))) {
     return reqdata
   }
 
   const body: Record<string, any> = {}
   for (const key of Object.keys(reqdata)) {
-    if ('$action' === key) {
+    if (names.includes(key)) {
       continue
     }
     if ('__proto__' === key) {

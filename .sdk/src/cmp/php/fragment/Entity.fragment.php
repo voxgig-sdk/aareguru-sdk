@@ -50,6 +50,22 @@ class EntyClass
         return $this->_name;
     }
 
+    // What print_r shows: the record, cleaned. The client and utility this
+    // instance holds print every feature's state through their closures,
+    // credentials included.
+    public function __debugInfo(): array
+    {
+        $record = [
+            'name' => $this->_name,
+            'data' => $this->_data,
+            'match' => $this->_match,
+            'deleted' => $this->_deleted,
+        ];
+        $clean = $this->_utility->clean ?? null;
+        $cleaned = is_callable($clean) ? $clean($this->_entctx, $record) : $record;
+        return is_array($cleaned) ? $cleaned : $record;
+    }
+
     /**
      * A `remove` marks the entity deleted. The instance KEEPS the data it
      * held — a caller can still read what was removed — but it is no longer a
@@ -172,72 +188,80 @@ class EntyClass
             return false;
         };
 
-        ($utility->feature_hook)($ctx, "PrePoint");
-        [$point, $err] = ($utility->make_point)($ctx);
-        $ctx->out["point"] = $point;
-        if ($err) {
-            return;
-        }
+        // The pipeline runs as the caller iterates, so its errors leave
+        // through the same catch path as an operation's.
+        try {
+            ($utility->feature_hook)($ctx, "PrePoint");
+            [$point, $err] = ($utility->make_point)($ctx);
+            $ctx->out["point"] = $point;
+            if ($err) {
+                return;
+            }
 
-        ($utility->feature_hook)($ctx, "PreSpec");
-        [$spec, $err] = ($utility->make_spec)($ctx);
-        $ctx->out["spec"] = $spec;
-        if ($err) {
-            return;
-        }
+            ($utility->feature_hook)($ctx, "PreSpec");
+            [$spec, $err] = ($utility->make_spec)($ctx);
+            $ctx->out["spec"] = $spec;
+            if ($err) {
+                return;
+            }
 
-        ($utility->feature_hook)($ctx, "PreRequest");
-        [$resp, $err] = ($utility->make_request)($ctx);
-        $ctx->out["request"] = $resp;
-        if ($err) {
-            return;
-        }
+            ($utility->feature_hook)($ctx, "PreRequest");
+            [$resp, $err] = ($utility->make_request)($ctx);
+            $ctx->out["request"] = $resp;
+            if ($err) {
+                return;
+            }
 
-        ($utility->feature_hook)($ctx, "PreResponse");
-        [$resp2, $err] = ($utility->make_response)($ctx);
-        $ctx->out["response"] = $resp2;
-        if ($err) {
-            return;
-        }
+            ($utility->feature_hook)($ctx, "PreResponse");
+            [$resp2, $err] = ($utility->make_response)($ctx);
+            $ctx->out["response"] = $resp2;
+            if ($err) {
+                return;
+            }
 
-        ($utility->feature_hook)($ctx, "PreResult");
-        [$result, $err] = ($utility->make_result)($ctx);
-        $ctx->out["result"] = $result;
-        if ($err) {
-            return;
-        }
+            ($utility->feature_hook)($ctx, "PreResult");
+            [$result, $err] = ($utility->make_result)($ctx);
+            $ctx->out["result"] = $result;
+            if ($err) {
+                return;
+            }
 
-        ($utility->feature_hook)($ctx, "PreDone");
+            ($utility->feature_hook)($ctx, "PreDone");
 
-        $result = $ctx->result;
+            $result = $ctx->result;
 
-        // Inbound: prefer the streaming feature's incremental generator; else
-        // fall back to the materialised items so stream always yields.
-        $streamfn = ($result !== null && isset($result->stream) && is_callable($result->stream))
-            ? $result->stream : null;
-        if ($streamfn !== null) {
-            foreach ($streamfn() as $item) {
+            // Inbound: prefer the streaming feature's incremental generator;
+            // else fall back to the materialised items so stream always yields.
+            $streamfn = ($result !== null && isset($result->stream) && is_callable($result->stream))
+                ? $result->stream : null;
+            if ($streamfn !== null) {
+                // done() does not run on this path, so its record is cleaned here.
+                ($utility->clean_explain)($ctx);
+                foreach ($streamfn() as $item) {
+                    if ($aborted()) {
+                        return;
+                    }
+                    yield $item;
+                }
+                return;
+            }
+
+            $data = ($utility->done)($ctx);
+            if (is_array($data) && array_is_list($data)) {
+                $items = $data;
+            } elseif ($data === null) {
+                $items = [];
+            } else {
+                $items = [$data];
+            }
+            foreach ($items as $item) {
                 if ($aborted()) {
                     return;
                 }
                 yield $item;
             }
-            return;
-        }
-
-        $data = ($utility->done)($ctx);
-        if (is_array($data) && array_is_list($data)) {
-            $items = $data;
-        } elseif ($data === null) {
-            $items = [];
-        } else {
-            $items = [$data];
-        }
-        foreach ($items as $item) {
-            if ($aborted()) {
-                return;
-            }
-            yield $item;
+        } catch (\Throwable $err) {
+            throw $this->_unexpected($ctx, $err);
         }
     }
 
@@ -252,6 +276,23 @@ class EntyClass
     // #RemoveOp
 
     private function _run_op($ctx, callable $post_done): mixed
+    {
+        try {
+            return $this->_run_steps($ctx, $post_done);
+        } catch (\Throwable $err) {
+            throw $this->_unexpected($ctx, $err);
+        }
+    }
+
+    // A hook, fetcher or parser threw: make_error never saw it.
+    private function _unexpected($ctx, \Throwable $err): \Throwable
+    {
+        $ctx->ctrl->err = $err;
+        ($this->_utility->clean_explain)($ctx);
+        return ($this->_utility->clean)($ctx, $err);
+    }
+
+    private function _run_steps($ctx, callable $post_done): mixed
     {
         $utility = $this->_utility;
 

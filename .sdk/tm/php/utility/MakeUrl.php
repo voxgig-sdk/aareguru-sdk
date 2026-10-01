@@ -20,6 +20,13 @@ class AareguruMakeUrl
         $url = \Voxgig\Struct\Struct::join([$spec->base, $spec->prefix, $spec->path, $spec->suffix], '/', true);
         $resmatch = [];
 
+        // A route the definition ends with a slash keeps it: a server such as
+        // a Django REST one redirects or refuses the route without it.
+        $orig = $ctx->point ? \Voxgig\Struct\Struct::getprop($ctx->point, 'orig') : null;
+        if (is_string($orig) && str_ends_with($orig, '/') && '' === $spec->suffix && !str_ends_with($url, '/')) {
+            $url .= '/';
+        }
+
         $param_items = \Voxgig\Struct\Struct::items($spec->params);
         if ($param_items) {
             foreach ($param_items as $item) {

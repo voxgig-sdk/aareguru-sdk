@@ -124,21 +124,26 @@ end
 `
 
   const basicBlock = !basicHere ? '' : `
-    # True HTTP Basic Auth needs TWO credentials, base64-joined - a single
+    # True HTTP Basic Auth joins the two credentials, base64-encoded - a single
     # token in the header (the branch below) can never authenticate against
     # an API that actually checks \`Authorization: Basic base64(user:pass)\`.
+    # The password may be empty (RFC 7617): Lob, for one, documents the key as
+    # the user with a blank password (\`curl -u key:\`).
     if VoxgigStruct.getpath(options, "auth.basic") == true
       secret = VoxgigStruct.getprop(options, OPTION_SECRET, NOT_FOUND)
       no_apikey = apikey.nil? || !apikey.is_a?(String) || apikey == NOT_FOUND || apikey == ""
       no_secret = secret.nil? || !secret.is_a?(String) || secret == NOT_FOUND || secret == ""
 
-      if no_apikey || no_secret
+      if no_apikey
         headers.delete(HEADER_AUTH)
       else
         auth_prefix = VoxgigStruct.getpath(options, "auth.prefix") || ""
         # \`pack("m0")\` rather than \`Base64.strict_encode64\`: base64 left
         # Ruby's default gems in 3.4, and pack is core.
-        b64 = ["#{apikey}:#{secret}"].pack("m0")
+        b64 = ["#{apikey}:#{no_secret ? "" : secret}"].pack("m0")
+        # The joined, encoded pair is a wire form neither credential's own
+        # registration covers.
+        ctx.utility.clean_add.call(ctx, b64)
         headers[HEADER_AUTH] =
           auth_prefix.empty? ? b64 : "#{auth_prefix} #{b64}"
       end

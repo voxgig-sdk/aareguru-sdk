@@ -2,6 +2,7 @@ package utility
 
 import (
 	"regexp"
+	"strings"
 
 	vs "github.com/voxgig/struct"
 
@@ -23,6 +24,13 @@ func makeUrlUtil(ctx *core.Context) (string, error) {
 
 	url := vs.Join([]any{spec.Base, spec.Prefix, spec.Path, spec.Suffix}, "/", true)
 	resmatch := map[string]any{}
+
+	// A route the definition ends with a slash keeps it: a server such as a
+	// Django REST one redirects or refuses the route without it.
+	if orig, _ := vs.GetProp(ctx.Point, "orig").(string); strings.HasSuffix(orig, "/") &&
+		spec.Suffix == "" && !strings.HasSuffix(url, "/") {
+		url += "/"
+	}
 
 	params := spec.Params
 	for _, item := range vs.Items(params) {

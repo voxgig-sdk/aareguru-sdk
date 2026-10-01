@@ -140,6 +140,8 @@ class AareguruEntityBase {
             // Inbound: prefer the streaming feature's incremental iterator; else
             // fall back to the materialised items so `stream` always yields.
             if (result && 'function' === typeof result.stream) {
+                // done() does not run on this path, so its record is cleaned here.
+                utility.cleanExplain(ctx);
                 for await (const item of result.stream()) {
                     if (signal && signal.aborted) {
                         return;
@@ -178,14 +180,12 @@ class AareguruEntityBase {
     _unexpected(ctx, err) {
         const clean = this._utility.clean;
         const struct = this._utility.struct;
-        const delprop = struct.delprop;
         const clone = struct.clone;
         const merge = struct.merge;
         const ctrl = ctx.ctrl;
         ctrl.err = err;
         if (ctrl.explain) {
-            ctx.ctrl.explain = clean(ctx, ctx.ctrl.explain);
-            delprop(ctx.ctrl.explain.result, 'err');
+            this._utility.cleanExplain(ctx);
             if (null != ctx.result && null != ctx.result.err) {
                 ctrl.explain.err = clean(ctx, merge([
                     clone({ err: ctx.result.err }).err,
@@ -212,7 +212,8 @@ class AareguruEntityBase {
         if (false === ctrl.throw) {
             return undefined;
         }
-        return err;
+        // An error a hook threw never passed through makeError.
+        return clean(ctx, err);
     }
 }
 exports.AareguruEntityBase = AareguruEntityBase;

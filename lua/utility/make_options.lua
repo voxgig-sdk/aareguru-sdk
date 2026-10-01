@@ -2,6 +2,7 @@
 
 local vs = require("utility.struct.struct")
 local schema = require("schema")
+local cleanmod = require("utility.clean")
 
 -- See the call site in make_options for why this exists.
 local function densify_lists(v, seen)
@@ -46,6 +47,43 @@ local function densify_lists(v, seen)
     v[k] = densify_lists(e, seen)
   end
   return v
+end
+
+local function noentity(settings)
+  if type(settings) ~= "table" then
+    return settings
+  end
+  local out = {}
+  for k, v in pairs(settings) do
+    if k ~= "entity" then
+      out[k] = v
+    end
+  end
+  return out
+end
+
+-- The options to scan for secrets. The feature map is keyed by feature
+-- names, not field names, so it is scanned as a list: `secrets` must not
+-- make every setting of that feature a secret. Entity blocks hold entity
+-- settings and seeded records, never a credential, so none is scanned. The
+-- raw scan still sees the feature list form, whose entries each carry `name`.
+local function secret_scan(opts, omit)
+  local out = {}
+  for k, v in pairs(opts) do
+    if not omit[k] and k ~= "entity" then
+      if k == "feature" and type(v) == "table" then
+        local list = {}
+        for _, fopts in pairs(v) do
+          list[#list + 1] = noentity(fopts)
+        end
+        v = list
+      elseif k == "test" then
+        v = noentity(v)
+      end
+      out[k] = v
+    end
+  end
+  return out
 end
 
 local function copy_data(v)
@@ -121,6 +159,32 @@ local function make_options_util(ctx)
     opts = {}
   end
 
+  local config = ctx.config or {}
+  local cfgopts = {}
+  local co = config["options"]
+  if type(co) == "table" then
+    cfgopts = co
+  end
+
+  -- The secret registry exists BEFORE validation, fed from the raw input, so
+  -- the constructor's own rejection of a mistyped credential is clean too.
+  local specclean = type(schema.OPTSPEC) == "table" and schema.OPTSPEC.clean or nil
+  local cfgclean = type(cfgopts.clean) == "table" and cfgopts.clean or {}
+  local rawclean = type(opts.clean) == "table" and opts.clean or {}
+  local cleancfg = cleanmod.make_clean_config(vs.merge({
+    {},
+    type(specclean) == "table" and vs.clone(specclean) or {},
+    vs.clone(cfgclean),
+    vs.clone(rawclean),
+  }))
+  local cleanctx = { options = { __derived__ = { clean = cleancfg } } }
+  cleanmod.clean_add_sensitive(cleanctx, secret_scan(opts, { clean = true, extend = true }))
+  for _, block in ipairs({ cfgclean, rawclean }) do
+    for _, raw in ipairs(cleanmod.splitvalues(block.values)) do
+      cleanmod.clean_add(cleanctx, raw)
+    end
+  end
+
   -- Feature add-order. options.feature may be given as an ordered LIST of
   -- { name = ..., active = ..., ... } entries (the list position IS the order
   -- in which features are added), or as a { name = {opts} } map. Normalize a
@@ -144,13 +208,6 @@ local function make_options_util(ctx)
       end
     end
     opts.feature = fmap
-  end
-
-  local config = ctx.config or {}
-  local cfgopts = {}
-  local co = config["options"]
-  if type(co) == "table" then
-    cfgopts = co
   end
 
   -- THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
@@ -215,7 +272,10 @@ local function make_options_util(ctx)
   -- feature reading it refuses it by its own rule, with its own message.
   merged = densify_lists(merged)
 
-  local validated = vs.validate(merged, optspec)
+  local vok, validated = pcall(vs.validate, merged, optspec)
+  if not vok then
+    error(cleanmod.clean(cleanctx, validated), 0)
+  end
   if type(validated) ~= "table" then
     validated = {}
   end
@@ -282,22 +342,6 @@ local function make_options_util(ctx)
     opts["extend"] = extend
   end
 
-  -- Derived clean config.
-  local clean_keys = "key,token,id"
-  local ck = vs.getpath(opts, "clean.keys")
-  if type(ck) == "string" then
-    clean_keys = ck
-  end
-
-  local parts = {}
-  for part in string.gmatch(clean_keys, "[^,]+") do
-    local trimmed = part:match("^%s*(.-)%s*$")
-    if trimmed ~= "" then
-      table.insert(parts, vs.escre(trimmed))
-    end
-  end
-  local keyre = table.concat(parts, "|")
-
   -- Resolve the feature add-order: an explicit list order (above) wins;
   -- otherwise order the map test-first, then the remaining names sorted, so
   -- the outcome is deterministic and `test` is always the base transport.
@@ -354,12 +398,14 @@ local function make_options_util(ctx)
     end
   end
 
-  local derived = { clean = {} }
-  if keyre ~= "" then
-    derived.clean = { keyre = keyre }
-  end
-  derived.featureorder = featureorder
-  opts["__derived__"] = derived
+  -- Again over the merged result: the config's own defaults can carry one.
+  cleanmod.clean_add_sensitive(cleanctx,
+    secret_scan(opts, { clean = true, extend = true, __derived__ = true }))
+
+  opts["__derived__"] = {
+    clean = cleancfg,
+    featureorder = featureorder,
+  }
 
   return opts
 end

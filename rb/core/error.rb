@@ -1,5 +1,7 @@
 # Aareguru SDK error
 
+require 'json'
+
 class AareguruError < StandardError
   attr_accessor :is_sdk_error, :sdk, :code, :msg, :ctx, :result, :spec, :status
 
@@ -9,6 +11,9 @@ class AareguruError < StandardError
     @sdk = "Aareguru"
     @code = code
     @msg = msg
+    # Reachable for a debugger, absent from every serialiser below: the
+    # context holds the live spec and options, and an error is what gets
+    # logged.
     @ctx = ctx
     @result = nil
     @spec = nil
@@ -25,5 +30,30 @@ class AareguruError < StandardError
 
   def to_s
     @msg
+  end
+
+  def inspect
+    "#<#{self.class.name} #{@code.inspect} #{@status}: #{@msg}>"
+  end
+
+  # What make_error attached is already cleaned; the context is not part of
+  # the record.
+  def to_h
+    {
+      "sdk" => @sdk,
+      "code" => @code,
+      "message" => @msg,
+      "status" => @status,
+      "result" => @result,
+      "spec" => @spec,
+    }
+  end
+
+  def as_json(*)
+    to_h
+  end
+
+  def to_json(*args)
+    to_h.to_json(*args)
   end
 end

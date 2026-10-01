@@ -105,7 +105,7 @@ function loadTestControl() {
 }
 // Returns the skip decision for a given test name from sdk-test-control.json.
 // `kind` is 'direct' (matches by `test` field) or 'entityOp' (matches by
-// `entity` + `op`). `mode` is 'live' or 'unit'.
+// `entity` + `op`). `mode` is 'live', 'unit' or 'definition'.
 function isControlSkipped(kind, name, mode) {
     const ctrl = loadTestControl();
     const list = ctrl?.test?.skip?.[mode]?.[kind] ?? [];

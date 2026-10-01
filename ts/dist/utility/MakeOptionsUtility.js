@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.makeOptions = makeOptions;
 const Schema_1 = require("../Schema");
+const CleanUtility_1 = require("./CleanUtility");
 function makeOptions(ctx) {
     const utility = ctx.utility;
     const options = ctx.options;
@@ -10,9 +11,20 @@ function makeOptions(ctx) {
     const setprop = struct.setprop;
     const merge = struct.merge;
     const validate = struct.validate;
-    const escre = struct.escre;
     let opts = { ...(options || {}) };
     const authSuppressed = null === (options || {}).auth;
+    let config = ctx.config || {};
+    let cfgopts = config.options || {};
+    // The registry exists BEFORE validation, so rejecting a mistyped credential
+    // is clean too. An absent block is left out, or merge would erase the defaults.
+    const layer = (b) => null != b && 'object' === typeof b && !Array.isArray(b) ? b : {};
+    const cleancfg = (0, CleanUtility_1.makeCleanConfig)(merge([{}, Schema_1.OPTSPEC.clean,
+        struct.clone(layer(cfgopts.clean)), layer(opts.clean)]));
+    const cleanctx = { options: { __derived__: { clean: cleancfg } } };
+    (0, CleanUtility_1.cleanAddSensitive)(cleanctx, settings(opts));
+    for (const raw of [...(0, CleanUtility_1.splitvalues)(cfgopts.clean?.values), ...(0, CleanUtility_1.splitvalues)(opts.clean?.values)]) {
+        (0, CleanUtility_1.cleanAdd)(cleanctx, raw);
+    }
     let featureorder = [];
     if (Array.isArray(opts.feature)) {
         const fmap = {};
@@ -29,15 +41,18 @@ function makeOptions(ctx) {
     for (let [key, val] of items(customUtils)) {
         setprop(utility, key, val);
     }
-    let config = ctx.config || {};
-    let cfgopts = config.options || {};
     const optspec = Schema_1.OPTSPEC;
     // Clone the config side before merging: `config` is a module-level
     // singleton in ts/js, and merge would otherwise use its nested maps as
     // merge TARGETS — one instance's options (server, headers, ...) would
     // contaminate every instance constructed after it.
     opts = merge([{}, struct.clone(cfgopts), opts]);
-    opts = validate(opts, optspec);
+    try {
+        opts = validate(opts, optspec);
+    }
+    catch (err) {
+        throw (0, CleanUtility_1.clean)(cleanctx, err);
+    }
     opts.system = opts.system || {};
     if (null == opts.system.fetch) {
         opts.system.fetch = global.fetch;
@@ -80,18 +95,22 @@ function makeOptions(ctx) {
         featureorder = names;
     }
     opts.__derived__ = {
-        clean: {
-            keyre: undefined
-        },
+        clean: cleancfg,
         featureorder,
     };
-    const keyre = opts.clean.keys
-        .split(/\s*,\s*/)
-        .filter((s) => null != s && '' !== s)
-        .map((key) => escre(key)).join('|');
-    if ('' != keyre) {
-        opts.__derived__.clean.keyre = keyre;
-    }
+    // Again over the merged result: the config's own defaults can carry one.
+    (0, CleanUtility_1.cleanAddSensitive)({ options: opts }, settings(opts));
     return opts;
+}
+// Registration skips entity blocks: entity settings and seed records hold no credential.
+function settings(opts) {
+    const noent = (b) => null != b && 'object' === typeof b && !Array.isArray(b)
+        ? { ...b, entity: undefined } : b;
+    const feature = Array.isArray(opts.feature) ? opts.feature.map(noent)
+        : null != opts.feature && 'object' === typeof opts.feature
+            ? Object.fromEntries(Object.entries(opts.feature).map(([k, v]) => [k, noent(v)]))
+            : opts.feature;
+    return { ...opts, clean: undefined, __derived__: undefined, entity: undefined,
+        test: noent(opts.test), feature };
 }
 //# sourceMappingURL=MakeOptionsUtility.js.map

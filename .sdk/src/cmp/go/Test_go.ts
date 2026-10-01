@@ -9,6 +9,7 @@ import { cmp, each, Folder, File, Content, goModule, entityCollection,
 
 import { TestEntity } from './TestEntity_go'
 import { TestDirect } from './TestDirect_go'
+import { TestClean } from './TestClean_go'
 import { ReadmeExamplesTest } from './ReadmeExamplesTest_go'
 
 
@@ -46,6 +47,8 @@ func TestExists(t *testing.T) {
 }
 `)
     })
+
+    TestClean({ target, gomodule })
 
     const entity = each(entityCollection(model))
       .filter((e: any) => false !== e.active)

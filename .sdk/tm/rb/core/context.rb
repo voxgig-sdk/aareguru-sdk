@@ -109,4 +109,32 @@ class AareguruContext
   def make_error(code, msg)
     AareguruError.new(code, msg, self)
   end
+
+  # The serialised context leaves the pipeline (a logger, an error dump), so
+  # it is cleaned; the live fields stay raw for the pipeline's own use.
+  def to_h
+    record = {
+      "id" => @id,
+      "op" => @op,
+      "spec" => @spec,
+      "entity" => @entity,
+      "result" => @result,
+      "response" => @response,
+      "meta" => @meta,
+    }
+    clean = @utility.respond_to?(:clean) ? @utility.clean : nil
+    clean.respond_to?(:call) ? clean.call(self, record) : record
+  end
+
+  def to_json(*args)
+    to_h.to_json(*args)
+  end
+
+  def to_s
+    "Context " + VoxgigStruct.jsonify(to_h)
+  end
+
+  def inspect
+    to_s
+  end
 end

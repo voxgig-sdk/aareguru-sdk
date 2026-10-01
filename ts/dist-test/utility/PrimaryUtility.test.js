@@ -203,6 +203,28 @@ const index_1 = require("./index");
             return utility.resultBody(ctx);
         });
     });
+    // An accepted delete answers 202 with an empty body, which is no body.
+    (0, node_test_1.test)('resbody-empty', async () => {
+        const read = async (res) => {
+            const reqClient = new index_1.SDK({
+                base: 'http://localhost:8080',
+                system: { fetch: async () => res },
+            });
+            const reqUtility = reqClient.utility();
+            const ctx = reqUtility.makeContext({
+                opname: 'remove',
+                spec: {
+                    alias: {}, base: 'http://localhost/', headers: {}, method: 'DELETE',
+                    params: {}, path: '/p0', prefix: '', query: {}, suffix: '',
+                },
+            }, reqClient._rootctx);
+            ctx.client = reqClient;
+            await reqUtility.makeRequest(ctx);
+            return reqUtility.resultBody(ctx);
+        };
+        (0, node_assert_1.equal)((await read(new Response('', { status: 202 }))).body, undefined);
+        (0, node_assert_1.deepStrictEqual)((await read(new Response('{"a":1}', { status: 200 }))).body, { a: 1 });
+    });
     (0, node_test_1.test)('request-basic', async () => {
         const mockFetch = async (url, init) => ({
             status: 200,

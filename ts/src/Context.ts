@@ -121,8 +121,10 @@ class Context {
   }
 
 
+  // The serialised context leaves the pipeline (a logger, an error dump), so
+  // it is cleaned; the live fields stay raw for the pipeline's own use.
   toJSON() {
-    return {
+    const record = {
       id: this.id,
       op: this.op,
       spec: this.spec,
@@ -131,6 +133,8 @@ class Context {
       response: this.response,
       meta: this.meta,
     }
+    const clean = (this as any).utility?.clean
+    return 'function' === typeof clean ? clean(this, record) : record
   }
 
   toString() {

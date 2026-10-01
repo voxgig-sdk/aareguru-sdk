@@ -26,19 +26,25 @@ def make_response_util(ctx):
 
     spec.step = "response"
 
-    utility.result_basic(ctx)
-    utility.result_headers(ctx)
-    utility.result_body(ctx)
+    # A body that is not what it claims (a `json` thunk that raises) is a
+    # failed result, not a raw exception out of the pipeline - as in ts.
+    try:
+        utility.result_basic(ctx)
+        utility.result_headers(ctx)
+        utility.result_body(ctx)
 
-    # GraphQL reports failures as a top-level `errors` array under HTTP
-    # 200, so result_basic's status check never sees them. Lift them here,
-    # before the response transform tries to unwrap data that is not there.
-    utility.graphql_errors(ctx)
+        # GraphQL reports failures as a top-level `errors` array under HTTP
+        # 200, so result_basic's status check never sees them. Lift them
+        # here, before the response transform tries to unwrap data that is
+        # not there.
+        utility.graphql_errors(ctx)
 
-    utility.transform_response(ctx)
+        utility.transform_response(ctx)
 
-    if result.err is None:
-        result.ok = True
+        if result.err is None:
+            result.ok = True
+    except Exception as err:
+        result.err = err
 
     if ctx.ctrl.explain is not None:
         ctx.ctrl.explain["result"] = result

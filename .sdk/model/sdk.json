@@ -292,7 +292,7 @@
                         "ex": 12,
                         "k": "query",
                         "n": "line",
-                        "or": "line",
+                        "or": "lines",
                         "r": false,
                         "t": "`$INTEGER`"
                       },
@@ -489,7 +489,7 @@
                         "ex": null,
                         "k": "query",
                         "n": "value",
-                        "or": "value",
+                        "or": "values",
                         "r": false,
                         "t": "`$STRING`"
                       },
@@ -564,7 +564,7 @@
                         "ex": null,
                         "k": "query",
                         "n": "value",
-                        "or": "value",
+                        "or": "values",
                         "r": false,
                         "t": "`$STRING`"
                       },
@@ -637,7 +637,7 @@
                         "ex": null,
                         "k": "query",
                         "n": "value",
-                        "or": "value",
+                        "or": "values",
                         "r": false,
                         "t": "`$STRING`"
                       },
@@ -701,7 +701,7 @@
                         "ex": null,
                         "k": "query",
                         "n": "value",
-                        "or": "value",
+                        "or": "values",
                         "r": false,
                         "t": "`$STRING`"
                       },
@@ -764,7 +764,7 @@
                         "ex": null,
                         "k": "query",
                         "n": "value",
-                        "or": "value",
+                        "or": "values",
                         "r": false,
                         "t": "`$STRING`"
                       },
@@ -1353,7 +1353,12 @@
         },
         "base": "http://localhost:8000",
         "clean": {
-          "keys": "key,token,id"
+          "active": true,
+          "hint": "0",
+          "keys": "key,secret,token,password,passwd,authorization,cookie,credential,signature",
+          "mask": "[redacted]",
+          "min": "4",
+          "values": ""
         },
         "entity": {
           "`$CHILD`": {

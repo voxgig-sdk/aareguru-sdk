@@ -22,7 +22,7 @@ use Voxgig\Struct\Struct;
 // (_retry, _cache, _metrics, ...); allow them explicitly (PHP 8.2+
 // deprecates implicit dynamic properties).
 #[\AllowDynamicProperties]
-class ProjectNameSDK
+class ProjectNameSDK implements \JsonSerializable
 {
     public string $mode;
     public array $features;
@@ -115,6 +115,19 @@ class ProjectNameSDK
     {
         $out = Struct::clone($this->options);
         return is_array($out) ? $out : [];
+    }
+
+    // The options hold the credential, so the default print and json form
+    // name the client and nothing more; options_map() is the way to read
+    // them back.
+    public function jsonSerialize(): array
+    {
+        return ['name' => 'ProjectName'];
+    }
+
+    public function __debugInfo(): array
+    {
+        return $this->jsonSerialize();
     }
 
     public function get_utility()
@@ -242,7 +255,7 @@ class ProjectNameSDK
         [$fetched, $fetch_err] = ($utility->fetcher)($ctx, $url, $fetchdef);
 
         if ($fetch_err) {
-            return ["ok" => false, "err" => $fetch_err];
+            return ["ok" => false, "err" => ($utility->clean)($ctx, $fetch_err)];
         }
 
         if ($fetched === null) {

@@ -274,7 +274,7 @@ module AareguruConfig
                       },
                       {
                         "name" => "line",
-                        "orig" => "line",
+                        "orig" => "lines",
                         "type" => "`$INTEGER`",
                         "kind" => "query",
                         "example" => 12,
@@ -447,7 +447,7 @@ module AareguruConfig
                       },
                       {
                         "name" => "value",
-                        "orig" => "value",
+                        "orig" => "values",
                         "type" => "`$STRING`",
                         "kind" => "query",
                         "example" => nil,
@@ -512,7 +512,7 @@ module AareguruConfig
                       },
                       {
                         "name" => "value",
-                        "orig" => "value",
+                        "orig" => "values",
                         "type" => "`$STRING`",
                         "kind" => "query",
                         "example" => nil,
@@ -575,7 +575,7 @@ module AareguruConfig
                       },
                       {
                         "name" => "value",
-                        "orig" => "value",
+                        "orig" => "values",
                         "type" => "`$STRING`",
                         "kind" => "query",
                         "example" => nil,
@@ -631,7 +631,7 @@ module AareguruConfig
                       },
                       {
                         "name" => "value",
-                        "orig" => "value",
+                        "orig" => "values",
                         "type" => "`$STRING`",
                         "kind" => "query",
                         "example" => nil,
@@ -686,7 +686,7 @@ module AareguruConfig
                       },
                       {
                         "name" => "value",
-                        "orig" => "value",
+                        "orig" => "values",
                         "type" => "`$STRING`",
                         "kind" => "query",
                         "example" => nil,

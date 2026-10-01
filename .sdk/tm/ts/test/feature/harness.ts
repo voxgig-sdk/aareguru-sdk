@@ -80,6 +80,9 @@ function makeClient(spec: {
 
   const utility: any = {
     struct,
+    // Features pass every record they emit through the SDK's own clean.
+    clean: (stdutil as any).clean,
+    cleanAdd: (stdutil as any).cleanAdd,
     fetcher: server,
     param: (ctx: any, name: string) => {
       const p = (ctx.spec && ctx.spec.params) || {}
@@ -88,10 +91,16 @@ function makeClient(spec: {
     },
   }
 
+  // One clean registry per client, as makeOptions gives a real one, so a value
+  // a feature registers with cleanAdd is masked by every clean after it.
+  const derived = (stdutil as any).makeOptions({
+    utility, options: { feature: { test: { active: true } } }, config: {},
+  }).__derived__
+
   const client: any = {
     _mode: spec.mode || 'test',
     _features: [],
-    _options: { base, headers: spec.headers || {}, feature: {} },
+    _options: { base, headers: spec.headers || {}, feature: {}, __derived__: derived },
     options() { return this._options },
     utility() { return utility },
   }
@@ -111,6 +120,7 @@ function makeClient(spec: {
       id: 'C' + idseq,
       client,
       utility,
+      options: client._options,
       out: {},
       ctrl: over.ctrl || {},
       meta: {},

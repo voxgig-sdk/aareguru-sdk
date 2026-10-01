@@ -259,6 +259,31 @@ describe('PrimaryUtility', async () => {
   })
 
 
+  // An accepted delete answers 202 with an empty body, which is no body.
+  test('resbody-empty', async () => {
+    const read = async (res: any) => {
+      const reqClient = new (SDK as any)({
+        base: 'http://localhost:8080',
+        system: { fetch: async () => res },
+      })
+      const reqUtility = reqClient.utility()
+      const ctx = reqUtility.makeContext({
+        opname: 'remove',
+        spec: {
+          alias: {}, base: 'http://localhost/', headers: {}, method: 'DELETE',
+          params: {}, path: '/p0', prefix: '', query: {}, suffix: '',
+        },
+      }, reqClient._rootctx)
+      ctx.client = reqClient
+      await reqUtility.makeRequest(ctx)
+      return reqUtility.resultBody(ctx)
+    }
+
+    equal((await read(new Response('', { status: 202 }))).body, undefined)
+    deepStrictEqual((await read(new Response('{"a":1}', { status: 200 }))).body, { a: 1 })
+  })
+
+
   test('request-basic', async () => {
     const mockFetch = async (url: string, init: any) => ({
       status: 200,

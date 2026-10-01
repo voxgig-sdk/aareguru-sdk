@@ -291,7 +291,7 @@ def make_config():
                     },
                     {
                       "name": "line",
-                      "orig": "line",
+                      "orig": "lines",
                       "type": "`$INTEGER`",
                       "kind": "query",
                       "example": 12,
@@ -464,7 +464,7 @@ def make_config():
                     },
                     {
                       "name": "value",
-                      "orig": "value",
+                      "orig": "values",
                       "type": "`$STRING`",
                       "kind": "query",
                       "example": None,
@@ -529,7 +529,7 @@ def make_config():
                     },
                     {
                       "name": "value",
-                      "orig": "value",
+                      "orig": "values",
                       "type": "`$STRING`",
                       "kind": "query",
                       "example": None,
@@ -592,7 +592,7 @@ def make_config():
                     },
                     {
                       "name": "value",
-                      "orig": "value",
+                      "orig": "values",
                       "type": "`$STRING`",
                       "kind": "query",
                       "example": None,
@@ -648,7 +648,7 @@ def make_config():
                     },
                     {
                       "name": "value",
-                      "orig": "value",
+                      "orig": "values",
                       "type": "`$STRING`",
                       "kind": "query",
                       "example": None,
@@ -703,7 +703,7 @@ def make_config():
                     },
                     {
                       "name": "value",
-                      "orig": "value",
+                      "orig": "values",
                       "type": "`$STRING`",
                       "kind": "query",
                       "example": None,

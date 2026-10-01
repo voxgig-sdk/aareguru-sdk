@@ -331,7 +331,7 @@ function skipWithout(name) {
                 const entries = h.client._debug.entries;
                 (0, node_assert_1.strictEqual)(entries.length, 1); // ring buffer capped at max
                 (0, node_assert_1.strictEqual)(seen.length, 2);
-                (0, node_assert_1.strictEqual)(seen[0].headers.authorization, '<redacted>');
+                (0, node_assert_1.strictEqual)(seen[0].headers.authorization, '[redacted]');
             });
             (0, node_test_1.test)('captures failures', { skip: skipWithout('netsim') }, async () => {
                 const h = (0, harness_1.makeClient)({ features: [
@@ -452,6 +452,12 @@ function skipWithout(name) {
                 const h = (0, harness_1.makeClient)({ features: [{ name: 'proxy', options: { url: 'http://proxy:8080', noProxy: ['api.test'] } }], server: rec.server, base: 'http://api.test' });
                 await h.op({ op: 'load' });
                 (0, node_assert_1.strictEqual)(rec.calls[0].fetchdef.proxy, undefined);
+            });
+            (0, node_test_1.test)('masks the credentials in the URL it reports', async () => {
+                const h = (0, harness_1.makeClient)({ features: [{ name: 'proxy', options: { url: 'http://pxuser:pxs3cret@proxy:8080' } }] });
+                await h.op({ op: 'load' });
+                (0, node_assert_1.strictEqual)(h.client._proxy.url.includes('pxs3cret'), false);
+                (0, node_assert_1.strictEqual)(h.client._proxy.url.includes('pxuser'), false);
             });
         });
     // --- edge branches (coverage) ---------------------------------------------
@@ -702,7 +708,7 @@ function skipWithout(name) {
             const h = (0, harness_1.makeClient)({ features: [{ name: 'debug', options: { now: () => 7, redact: ['x-secret'] } }] });
             await h.op({ op: 'load', headers: { 'x-secret': 'hide', 'x-ok': 'show' } });
             const e = h.client._debug.entries[0];
-            (0, node_assert_1.strictEqual)(e.headers['x-secret'], '<redacted>');
+            (0, node_assert_1.strictEqual)(e.headers['x-secret'], '[redacted]');
             (0, node_assert_1.strictEqual)(e.headers['x-ok'], 'show');
         });
     // --- composition ----------------------------------------------------------

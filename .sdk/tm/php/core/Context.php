@@ -11,7 +11,7 @@ require_once __DIR__ . '/Response.php';
 require_once __DIR__ . '/Error.php';
 require_once __DIR__ . '/Helpers.php';
 
-class AareguruContext
+class AareguruContext implements \JsonSerializable
 {
     public string $id;
     public array $out;
@@ -148,5 +148,28 @@ class AareguruContext
     public function make_error(string $code, string $msg): AareguruError
     {
         return new AareguruError($code, $msg, $this);
+    }
+
+    // The serialised context leaves the pipeline (a logger, a dump), so it
+    // is cleaned; the live fields stay raw for the pipeline's own use.
+    public function jsonSerialize(): mixed
+    {
+        $record = [
+            'id' => $this->id,
+            'op' => $this->op,
+            'spec' => $this->spec,
+            'entity' => $this->entity,
+            'result' => $this->result,
+            'response' => $this->response,
+            'meta' => $this->meta,
+        ];
+        $clean = null === $this->utility ? null : $this->utility->clean;
+        return is_callable($clean) ? $clean($this, $record) : $record;
+    }
+
+    public function __debugInfo(): array
+    {
+        $record = $this->jsonSerialize();
+        return is_array($record) ? $record : ['record' => $record];
     }
 }

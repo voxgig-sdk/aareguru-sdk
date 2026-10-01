@@ -1,5 +1,6 @@
 -- ProjectName SDK
 
+local json = require("dkjson")
 local vs = require("utility.struct.struct")
 local Utility = require("core.utility_type")
 local Spec = require("core.spec")
@@ -16,7 +17,53 @@ local features_factory = require("features")
 
 
 local ProjectNameSDK = {}
-ProjectNameSDK.__index = ProjectNameSDK
+
+-- The options and the root context both hold the credential. They live in
+-- a side table rather than in the client, so a dump or an encoder walking
+-- the client's fields never reaches them; `sdk.options` still reads and
+-- writes through the metamethods, and options_map() is the documented way
+-- to read the credential back.
+local HIDDEN = { options = true, _rootctx = true }
+local SLOTS = setmetatable({}, { __mode = "k" })
+
+ProjectNameSDK.__index = function(self, key)
+  local member = rawget(ProjectNameSDK, key)
+  if member ~= nil then
+    return member
+  end
+  if HIDDEN[key] then
+    local slots = SLOTS[self]
+    return slots ~= nil and slots[key] or nil
+  end
+  return nil
+end
+
+ProjectNameSDK.__newindex = function(self, key, val)
+  if HIDDEN[key] then
+    local slots = SLOTS[self]
+    if slots == nil then
+      slots = {}
+      SLOTS[self] = slots
+    end
+    slots[key] = val
+  else
+    rawset(self, key, val)
+  end
+end
+
+-- The client's own record: what a serialiser or clean's snapshot sees in
+-- place of the client, so neither reaches the options through it.
+function ProjectNameSDK:to_record()
+  return { sdk = "ProjectName", mode = self.mode }
+end
+
+ProjectNameSDK.__tostring = function(self)
+  return "ProjectNameSDK mode=" .. tostring(self.mode)
+end
+
+ProjectNameSDK.__tojson = function(self)
+  return json.encode(self:to_record())
+end
 
 
 local function _make_feature(name)
@@ -243,7 +290,7 @@ function ProjectNameSDK:_raw_request(fetchargs)
   local fetched, fetch_err = utility.fetcher(ctx, url, fetchdef)
 
   if fetch_err ~= nil then
-    return { ok = false, err = fetch_err }, nil
+    return { ok = false, err = utility.clean(ctx, fetch_err) }, nil
   end
 
   if fetched == nil then

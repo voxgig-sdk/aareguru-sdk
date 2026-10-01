@@ -16,12 +16,18 @@ ${installCommand(model, target.name)}
   }
 
   // Publish pending: the package is not yet on npm, so install from the
-  // git release tag instead of a `npm install` that would 404.
-  const { releasesUrl } = repoInfo(model)
+  // git release tag instead of a `npm install` that would 404. A repository
+  // may have no tag at all, and npm cannot install a subdirectory of a git
+  // URL, so a clone is always offered too. It carries the compiled dist/.
+  const { releasesUrl, repoUrl, repo } = repoInfo(model)
   Content(`This package is not yet published to npm. Install it from the GitHub
-release tag (\`${target.name}/vX.Y.Z\`):
+release tag (\`${target.name}/vX.Y.Z\`, see [Releases](${releasesUrl})), or from a
+clone, which carries the compiled \`dist/\`:
 
-- Releases: [${releasesUrl}](${releasesUrl})
+\`\`\`bash
+git clone ${repoUrl}
+npm install ./${repo}/${target.name}
+\`\`\`
 
 `)
 })

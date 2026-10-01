@@ -67,6 +67,36 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 
 	opts := vs.Clone(options).(map[string]any)
 
+	config := ctx.Config
+	if config == nil {
+		config = map[string]any{}
+	}
+	cfgopts := map[string]any{}
+	if co, ok := config["options"]; ok && co != nil {
+		if cm, ok := co.(map[string]any); ok {
+			cfgopts = cm
+		}
+	}
+
+	// The secret registry exists BEFORE validation, fed from the raw input, so
+	// the constructor's own rejection of a mistyped credential is clean too.
+	cleanraw := map[string]any{}
+	for _, layer := range []any{core.OPTSPEC["clean"], cfgopts["clean"], opts["clean"]} {
+		for k, v := range core.ToMapAny(layer) {
+			cleanraw[k] = v
+		}
+	}
+	cleancfg := makeCleanConfig(cleanraw)
+	cleanctx := &core.Context{Options: map[string]any{
+		"__derived__": map[string]any{"clean": cleancfg},
+	}}
+	cleanAddOptions(cleanctx, cleanOmit(opts, "clean"))
+	for _, block := range []map[string]any{cfgopts, opts} {
+		for _, s := range cleanSplit(vs.GetPath(block, []any{"clean", "values"})) {
+			cleancfg.add(s)
+		}
+	}
+
 	var featureorder []any
 	if farr, ok := opts["feature"].([]any); ok {
 		fmap := map[string]any{}
@@ -89,17 +119,6 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 			featureorder = append(featureorder, name)
 		}
 		opts["feature"] = fmap
-	}
-
-	config := ctx.Config
-	if config == nil {
-		config = map[string]any{}
-	}
-	cfgopts := map[string]any{}
-	if co, ok := config["options"]; ok && co != nil {
-		if cm, ok := co.(map[string]any); ok {
-			cfgopts = cm
-		}
 	}
 
 	optspec := core.OPTSPEC
@@ -169,24 +188,6 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 		}
 	}
 
-	// Derived clean config.
-	cleanKeys := "key,token,id"
-	if ck := vs.GetPath(opts, []any{"clean", "keys"}); ck != nil {
-		if cks, ok := ck.(string); ok {
-			cleanKeys = cks
-		}
-	}
-
-	parts := strings.Split(cleanKeys, ",")
-	var filtered []string
-	for _, p := range parts {
-		p = strings.TrimSpace(p)
-		if p != "" {
-			filtered = append(filtered, vs.EscRe(p))
-		}
-	}
-	keyre := strings.Join(filtered, "|")
-
 	// Resolve the feature add-order: an explicit array order (above) wins;
 	// otherwise order the map test-first, then the remaining names sorted, so
 	// the outcome is deterministic and `test` is always the base transport.
@@ -238,14 +239,54 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 		}
 	}
 
-	derived := map[string]any{
-		"clean": map[string]any{},
+	opts["__derived__"] = map[string]any{
+		"clean":        cleancfg,
+		"featureorder": featureorder,
 	}
-	if keyre != "" {
-		derived["clean"] = map[string]any{"keyre": keyre}
-	}
-	derived["featureorder"] = featureorder
-	opts["__derived__"] = derived
+
+	// Again over the merged result: the config's own defaults can carry one.
+	cleanAddOptions(cleanctx, cleanOmit(opts, "clean", "__derived__"))
 
 	return opts
+}
+
+// A feature's name is not a field name: only the sensitive names inside its
+// settings count, so `secrets` does not make every setting a secret. Entity
+// blocks (per-entity settings, seeded records) hold no credential.
+func cleanAddOptions(ctx *core.Context, opts map[string]any) {
+	top := cleanOmit(opts, "feature", "entity")
+	if test, ok := top["test"]; ok {
+		top["test"] = cleanNoEntity(test)
+	}
+	cleanAddSensitive(ctx, top)
+	switch feature := opts["feature"].(type) {
+	case map[string]any:
+		for _, fopts := range feature {
+			cleanAddSensitive(ctx, cleanNoEntity(fopts))
+		}
+	case []any:
+		for _, entry := range feature {
+			cleanAddSensitive(ctx, cleanNoEntity(entry))
+		}
+	default:
+		cleanAddSensitive(ctx, feature)
+	}
+}
+
+func cleanNoEntity(block any) any {
+	if m, ok := block.(map[string]any); ok {
+		return cleanOmit(m, "entity")
+	}
+	return block
+}
+
+func cleanOmit(m map[string]any, keys ...string) map[string]any {
+	out := make(map[string]any, len(m))
+	for k, v := range m {
+		out[k] = v
+	}
+	for _, k := range keys {
+		delete(out, k)
+	}
+	return out
 }

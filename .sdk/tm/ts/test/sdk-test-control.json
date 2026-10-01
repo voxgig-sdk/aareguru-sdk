@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "_doc": "Per-SDK test control. Lists tests/operations to skip in unit and live modes; tunes per-test pacing. Edit by hand. Loaded by ts/test/utility.ts.",
+  "_doc": "Per-SDK test control. Lists tests/operations to skip in unit, live and definition modes; tunes per-test pacing. Edit by hand. Loaded by ts/test/utility.ts.",
   "test": {
     "skip": {
       "live": {
@@ -9,6 +9,9 @@
       },
       "unit": {
         "direct": [],
+        "entityOp": []
+      },
+      "definition": {
         "entityOp": []
       }
     },

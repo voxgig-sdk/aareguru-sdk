@@ -1,9 +1,11 @@
 # Aareguru SDK utility: make_options
 require_relative 'struct/voxgig_struct'
 require_relative '../schema'
+require_relative 'clean'
 module AareguruUtilities
   MakeOptions = ->(ctx) {
     options = ctx.options || {}
+    options = {} unless options.is_a?(Hash)
 
     # Merge custom utility overrides.
     #
@@ -58,6 +60,22 @@ module AareguruUtilities
 
     opts.delete('auth') if authsuppressed
 
+    config = ctx.config || {}
+    cfgopts = config["options"].is_a?(Hash) ? config["options"] : {}
+
+    # The secret registry exists BEFORE validation, fed from the raw input, so
+    # the constructor's own rejection of a mistyped credential is clean too.
+    cfgclean = cfgopts["clean"].is_a?(Hash) ? VoxgigStruct.clone(cfgopts["clean"]) : nil
+    cleancfg = CleanSupport.make_config(VoxgigStruct.merge(
+      [{}, AareguruSchema::OPTSPEC["clean"], cfgclean, opts["clean"]].select { |c| c.is_a?(Hash) }))
+    cleanctx = { "options" => { "__derived__" => { "clean" => cleancfg } } }
+    CleanSupport.add_options(cleanctx, opts.reject { |k, _| k == "clean" })
+    [cfgopts, opts].each do |block|
+      CleanSupport.splitvalues(VoxgigStruct.getpath(block, "clean.values")).each do |raw|
+        CleanSupport.add(cleanctx, raw)
+      end
+    end
+
     # Feature add-order. options["feature"] may be given as an ordered ARRAY of
     # { "name" => ..., "active" => ..., ... } entries (the array position IS the
     # order in which features are added), or as a { "name" => {opts} } map.
@@ -77,9 +95,6 @@ module AareguruUtilities
       end
       opts["feature"] = fmap
     end
-
-    config = ctx.config || {}
-    cfgopts = config["options"].is_a?(Hash) ? config["options"] : {}
 
     # THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
     #
@@ -103,7 +118,12 @@ module AareguruUtilities
     # nested hashes as merge TARGETS — one instance's options (server,
     # headers, ...) would contaminate every instance constructed after it.
     merged = VoxgigStruct.merge([{}, VoxgigStruct.clone(cfgopts), opts])
-    validated = VoxgigStruct.validate(merged, optspec)
+    begin
+      validated = VoxgigStruct.validate(merged, optspec)
+    rescue StandardError => e
+      # Not a cause: the raw error would print beneath the cleaned one.
+      raise CleanSupport.clean(cleanctx, e), cause: nil
+    end
     opts = validated.is_a?(Hash) ? validated : {}
 
     # Restore the suppression the optspec default would otherwise erase.
@@ -146,11 +166,6 @@ module AareguruUtilities
       opts["system"]["fetch"] = sys_fetch
     end
 
-    clean_keys = VoxgigStruct.getpath(opts, "clean.keys")
-    clean_keys = "key,token,id" unless clean_keys.is_a?(String)
-    parts = clean_keys.split(",").map(&:strip).reject(&:empty?).map { |p| VoxgigStruct.escre(p) }
-    keyre = parts.join("|")
-
     # Resolve the feature add-order: an explicit array order (above) wins;
     # otherwise order the map test-first, then the remaining names sorted, so
     # the outcome is deterministic and `test` is always the base transport.
@@ -176,9 +191,13 @@ module AareguruUtilities
       end
     end
 
-    derived = { "clean" => keyre.empty? ? {} : { "keyre" => keyre } }
-    derived["featureorder"] = featureorder
-    opts["__derived__"] = derived
+    # Again over the merged result: the config's own defaults can carry one.
+    CleanSupport.add_options(cleanctx, opts.reject { |k, _| k == "clean" })
+
+    opts["__derived__"] = {
+      "clean" => cleancfg,
+      "featureorder" => featureorder,
+    }
 
     opts
   }

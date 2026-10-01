@@ -7,14 +7,44 @@ module AareguruUtilities
     params = []
     if point
       p = VoxgigStruct.getprop(point, "params")
-      params = p if p.is_a?(Array)
+      params = p.dup if p.is_a?(Array)
+      # A path parameter travels in the path. The generated config lists them
+      # as args.params, which prepare_params reads; params is the older list.
+      pl = VoxgigStruct.getpath(point, "args.params")
+      if pl.is_a?(Array)
+        pl.each do |pd|
+          name = VoxgigStruct.getprop(pd, "name")
+          params << name if name.is_a?(String)
+        end
+      end
+      # A header parameter travels in the headers, which prepare_headers fills.
+      hl = VoxgigStruct.getpath(point, "args.header")
+      if hl.is_a?(Array)
+        hl.each do |hd|
+          name = VoxgigStruct.getprop(hd, "name")
+          params << name if name.is_a?(String)
+        end
+      end
+    end
+    # A query parameter travels under the name the definition gives it, its
+    # orig, which the model may have renamed for the caller.
+    wire = {}
+    if point
+      ql = VoxgigStruct.getpath(point, "args.query")
+      if ql.is_a?(Array)
+        ql.each do |qd|
+          name = VoxgigStruct.getprop(qd, "name")
+          orig = VoxgigStruct.getprop(qd, "orig")
+          wire[name] = orig if name.is_a?(String) && orig.is_a?(String) && !orig.empty?
+        end
+      end
     end
     out = {}
     items = VoxgigStruct.items(reqmatch)
     if items
       items.each do |item|
         key, val = item[0], item[1]
-        out[key] = val if val && key.is_a?(String) && key != "$action" && !params.include?(key)
+        out[wire.fetch(key, key)] = val if val && key.is_a?(String) && key != "$action" && !params.include?(key)
       end
     end
     out

@@ -186,6 +186,7 @@ class TestPrimaryUtility:
         utility = client._utility
 
         assert utility.clean is not None
+        assert utility.clean_add is not None
         assert utility.done is not None
         assert utility.make_error is not None
         assert utility.feature_add is not None

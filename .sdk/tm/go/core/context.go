@@ -1,6 +1,8 @@
 package core
 
 import (
+	"encoding/json"
+	"fmt"
 	"math/rand"
 	"strconv"
 	"sync"
@@ -286,4 +288,44 @@ func (ctx *Context) resolveOp(opname string) *Operation {
 
 func (ctx *Context) MakeError(code string, msg string) *AareguruError {
 	return NewAareguruError(code, msg, ctx)
+}
+
+// The record a context serialises as; the options and the client stay out.
+func (ctx *Context) Record() map[string]any {
+	return map[string]any{
+		"id":       ctx.Id,
+		"op":       ctx.Op,
+		"spec":     ctx.Spec,
+		"entity":   ctx.Entity,
+		"result":   ctx.Result,
+		"response": ctx.Response,
+		"meta":     ctx.Meta,
+	}
+}
+
+// The serialised context leaves the pipeline (a logger, an error dump), so
+// it is cleaned; the live fields stay raw for the pipeline's own use. Value
+// receivers, so a dereferenced context prints the same way.
+func (ctx Context) cleaned() any {
+	record := ctx.Record()
+	if ctx.Utility != nil && ctx.Utility.Clean != nil {
+		return ctx.Utility.Clean(&ctx, record)
+	}
+	return record
+}
+
+func (ctx Context) MarshalJSON() ([]byte, error) {
+	return json.Marshal(ctx.cleaned())
+}
+
+func (ctx Context) String() string {
+	cleaned := ctx.cleaned()
+	if raw, err := json.Marshal(cleaned); err == nil {
+		return "Context " + string(raw)
+	}
+	return "Context " + fmt.Sprintf("%v", cleaned)
+}
+
+func (ctx Context) GoString() string {
+	return ctx.String()
 }

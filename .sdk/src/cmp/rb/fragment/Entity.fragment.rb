@@ -34,6 +34,21 @@ class EntyClass
     @_name
   end
 
+  # The entity serialises and prints as its data (clean honours `to_h`),
+  # never as the client it holds or the match it absorbed: a query
+  # credential comes back in resmatch.
+  def to_h
+    VoxgigStruct.clone(@_data)
+  end
+
+  def to_s
+    "EntityName " + VoxgigStruct.jsonify(@_data)
+  end
+
+  def inspect
+    to_s
+  end
+
   # Every operation resolves to the entity; `remove` additionally marks
   # it. The instance KEEPS the data it held — a caller can still read what
   # was deleted — but it is no longer a live record. See AGENTS.md.
@@ -119,53 +134,71 @@ class EntyClass
       false
     end
 
+    # The pipeline runs as the caller iterates, so its errors leave through
+    # the same catch path as an operation's. The caller's block runs on this
+    # stack too, and what it raises is left alone.
     Enumerator.new do |yielder|
-      catch(:stream_stop) do
-        utility.feature_hook.call(ctx, "PrePoint")
-        point, err = utility.make_point.call(ctx)
-        ctx.out["point"] = point
-        throw :stream_stop if err
+      inblock = false
+      give = lambda do |item|
+        inblock = true
+        yielder << item
+        inblock = false
+      end
+      begin
+        catch(:stream_stop) do
+          utility.feature_hook.call(ctx, "PrePoint")
+          point, err = utility.make_point.call(ctx)
+          ctx.out["point"] = point
+          throw :stream_stop if err
 
-        utility.feature_hook.call(ctx, "PreSpec")
-        spec, err = utility.make_spec.call(ctx)
-        ctx.out["spec"] = spec
-        throw :stream_stop if err
+          utility.feature_hook.call(ctx, "PreSpec")
+          spec, err = utility.make_spec.call(ctx)
+          ctx.out["spec"] = spec
+          throw :stream_stop if err
 
-        utility.feature_hook.call(ctx, "PreRequest")
-        resp, err = utility.make_request.call(ctx)
-        ctx.out["request"] = resp
-        throw :stream_stop if err
+          utility.feature_hook.call(ctx, "PreRequest")
+          resp, err = utility.make_request.call(ctx)
+          ctx.out["request"] = resp
+          throw :stream_stop if err
 
-        utility.feature_hook.call(ctx, "PreResponse")
-        resp2, err = utility.make_response.call(ctx)
-        ctx.out["response"] = resp2
-        throw :stream_stop if err
+          utility.feature_hook.call(ctx, "PreResponse")
+          resp2, err = utility.make_response.call(ctx)
+          ctx.out["response"] = resp2
+          throw :stream_stop if err
 
-        utility.feature_hook.call(ctx, "PreResult")
-        result, err = utility.make_result.call(ctx)
-        ctx.out["result"] = result
-        throw :stream_stop if err
+          utility.feature_hook.call(ctx, "PreResult")
+          result, err = utility.make_result.call(ctx)
+          ctx.out["result"] = result
+          throw :stream_stop if err
 
-        utility.feature_hook.call(ctx, "PreDone")
+          utility.feature_hook.call(ctx, "PreDone")
 
-        result = ctx.result
+          result = ctx.result
 
-        # Inbound: prefer the streaming feature's incremental Enumerator; else
-        # fall back to the materialised items so stream always yields.
-        stream_enum = result ? result.stream : nil
-        if stream_enum
-          stream_enum.each do |item|
-            throw :stream_stop if aborted.call
-            yielder << item
-          end
-        else
-          data = utility.done.call(ctx)
-          items = data.is_a?(Array) ? data : (data.nil? ? [] : [data])
-          items.each do |item|
-            throw :stream_stop if aborted.call
-            yielder << item
+          # Inbound: prefer the streaming feature's incremental Enumerator;
+          # else fall back to the materialised items so stream always yields.
+          stream_enum = result ? result.stream : nil
+          if stream_enum
+            # done does not run on this path, so its record is cleaned here.
+            utility.clean_explain.call(ctx)
+            stream_enum.each do |item|
+              throw :stream_stop if aborted.call
+              give.call(item)
+            end
+          else
+            data = utility.done.call(ctx)
+            items = data.is_a?(Array) ? data : (data.nil? ? [] : [data])
+            items.each do |item|
+              throw :stream_stop if aborted.call
+              give.call(item)
+            end
           end
         end
+      rescue StandardError => operr
+        raise if inblock
+        ctx.ctrl.err = operr
+        e = _unexpected(ctx, operr)
+        raise e, cause: nil unless e.nil?
       end
     end
   end
@@ -239,9 +272,38 @@ class EntyClass
 
       out
     rescue StandardError => operr
-      # #PreUnexpected-Hook
+      ctx.ctrl.err = operr
 
-      raise operr
+      # What a hook raises here must not escape the cleaning below.
+      begin
+        # #PreUnexpected-Hook
+      rescue StandardError => hookerr
+        operr = hookerr
+        ctx.ctrl.err = operr
+      end
+
+      e = _unexpected(ctx, operr)
+      # Not a cause: the raw error would print beneath the cleaned one.
+      raise e, cause: nil unless e.nil?
+      nil
     end
+  end
+
+  # An exception the pipeline did not build still leaves through the
+  # caller: it is cleaned, and so is the explain record it interrupted.
+  # Answers nil when throwing is disabled, as the pipeline's own errors do.
+  def _unexpected(ctx, err)
+    clean = @_utility.clean
+    if ctx.ctrl.explain.is_a?(Hash)
+      @_utility.clean_explain.call(ctx)
+      cleanerr = clean.call(ctx, { "message" => err.message.to_s, "class" => err.class.name })
+      if ctx.ctrl.explain["err"].nil?
+        ctx.ctrl.explain["err"] = cleanerr
+      elsif ctx.ctrl.explain["err"]["message"] != cleanerr["message"]
+        ctx.ctrl.explain["unexpected"] = cleanerr
+      end
+    end
+    return nil if ctx.ctrl.throw_err == false
+    clean.call(ctx, err)
   end
 end

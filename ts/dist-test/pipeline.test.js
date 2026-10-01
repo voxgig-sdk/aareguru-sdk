@@ -269,9 +269,9 @@ const COOKIE_PAIR = /^[^=;]+=K$/;
         return { headers: {}, query: {} };
     }
     // `basic: false` is explicit: an HTTP Basic API's generated config carries
-    // `auth.basic: true`, and a client that merges it in takes a branch needing
-    // a secret as well. With none supplied that branch writes nothing, which
-    // the probe below would then read as a public API.
+    // `auth.basic: true`, and a client that merges it in takes the Basic
+    // branch, which base64-joins the key with a password rather than placing
+    // the key as it is.
     function auth(prefix) {
         return { prefix, basic: false };
     }
@@ -348,6 +348,42 @@ const COOKIE_PAIR = /^[^=;]+=K$/;
     });
     (0, node_test_1.test)('a missing apikey option drops the credential', () => {
         (0, node_assert_1.strictEqual)(placed({ auth: auth('Bearer') }, 'stale'), undefined);
+    });
+    // HTTP Basic joins the key with a password, which may be empty (RFC 7617):
+    // Lob documents its key as the user with a blank password. An SDK for an
+    // API that is not HTTP Basic has no such branch, and the first placement
+    // below tells the two apart.
+    (0, node_test_1.test)('HTTP Basic sends the key with a blank password', () => {
+        if (null == CRED || 'headers' !== CRED.where || '' !== CRED.pair)
+            return;
+        const basic = { prefix: 'Basic', basic: true };
+        const b64 = (s) => Buffer.from(s).toString('base64');
+        if (placed({ apikey: 'K', secret: 'S', auth: basic }) !== 'Basic ' + b64('K:S'))
+            return;
+        (0, node_assert_1.strictEqual)(placed({ apikey: 'K', auth: basic }), 'Basic ' + b64('K:'));
+        (0, node_assert_1.strictEqual)(placed({ apikey: 'K', secret: '', auth: basic }), 'Basic ' + b64('K:'));
+        (0, node_assert_1.strictEqual)(placed({ apikey: '', secret: 'S', auth: basic }, 'stale'), undefined);
+    });
+});
+(0, node_test_1.describe)('pipeline:prepareQuery', () => {
+    // The generated config lists path parameters as args.params. A match field
+    // that fills the path must not be sent again as a query parameter, which a
+    // strict server rejects.
+    (0, node_test_1.test)('a path parameter stays out of the query', () => {
+        const point = { args: { params: [{ name: 'id', kind: 'param' }] } };
+        const ctx = base({ point, reqmatch: { id: 'i1', q: 'x' } });
+        (0, node_assert_1.deepStrictEqual)(__1.stdutil.prepareQuery(ctx), { q: 'x' });
+    });
+    (0, node_test_1.test)('an action is never a query parameter', () => {
+        const ctx = base({ point: { args: { params: [] } }, reqmatch: { $action: 'go', q: 'x' } });
+        (0, node_assert_1.deepStrictEqual)(__1.stdutil.prepareQuery(ctx), { q: 'x' });
+    });
+    // A query argument's orig is the name the API definition gives it, which
+    // the model may have renamed for the caller.
+    (0, node_test_1.test)('a query argument goes out under its orig', () => {
+        const point = { args: { query: [{ name: 'item_id', orig: 'itemIds', kind: 'query' }] } };
+        const ctx = base({ point, reqmatch: { item_id: ['i1'], q: 'x' } });
+        (0, node_assert_1.deepStrictEqual)(__1.stdutil.prepareQuery(ctx), { itemIds: ['i1'], q: 'x' });
     });
 });
 (0, node_test_1.describe)('pipeline:result helpers', () => {

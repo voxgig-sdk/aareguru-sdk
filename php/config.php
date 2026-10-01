@@ -288,7 +288,7 @@ class AareguruConfig
                       ],
                       [
                         'name' => 'line',
-                        'orig' => 'line',
+                        'orig' => 'lines',
                         'type' => '`$INTEGER`',
                         'kind' => 'query',
                         'example' => 12,
@@ -461,7 +461,7 @@ class AareguruConfig
                       ],
                       [
                         'name' => 'value',
-                        'orig' => 'value',
+                        'orig' => 'values',
                         'type' => '`$STRING`',
                         'kind' => 'query',
                         'example' => null,
@@ -526,7 +526,7 @@ class AareguruConfig
                       ],
                       [
                         'name' => 'value',
-                        'orig' => 'value',
+                        'orig' => 'values',
                         'type' => '`$STRING`',
                         'kind' => 'query',
                         'example' => null,
@@ -589,7 +589,7 @@ class AareguruConfig
                       ],
                       [
                         'name' => 'value',
-                        'orig' => 'value',
+                        'orig' => 'values',
                         'type' => '`$STRING`',
                         'kind' => 'query',
                         'example' => null,
@@ -645,7 +645,7 @@ class AareguruConfig
                       ],
                       [
                         'name' => 'value',
-                        'orig' => 'value',
+                        'orig' => 'values',
                         'type' => '`$STRING`',
                         'kind' => 'query',
                         'example' => null,
@@ -700,7 +700,7 @@ class AareguruConfig
                       ],
                       [
                         'name' => 'value',
-                        'orig' => 'value',
+                        'orig' => 'values',
                         'type' => '`$STRING`',
                         'kind' => 'query',
                         'example' => null,

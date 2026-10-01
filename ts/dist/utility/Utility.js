@@ -34,6 +34,8 @@ const TransformResponseUtility_1 = require("./TransformResponseUtility");
 const StructUtility_1 = require("./StructUtility");
 class Utility {
     clean = CleanUtility_1.clean;
+    cleanAdd = CleanUtility_1.cleanAdd;
+    cleanExplain = DoneUtility_1.cleanExplain;
     done = DoneUtility_1.done;
     makeError = MakeErrorUtility_1.makeError;
     featureAdd = FeatureAddUtility_1.featureAdd;

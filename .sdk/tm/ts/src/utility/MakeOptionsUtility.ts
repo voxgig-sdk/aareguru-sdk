@@ -2,6 +2,8 @@
 import { Context } from '../types'
 import { OPTSPEC } from '../Schema'
 
+import { clean, cleanAdd, cleanAddSensitive, makeCleanConfig, splitvalues } from './CleanUtility'
+
 
 function makeOptions(ctx: Context) {
   const utility = ctx.utility
@@ -11,11 +13,24 @@ function makeOptions(ctx: Context) {
   const setprop = struct.setprop
   const merge = struct.merge
   const validate = struct.validate
-  const escre = struct.escre
 
   let opts = { ...(options || {}) }
 
   const authSuppressed = null === (options || {}).auth
+
+  let config = ctx.config || {}
+  let cfgopts = config.options || {}
+
+  // The registry exists BEFORE validation, so rejecting a mistyped credential
+  // is clean too. An absent block is left out, or merge would erase the defaults.
+  const layer = (b: any) => null != b && 'object' === typeof b && !Array.isArray(b) ? b : {}
+  const cleancfg = makeCleanConfig(merge([{}, (OPTSPEC as any).clean,
+    struct.clone(layer(cfgopts.clean)), layer(opts.clean)]))
+  const cleanctx: any = { options: { __derived__: { clean: cleancfg } } }
+  cleanAddSensitive(cleanctx, settings(opts))
+  for (const raw of [...splitvalues(cfgopts.clean?.values), ...splitvalues(opts.clean?.values)]) {
+    cleanAdd(cleanctx, raw)
+  }
 
   let featureorder: string[] = []
   if (Array.isArray(opts.feature)) {
@@ -35,9 +50,6 @@ function makeOptions(ctx: Context) {
     setprop(utility, key, val)
   }
 
-  let config = ctx.config || {}
-  let cfgopts = config.options || {}
-
   const optspec = OPTSPEC
 
   // Clone the config side before merging: `config` is a module-level
@@ -46,7 +58,12 @@ function makeOptions(ctx: Context) {
   // contaminate every instance constructed after it.
   opts = merge([{}, struct.clone(cfgopts), opts])
 
-  opts = validate(opts, optspec)
+  try {
+    opts = validate(opts, optspec)
+  }
+  catch (err: any) {
+    throw clean(cleanctx, err)
+  }
 
   opts.system = opts.system || {}
   if (null == opts.system.fetch) {
@@ -96,22 +113,27 @@ function makeOptions(ctx: Context) {
   }
 
   opts.__derived__ = {
-    clean: {
-      keyre: undefined
-    },
+    clean: cleancfg,
     featureorder,
   }
 
-  const keyre = opts.clean.keys
-    .split(/\s*,\s*/)
-    .filter((s: string) => null != s && '' !== s)
-    .map((key: string) => escre(key)).join('|')
-
-  if ('' != keyre) {
-    opts.__derived__.clean.keyre = keyre
-  }
+  // Again over the merged result: the config's own defaults can carry one.
+  cleanAddSensitive({ options: opts } as any, settings(opts))
 
   return opts
+}
+
+
+// Registration skips entity blocks: entity settings and seed records hold no credential.
+function settings(opts: any): any {
+  const noent = (b: any) => null != b && 'object' === typeof b && !Array.isArray(b)
+    ? { ...b, entity: undefined } : b
+  const feature = Array.isArray(opts.feature) ? opts.feature.map(noent)
+    : null != opts.feature && 'object' === typeof opts.feature
+      ? Object.fromEntries(Object.entries(opts.feature).map(([k, v]) => [k, noent(v)]))
+      : opts.feature
+  return { ...opts, clean: undefined, __derived__: undefined, entity: undefined,
+    test: noent(opts.test), feature }
 }
 
 

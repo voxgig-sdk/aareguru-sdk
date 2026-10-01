@@ -1,6 +1,10 @@
 package utility
 
-import "GOMODULE/core"
+import (
+	"fmt"
+
+	"GOMODULE/core"
+)
 
 func makeErrorUtil(ctx *core.Context, err error) (any, error) {
 	if ctx == nil {
@@ -40,23 +44,29 @@ func makeErrorUtil(ctx *core.Context, err error) (any, error) {
 
 	spec := ctx.Spec
 
+	// The context stays reachable on the error for a debugger; its result and
+	// spec are masked copies, so masking them never masks the pipeline's own.
+	sdkErr := &core.AareguruError{
+		IsAareguruError: true,
+		Sdk:                "Aareguru",
+		Code:               "",
+		Msg:                msg,
+		Ctx:                ctx,
+		Result:             cleanUtil(ctx, result),
+		Spec:               cleanUtil(ctx, spec),
+	}
+	if se, ok := err.(*core.AareguruError); ok {
+		sdkErr.Code = cleanUtil(ctx, se.Code).(string)
+	}
+
 	if ctx.Ctrl.Explain != nil {
 		ctx.Ctrl.Explain["err"] = map[string]any{
 			"message": msg,
+			"code":    sdkErr.Code,
 		}
-	}
-
-	sdkErr := &core.AareguruError{
-		IsAareguruError: true,
-		Sdk:              "Aareguru",
-		Code:             "",
-		Msg:              msg,
-		Ctx:              ctx,
-		Result:           cleanUtil(ctx, result),
-		Spec:             cleanUtil(ctx, spec),
-	}
-	if se, ok := err.(*core.AareguruError); ok {
-		sdkErr.Code = se.Code
+		// A failure before done() (makeSpec after prepareAuth, say) leaves the
+		// explain record raw otherwise; ts reaches done() on every such path.
+		cleanExplain(ctx)
 	}
 
 	ctx.Ctrl.Err = sdkErr
@@ -65,13 +75,38 @@ func makeErrorUtil(ctx *core.Context, err error) (any, error) {
 	// debug) close/record error paths that never reach PreDone (e.g. a PrePoint
 	// rbac short-circuit). Fires after ctx.Ctrl.Err is set so hooks can read the
 	// error; features guard against double-recording when PreDone already fired.
+	var out error = sdkErr
 	if ctx.Utility != nil && ctx.Utility.FeatureHook != nil {
-		ctx.Utility.FeatureHook(ctx, "PreUnexpected")
+		// A hook that panics here would leave raw, after the cleaning above:
+		// its error replaces the SDK error, cleaned, as ts's catch path does.
+		if herr := preUnexpected(ctx); herr != nil {
+			if cerr, ok := cleanUtil(ctx, herr).(error); ok {
+				herr = cerr
+			}
+			ctx.Ctrl.Err = herr
+			if ctx.Ctrl.Explain != nil {
+				ctx.Ctrl.Explain["unexpected"] = map[string]any{"message": herr.Error()}
+			}
+			out = herr
+		}
 	}
 
 	if ctx.Ctrl.Throw != nil && *ctx.Ctrl.Throw == false {
 		return result.Resdata, nil
 	}
 
-	return nil, sdkErr
+	return nil, out
+}
+
+func preUnexpected(ctx *core.Context) (herr error) {
+	defer func() {
+		if r := recover(); r != nil {
+			var ok bool
+			if herr, ok = r.(error); !ok {
+				herr = fmt.Errorf("%v", r)
+			}
+		}
+	}()
+	ctx.Utility.FeatureHook(ctx, "PreUnexpected")
+	return nil
 }

@@ -9,6 +9,7 @@ import { cmp, each, Folder, File, Content, entityCollection,
 
 import { TestEntity } from './TestEntity_lua'
 import { TestDirect } from './TestDirect_lua'
+import { TestClean } from './TestClean_lua'
 import { ReadmeExamplesTest } from './ReadmeExamplesTest_lua'
 
 
@@ -43,6 +44,8 @@ end)
       TestEntity({ target, entity })
       TestDirect({ target, entity })
     })
+
+    TestClean({ target })
 
     // README ```lua example snippets: syntax-check + offline run.
     ReadmeExamplesTest({ target })

@@ -33,6 +33,8 @@ require_relative 'transform_response'
 
 AareguruUtility.registrar = ->(u) {
   u.clean = AareguruUtilities::Clean
+  u.clean_add = AareguruUtilities::CleanAdd
+  u.clean_explain = AareguruUtilities::CleanExplain
   u.done = AareguruUtilities::Done
   u.make_error = AareguruUtilities::MakeError
   u.feature_add = AareguruUtilities::FeatureAdd

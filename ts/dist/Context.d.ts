@@ -32,15 +32,7 @@ declare class Context {
     constructor(ctxmap: Record<string, any>, basectx?: Context);
     resolveOp(opname: string): Operation;
     error(code: string, msg: string): AareguruError;
-    toJSON(): {
-        id: string;
-        op: Operation;
-        spec: Spec | undefined;
-        entity: any;
-        result: Result | undefined;
-        response: Response | undefined;
-        meta: Record<string, any>;
-    };
+    toJSON(): any;
     toString(): string;
     [inspect.custom](): string;
 }

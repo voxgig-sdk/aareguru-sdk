@@ -9,6 +9,7 @@ import { cmp, each, Folder, File, Content, entityCollection,
 
 import { TestEntity } from './TestEntity_rb'
 import { TestDirect } from './TestDirect_rb'
+import { TestClean } from './TestClean_rb'
 import { ReadmeExamplesTest } from './ReadmeExamplesTest_rb'
 
 
@@ -44,6 +45,8 @@ end
       TestEntity({ target, entity })
       TestDirect({ target, entity })
     })
+
+    TestClean({ target })
 
     // README example snippet test (syntax + offline test-mode run).
     ReadmeExamplesTest({ target })

@@ -950,7 +950,7 @@ class FeatureTest extends TestCase
         $h->op(['op' => 'list']);
         $this->assertCount(1, $h->client->_debug['entries']); // ring buffer capped at max
         $this->assertCount(2, $seen);
-        $this->assertSame('<redacted>', $seen[0]['headers']['authorization']);
+        $this->assertSame('[redacted]', $seen[0]['headers']['authorization']);
     }
 
     public function test_debug_captures_failures(): void
@@ -975,7 +975,7 @@ class FeatureTest extends TestCase
         ]);
         $h->op(['op' => 'load', 'headers' => ['x-secret' => 'hide', 'x-ok' => 'show']]);
         $e = $h->client->_debug['entries'][0];
-        $this->assertSame('<redacted>', $e['headers']['x-secret']);
+        $this->assertSame('[redacted]', $e['headers']['x-secret']);
         $this->assertSame('show', $e['headers']['x-ok']);
     }
 

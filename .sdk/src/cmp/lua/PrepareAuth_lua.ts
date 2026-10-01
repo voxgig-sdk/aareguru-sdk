@@ -189,15 +189,19 @@ function place(where: string): string {
 
 
 const BASIC = `
-  -- True HTTP Basic Auth needs TWO credentials, base64-joined - a single
+  -- True HTTP Basic Auth joins the two credentials, base64-encoded - a single
   -- token in the header (the branch below) can never authenticate against
   -- an API that actually checks "Authorization: Basic base64(user:pass)".
+  -- The password may be empty (RFC 7617): Lob, for one, documents the key as
+  -- the user with a blank password ("curl -u key:").
   if vs.getpath(options, "auth.basic") == true then
     local secret = vs.getprop(options, OPTION_SECRET, NOT_FOUND)
+    if secret == nil or secret == NOT_FOUND then
+      secret = ""
+    end
 
-    if apikey == nil or secret == nil
+    if apikey == nil
       or (type(apikey) == "string" and (apikey == NOT_FOUND or apikey == ""))
-      or (type(secret) == "string" and (secret == NOT_FOUND or secret == ""))
     then
       headers[HEADER_AUTH] = nil
     else
@@ -207,6 +211,9 @@ const BASIC = `
         auth_prefix = ap
       end
       local joined = base64(tostring(apikey) .. ":" .. tostring(secret))
+      -- The joined, encoded pair is a wire form neither credential's own
+      -- registration covers.
+      ctx.utility.clean_add(ctx, joined)
       if auth_prefix == "" then
         headers[HEADER_AUTH] = joined
       else

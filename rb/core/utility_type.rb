@@ -1,7 +1,7 @@
 # Aareguru SDK utility type
 
 class AareguruUtility
-  attr_accessor :clean, :done, :make_error, :feature_add, :feature_hook,
+  attr_accessor :clean, :clean_add, :clean_explain, :done, :make_error, :feature_add, :feature_hook,
                 :feature_init, :fetcher, :make_fetch_def, :make_context,
                 :make_options, :make_request, :make_response, :make_result,
                 :make_point, :make_spec, :make_url, :param, :prepare_auth,

@@ -81,8 +81,10 @@ class Context {
     error(code, msg) {
         return new AareguruError_1.AareguruError(code, msg, this);
     }
+    // The serialised context leaves the pipeline (a logger, an error dump), so
+    // it is cleaned; the live fields stay raw for the pipeline's own use.
     toJSON() {
-        return {
+        const record = {
             id: this.id,
             op: this.op,
             spec: this.spec,
@@ -91,6 +93,8 @@ class Context {
             response: this.response,
             meta: this.meta,
         };
+        const clean = this.utility?.clean;
+        return 'function' === typeof clean ? clean(this, record) : record;
     }
     toString() {
         return 'Context ' + this.utility?.struct.jsonify(this.toJSON());

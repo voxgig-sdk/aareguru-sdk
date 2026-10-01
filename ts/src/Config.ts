@@ -311,7 +311,7 @@ class Config {
                   },
                   {
                     "name": "line",
-                    "orig": "line",
+                    "orig": "lines",
                     "type": "`$INTEGER`",
                     "kind": "query",
                     "example": 12
@@ -484,7 +484,7 @@ class Config {
                   },
                   {
                     "name": "value",
-                    "orig": "value",
+                    "orig": "values",
                     "type": "`$STRING`",
                     "kind": "query",
                     "example": null
@@ -549,7 +549,7 @@ class Config {
                   },
                   {
                     "name": "value",
-                    "orig": "value",
+                    "orig": "values",
                     "type": "`$STRING`",
                     "kind": "query",
                     "example": null
@@ -612,7 +612,7 @@ class Config {
                   },
                   {
                     "name": "value",
-                    "orig": "value",
+                    "orig": "values",
                     "type": "`$STRING`",
                     "kind": "query",
                     "example": null
@@ -668,7 +668,7 @@ class Config {
                   },
                   {
                     "name": "value",
-                    "orig": "value",
+                    "orig": "values",
                     "type": "`$STRING`",
                     "kind": "query",
                     "example": null
@@ -723,7 +723,7 @@ class Config {
                   },
                   {
                     "name": "value",
-                    "orig": "value",
+                    "orig": "values",
                     "type": "`$STRING`",
                     "kind": "query",
                     "example": null

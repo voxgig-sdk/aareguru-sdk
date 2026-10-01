@@ -763,7 +763,9 @@ class FeatureTest < Minitest::Test
     entries = h.track(:@_debug)["entries"]
     assert_equal 1, entries.length # ring buffer capped at max
     assert_equal 2, seen.length
-    assert_equal "<redacted>", seen[0]["headers"]["authorization"]
+    # Masked by the SDK's own clean rule (authorization is a clean.keys
+    # name), which the feature's redact list now sits on top of.
+    assert_equal "[redacted]", seen[0]["headers"]["authorization"]
   end
 
   def test_debug_captures_failures
@@ -784,7 +786,7 @@ class FeatureTest < Minitest::Test
     h = harness([fspec("debug", "now" => -> { 7 }, "redact" => ["x-secret"])])
     h.op(headers: { "x-secret" => "hide", "x-ok" => "show" })
     entry = h.track(:@_debug)["entries"][0]
-    assert_equal "<redacted>", entry["headers"]["x-secret"]
+    assert_equal "[redacted]", entry["headers"]["x-secret"]
     assert_equal "show", entry["headers"]["x-ok"]
   end
 

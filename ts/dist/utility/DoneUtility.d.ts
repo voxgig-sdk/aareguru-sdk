@@ -1,3 +1,4 @@
 import { Context } from '../types';
 declare function done(ctx: Context): any;
-export { done };
+declare function cleanExplain(ctx: Context): void;
+export { cleanExplain, done };

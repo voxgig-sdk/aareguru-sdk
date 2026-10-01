@@ -12,7 +12,12 @@ declare const OPTSPEC: {
     };
     base: string;
     clean: {
+        active: boolean;
+        hint: string;
         keys: string;
+        mask: string;
+        min: string;
+        values: string;
     };
     entity: {
         "`$CHILD`": {

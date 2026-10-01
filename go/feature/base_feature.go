@@ -26,6 +26,18 @@ func NewBaseFeature() *BaseFeature {
 	}
 }
 
+// A record on its way to a sink, a buffer or a logger leaves the pipeline,
+// so it is cleaned through the utility slot.
+func fclean(ctx *core.Context, record map[string]any) map[string]any {
+	if ctx == nil || ctx.Utility == nil || ctx.Utility.Clean == nil {
+		return record
+	}
+	if out, ok := ctx.Utility.Clean(ctx, record).(map[string]any); ok {
+		return out
+	}
+	return record
+}
+
 func (f *BaseFeature) GetVersion() string { return f.Version }
 func (f *BaseFeature) GetName() string    { return f.Name }
 func (f *BaseFeature) GetActive() bool    { return f.Active }
