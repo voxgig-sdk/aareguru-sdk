@@ -8,6 +8,10 @@ Run these scripts from any working directory:
 .sdk/admin/status.sh --github
 ```
 
+`npm run status` from `.sdk` runs the same report through node alone, so it
+works in any shell, `cmd.exe` included; pass the options after `--`, as in
+`npm run status -- --json`.
+
 `status.sh` reads the compiled SDK model, repository state, target directories,
 publication settings, tool versions, and documentation outputs. It does not run
 builds or tests, contact package registries, fetch Git refs, or change files.
@@ -49,6 +53,12 @@ It **detects**; it does not prevent. Run it before a release, or after
 changing the model or the toolchain. It is deliberately not in CI: it
 regenerates every target, which is minutes of work and needs the `.sdk`
 dependencies installed.
+
+`check-drift.sh` and `status.sh` are bash scripts. On Windows, run them from
+Git Bash, inside the checkout: `npm run check-drift` hands the script to the
+first `bash` on the PATH, and from `cmd.exe` or PowerShell that can be WSL's,
+which runs it in Linux rather than in the checkout. `.sdk/.gitattributes`
+keeps every `.sh` file at LF line endings, which bash needs.
 
 When a GitHub Pages edition and its CI workflow are enabled, docgen generates
 `setup-github-pages.sh` here. Preview its changes, then configure Pages:

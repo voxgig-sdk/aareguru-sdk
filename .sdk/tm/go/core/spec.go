@@ -14,6 +14,9 @@ type Spec struct {
 	Body    any
 	Url     string
 	Path    string
+	// The query parameters PrepareAuth placed: the credential, which the
+	// request sends and the entity's match leaves out.
+	AuthQuery []string
 }
 
 func NewSpec(specmap map[string]any) *Spec {

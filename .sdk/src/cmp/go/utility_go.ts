@@ -68,7 +68,7 @@ function exampleValue(entity: any, op: any, paramName: string, placeholder: stri
   if ('NULL' === key) {
     return 'nil'
   }
-  return `"${placeholder}"`
+  return formatGoString(placeholder)
 }
 
 

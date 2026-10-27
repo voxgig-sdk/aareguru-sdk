@@ -156,7 +156,7 @@ func TestPipelineMakeResult(t *testing.T) {
 		ctx.Entity = &plEntity{name: "x", made: &made}
 		ctx.Spec = sdk.NewSpec(map[string]any{"step": "s"})
 		ctx.Result = sdk.NewResult(map[string]any{
-			"resdata": []any{map[string]any{"a": 1}, map[string]any{"a": 2}},
+			"resdata": []any{map[string]any{"a": 1}, "b.md"},
 		})
 		result, err := utility.MakeResult(ctx)
 		if err != nil {
@@ -166,8 +166,8 @@ func TestPipelineMakeResult(t *testing.T) {
 		if len(resdata) != 2 {
 			t.Errorf("expected 2 wrapped entities, got %v", result.Resdata)
 		}
-		if len(made) != 2 {
-			t.Errorf("expected 2 Data() calls, got %d", len(made))
+		if len(made) != 2 || made[1] != "b.md" {
+			t.Errorf("expected a Data() call per item, the scalar included, got %v", made)
 		}
 	})
 

@@ -571,10 +571,13 @@ class Struct
         return preg_quote($s, '/');
     }
 
+    // Keeps what encodeURIComponent keeps.
     public static function escurl(?string $s): string
     {
         $s = $s ?? self::S_MT;
-        return rawurlencode($s);
+        return strtr(rawurlencode($s), [
+            '%21' => '!', '%2A' => '*', '%27' => "'", '%28' => '(', '%29' => ')',
+        ]);
     }
 
     public static function joinurl(array $sarr): string
@@ -1263,11 +1266,18 @@ class Struct
                         $dst[$pI] = 0 < $pI ? self::_getprop($dst[$pI - 1], $key) : $dst[$pI];
                         $tval = $dst[$pI];
 
-                        if (self::undef() === $tval && 0 === (self::T_instance & self::typify($val))) {
-                            $cur[$pI] = self::islist($val) ? [] : new \stdClass();
-                        } elseif (self::typify($val) === self::typify($tval)) {
+                        if (self::typify($val) === self::typify($tval)) {
                             $cur[$pI] = $tval;
+                        } elseif (0 === (self::T_instance & self::typify($val))) {
+                            // Otherwise the override wins: a plain node is copied, taking
+                            // nothing from the destination, so no later merge writes into it.
+                            $cur[$pI] = self::islist($val) ? [] : new \stdClass();
+                            // At the root $dst[0] is $cur[0], the new node, by reference.
+                            if (0 < $pI) {
+                                $dst[$pI] = self::undef();
+                            }
                         } else {
+                            // A class instance is kept as is, so there is nothing to descend.
                             $cur[$pI] = $val;
                             $val = self::undef();
                         }
@@ -1276,13 +1286,17 @@ class Struct
                     return $val;
                 };
 
-                $after = function ($key, $_val, $_parent, $path) use (&$cur) {
+                $after = function ($key, $_val, $parent, $path) use (&$cur) {
                     $cI = self::size($path);
                     $value = $cur[$cI] ?? null;
-                    if ($cI > 0) {
-                        self::setprop($cur[$cI - 1], $key, $value);
+                    if (0 === $cI) {
+                        return $value;
                     }
-                    return $value;
+                    self::setprop($cur[$cI - 1], $key, $value);
+
+                    // walk writes this back into the override, so it is the
+                    // override's own child, read raw so a null stays null.
+                    return self::_getprop($parent, $key);
                 };
 
                 $out = self::walk($obj, $before, $after, $md);

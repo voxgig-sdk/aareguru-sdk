@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, entityOps, opRequestShape , targetFeatures } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, entityOps, targetFeatures, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -14,27 +14,32 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
   load: {
     sig: 'Load(reqmatch, ctrl map[string]any) (any, error)',
     returns: '(any, error)',
-    desc: 'Load a single entity matching the given criteria.',
+    desc: 'Load a single entity matching the given criteria. Returns the entity, whose record `Data()` reads; `err` is non-nil on failure.',
   },
   list: {
     sig: 'List(reqmatch, ctrl map[string]any) (any, error)',
     returns: '(any, error)',
-    desc: 'List entities matching the given criteria. Returns an array.',
+    desc: 'List entities matching the given criteria. Returns a `[]any` of entities, one per record; `err` is non-nil on failure.',
   },
   create: {
     sig: 'Create(reqdata, ctrl map[string]any) (any, error)',
     returns: '(any, error)',
-    desc: 'Create a new entity with the given data.',
+    desc: 'Create a new entity with the given data. Returns the created entity; `err` is non-nil on failure.',
   },
   update: {
     sig: 'Update(reqdata, ctrl map[string]any) (any, error)',
     returns: '(any, error)',
-    desc: 'Update an existing entity. The data must include the entity `id`.',
+    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity; `err` is non-nil on failure.',
+  },
+  patch: {
+    sig: 'Patch(reqdata, ctrl map[string]any) (any, error)',
+    returns: '(any, error)',
+    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity; `err` is non-nil on failure.',
   },
   remove: {
     sig: 'Remove(reqmatch, ctrl map[string]any) (any, error)',
     returns: '(any, error)',
-    desc: 'Remove the entity matching the given criteria.',
+    desc: 'Remove the entity matching the given criteria. Returns the entity, marked as deleted; `err` is non-nil on failure.',
   },
 }
 
@@ -210,7 +215,7 @@ fmt.Println(${eVar}.GetName()) // "${ent.name}"
           // Only emit columns for operations this entity actually exposes —
           // never advertise a create/update/remove column the entity lacks
           // (opnames already carries active ops only).
-          const opcols = ['load', 'list', 'create', 'update', 'remove']
+          const opcols = ['load', 'list', 'create', 'update', 'patch', 'remove']
             .filter((op: string) => opnames.includes(op))
           Content(`### Field Usage by Operation
 
@@ -258,13 +263,12 @@ ${info.desc}
             // The id key plus every REQUIRED match key (parent path params
             // like page_id) — the same shape that generates the op's request
             // match, so the example always carries the keys the route needs.
-            const matchItems = opRequestShape(ent, opname).items
-              .filter((it: any) => !it.optional || it.name === idF)
+            const matchItems = matchExampleItems(ent, opname, idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const arg = 0 < matchItems.length
               ? `map[string]any{${matchItems.map((it: any) =>
-                `"${it.name}": ${exampleValue(ent, ent.op && ent.op[opname], it.name,
+                `${litString('go', it.name)}: ${exampleValue(ent, ent.op && ent.op[opname], it.name,
                   it.name === idF ? ent.name + '_id' : it.name)}`).join(', ')}}`
               : 'nil'
             Content(`\`\`\`go
@@ -272,18 +276,20 @@ result, err := client.${ent.Name}(nil).${goOpName}(${arg}, nil)
 if err != nil {
     panic(err)
 }
-fmt.Println(result)
+fmt.Println(result.(sdk.Entity).Data())
 \`\`\`
 
 `)
           }
           else if ('list' === opname) {
             Content(`\`\`\`go
-results, err := client.${ent.Name}(nil).List(nil, nil)
+results, err := client.${ent.Name}(nil).List(${listMatchArg('go', ent)}, nil)
 if err != nil {
     panic(err)
 }
-fmt.Println(results)
+for _, item := range results.([]any) {
+    fmt.Println(item.(sdk.Entity).Data())
+}
 \`\`\`
 
 `)
@@ -294,46 +300,54 @@ fmt.Println(results)
             // required id), each with a type-correct example VALUE via
             // exampleValue — a `"name": /* type */` comment is not a value
             // and yields uncompilable Go.
-            const createItems = opRequestShape(ent, 'create').items
+            const createItems = requestExampleItems(ent, 'create')
               .filter((it: any) => !it.optional)
             Content(`\`\`\`go
 result, err := client.${ent.Name}(nil).Create(map[string]any{
 `)
             createItems.map((it: any) => {
-              Content(`    "${it.name}": ${exampleValue(ent, ent.op && ent.op.create, it.name, 'example_' + it.name)},
+              Content(`    ${litString('go', it.name)}: ${exampleValue(ent, ent.op && ent.op.create, it.name, 'example_' + it.name)},
 `)
             })
             Content(`}, nil)
 if err != nil {
     panic(err)
 }
-fmt.Println(result)
+fmt.Println(result.(sdk.Entity).Data())
 \`\`\`
 
 `)
           }
-          else if ('update' === opname) {
+          else if ('update' === opname || 'patch' === opname) {
             // The id key plus every REQUIRED data member — the same shape
             // that generates the op's request data — then the patch-fields
             // note.
-            const updateItems = opRequestShape(ent, 'update').items
+            const updateItems = requestExampleItems(ent, opname)
               .filter((it: any) => !it.optional || it.name === idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const updateLines = updateItems.map((it: any) =>
-              `    "${it.name}": ${exampleValue(ent, ent.op && ent.op.update, it.name,
+              `    ${litString('go', it.name)}: ${exampleValue(ent, ent.op && ent.op[opname], it.name,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
             Content(`\`\`\`go
-result, err := client.${ent.Name}(nil).Update(map[string]any{
-${updateLines}    // Fields to update
+result, err := client.${ent.Name}(nil).${'patch' === opname ? 'Patch' : 'Update'}(map[string]any{
+${updateLines}    // ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}
 }, nil)
 if err != nil {
     panic(err)
 }
-fmt.Println(result)
+fmt.Println(result.(sdk.Entity).Data())
 \`\`\`
 
 `)
+          }
+
+          if ('create' === opname || 'update' === opname || 'patch' === opname) {
+            const note = bodyNote(ent.op[opname], {
+              values: 'a `[]byte`, a `string` or an `io.Reader`',
+              once: 'an `io.Reader`',
+            })
+            if ('' !== note) Content(note)
           }
         })
       }
@@ -355,6 +369,14 @@ Get or set the entity match criteria. Works the same as \`Data()\`.
 
 Create a new \`${ent.Name}Entity\` instance with the same client and
 options.
+
+#### \`Stream(action string, args map[string]any, callopts map[string]any) <-chan StreamItem\`
+
+Run an operation through the pipeline and send its result items on the
+returned channel, which closes when the stream ends. A \`StreamItem\` holds
+one item in \`Item\`, or in \`Err\` the error that ended the stream: the
+error the operation itself would return, sent as the last value. Under
+\`throw: false\` in \`callopts["ctrl"]\`, no error is sent.
 
 #### \`GetName() string\`
 

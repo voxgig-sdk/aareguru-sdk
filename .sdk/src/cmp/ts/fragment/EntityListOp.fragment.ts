@@ -91,7 +91,10 @@ class EntityOperation {
     catch (err: any) {
       // What a hook throws here must not escape the cleaning below.
       try {
-        // #PreUnexpected-Hook
+        // Once per operation: makeError fires it for its own error.
+        if (!ctx.unexpectedFired) {
+          // #PreUnexpected-Hook
+        }
       }
       catch (hookerr: any) {
         err = hookerr
@@ -104,7 +107,7 @@ class EntityOperation {
       }
       else {
         // Off-happy-path (throw disabled): typed as any so the method's
-        // Promise<EntityName[]> return stays clean under strict null checks.
+        // Promise<EntyClass[]> return stays clean under strict null checks.
         return undefined as any
       }
     }

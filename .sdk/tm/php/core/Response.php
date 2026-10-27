@@ -11,6 +11,8 @@ class AareguruResponse
     public mixed $json_func;
     public mixed $body;
     public mixed $err;
+    // Set by a transport that could not read a non-blank body as JSON.
+    public bool $unreadable;
 
     public function __construct(array $resmap = [])
     {
@@ -26,5 +28,6 @@ class AareguruResponse
         $this->body = ($b === '__UNDEFINED__') ? null : $b;
         $e = \Voxgig\Struct\Struct::getprop($resmap, 'err');
         $this->err = ($e === '__UNDEFINED__') ? null : $e;
+        $this->unreadable = true === \Voxgig\Struct\Struct::getprop($resmap, 'unreadable');
     }
 }

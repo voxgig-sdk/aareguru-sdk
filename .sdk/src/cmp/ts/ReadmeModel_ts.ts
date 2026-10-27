@@ -14,23 +14,24 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const entityList = each(entity).filter((e: any) => e.active !== false)
 
   // Model-driven op rows for the shared entity interface: emit a
-  // load/list/create/update/remove row only for operations at least one active
+  // load/list/create/update/patch/remove row only for operations at least one active
   // entity actually exposes (a read-only entity has just list+load) — never
   // document an operation no entity has.
   const opUnion = new Set<string>()
   entityList.forEach((e: any) => Object.keys(e.op || {})
     .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
   const opRowDefs: Record<string, string> = {
-    load: '| `load` | `load(reqmatch?, ctrl?): Promise<Entity>` | Load a single entity by match criteria. |',
-    list: '| `list` | `list(reqmatch?, ctrl?): Promise<Entity[]>` | List entities matching the criteria. |',
-    create: '| `create` | `create(reqdata?, ctrl?): Promise<Entity>` | Create a new entity. |',
-    update: '| `update` | `update(reqdata?, ctrl?): Promise<Entity>` | Update an existing entity. |',
-    remove: '| `remove` | `remove(reqmatch?, ctrl?): Promise<void>` | Remove an entity. |',
+    load: '| `load` | `load(reqmatch?, ctrl?): Promise<Entity>` | Load a single entity by match criteria, and return it. |',
+    list: '| `list` | `list(reqmatch?, ctrl?): Promise<Entity[]>` | List entities matching the criteria, one per record. |',
+    create: '| `create` | `create(reqdata?, ctrl?): Promise<Entity>` | Create a new entity, and return it. |',
+    update: '| `update` | `update(reqdata?, ctrl?): Promise<Entity>` | Update an existing entity, and return it. |',
+    patch: '| `patch` | `patch(reqdata?, ctrl?): Promise<Entity>` | Change part of an existing entity, and return it. |',
+    remove: '| `remove` | `remove(reqmatch?, ctrl?): Promise<Entity>` | Remove an entity, and return it marked as deleted. |',
   }
-  const opRows = ['load', 'list', 'create', 'update', 'remove']
+  const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
 
-  const singleOps = ['load', 'create', 'update'].filter((o) => opUnion.has(o))
+  const singleOps = ['load', 'create', 'update', 'patch'].filter((o) => opUnion.has(o))
     .map((o) => '`' + o + '`')
   const retBullets: string[] = []
   if (singleOps.length) {
@@ -43,7 +44,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     retBullets.push('- `list` resolves to an **array** of entity objects (iterate it directly;\n  there is no `.data` and no `.ok`).')
   }
   if (opUnion.has('remove')) {
-    retBullets.push('- `remove` resolves to `void`.')
+    retBullets.push('- `remove` resolves to the entity, marked as deleted.')
   }
   const returnBullets = retBullets.join('\n')
 
@@ -133,8 +134,8 @@ ${opRows}
 
 #### Return values
 
-Entity operations resolve to the entity data directly — there is no
-result envelope:
+Entity operations resolve to the entity itself — there is no result
+envelope, and an entity's \`data()\` reads its record:
 
 ${returnBullets}
 

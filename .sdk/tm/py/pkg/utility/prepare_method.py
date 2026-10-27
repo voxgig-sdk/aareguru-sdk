@@ -27,3 +27,10 @@ def prepare_method_util(ctx):
     # The silent-pass inline runner hid a stray "GET" fallback here; the
     # shared corpus (prepareMethod, opname "bad" -> null) pins it now.
     return METHOD_MAP.get(opname)
+
+
+# Whether a comma-separated allow option names the item: whole names, any case.
+def allowed(names, item):
+    want = item.upper() if isinstance(item, str) else ""
+    return "" != want and isinstance(names, str) and any(
+        name.strip().upper() == want for name in names.split(","))

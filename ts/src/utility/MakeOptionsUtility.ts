@@ -14,7 +14,7 @@ function makeOptions(ctx: Context) {
   const merge = struct.merge
   const validate = struct.validate
 
-  let opts = { ...(options || {}) }
+  let opts = struct.clone(options || {})
 
   const authSuppressed = null === (options || {}).auth
 
@@ -52,10 +52,9 @@ function makeOptions(ctx: Context) {
 
   const optspec = OPTSPEC
 
-  // Clone the config side before merging: `config` is a module-level
-  // singleton in ts/js, and merge would otherwise use its nested maps as
-  // merge TARGETS — one instance's options (server, headers, ...) would
-  // contaminate every instance constructed after it.
+  // Both sides are clones: merge uses their nested maps as merge TARGETS, so
+  // the module-level `config` singleton would carry one instance's options
+  // into the next, and the caller's own maps would be swapped for merge's.
   opts = merge([{}, struct.clone(cfgopts), opts])
 
   try {
@@ -124,16 +123,16 @@ function makeOptions(ctx: Context) {
 }
 
 
-// Registration skips entity blocks: entity settings and seed records hold no credential.
+// Registration skips entity blocks, and rbac's rules, keyed by entity and op names.
 function settings(opts: any): any {
-  const noent = (b: any) => null != b && 'object' === typeof b && !Array.isArray(b)
-    ? { ...b, entity: undefined } : b
-  const feature = Array.isArray(opts.feature) ? opts.feature.map(noent)
+  const plain = (b: any, name?: string) => null != b && 'object' === typeof b && !Array.isArray(b)
+    ? { ...b, entity: undefined, ...('rbac' === name ? { rules: undefined } : {}) } : b
+  const feature = Array.isArray(opts.feature) ? opts.feature.map((b: any) => plain(b, b?.name))
     : null != opts.feature && 'object' === typeof opts.feature
-      ? Object.fromEntries(Object.entries(opts.feature).map(([k, v]) => [k, noent(v)]))
+      ? Object.fromEntries(Object.entries(opts.feature).map(([k, v]) => [k, plain(v, k)]))
       : opts.feature
   return { ...opts, clean: undefined, __derived__: undefined, entity: undefined,
-    test: noent(opts.test), feature }
+    test: plain(opts.test), feature }
 }
 
 

@@ -2,7 +2,20 @@
 require_relative 'struct/voxgig_struct'
 require_relative '../core/helpers'
 require_relative '../core/error'
+require_relative 'param'
+require_relative 'prepare_method'
 module AareguruUtilities
+  # The path parameters of a point that neither the call nor the entity gives
+  # a value for, looked up as prepare_params looks them up.
+  def self.unfilled_params(ctx, point)
+    parts = VoxgigStruct.getprop(point, "parts")
+    return [] unless parts.is_a?(Array)
+    parts.each_with_object([]) do |part, missing|
+      found = part.to_s.match(/\A\{([^{}\/]+)\}\z/)
+      missing << found[1] if found && param_value(ctx, point, found[1]).nil?
+    end
+  end
+
   MakePoint = ->(ctx) {
     if ctx.out["point"]
       preset = ctx.out["point"]
@@ -17,8 +30,8 @@ module AareguruUtilities
     op = ctx.op
     options = ctx.options
 
-    allow_op = VoxgigStruct.getpath(options, "allow.op") || ""
-    unless allow_op.include?(op.name)
+    allow_op = VoxgigStruct.getpath(options, "allow.op")
+    unless AareguruUtilities.allowed(allow_op, op.name)
       return nil, ctx.make_error("point_op_allow",
         "Operation \"#{op.name}\" not allowed by SDK option allow.op value: \"#{allow_op}\"")
     end
@@ -93,14 +106,37 @@ module AareguruUtilities
           parts = VoxgigStruct.getprop(p, "parts")
           parts.is_a?(Array) && parts.length > 0 && parts[-1].to_s.start_with?("{")
         }
-        point = op.points[0]
-        op.points.each do |p|
-          if terminal_param.call(p) != terminal_param.call(point)
-            point = p if terminal_param.call(p)
-          elsif parts_len.call(p) < parts_len.call(point)
-            point = p
+        own_point = ->(points) {
+          best = points[0]
+          points.each do |p|
+            if terminal_param.call(p) != terminal_param.call(best)
+              best = p if terminal_param.call(p)
+            elsif parts_len.call(p) < parts_len.call(best)
+              best = p
+            end
           end
+          best
+        }
+
+        # A call without an action falls back to a point without one, as
+        # generation does, and only to a route the call can fill.
+        plain = op.points.select { |p|
+          VoxgigStruct.getprop(AareguruHelpers.to_map(VoxgigStruct.getprop(p, "select")), "$action").nil?
+        }
+        if plain.empty?
+          return nil, ctx.make_error("point_action_required",
+            "Operation \"#{op.name}\" has only action endpoints; pass $action to choose one.")
         end
+
+        fillable = plain.select { |p| AareguruUtilities.unfilled_params(ctx, p).empty? }
+
+        if fillable.empty?
+          missing = AareguruUtilities.unfilled_params(ctx, own_point.call(plain)).join(", ")
+          return nil, ctx.make_error("point_no_match",
+            "Operation \"#{op.name}\" has no endpoint whose path parameters are all given (missing: #{missing}).")
+        end
+
+        point = own_point.call(fillable)
       end
 
       if reqselector

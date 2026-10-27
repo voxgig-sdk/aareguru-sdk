@@ -9,7 +9,7 @@ import { createLiveTransport } from '../../live-runner'
 import { runLiveEntity } from '../../live-entity'
 
 
-import { ProjectNameSDK, BaseFeature, stdutil } from '../../..'
+import { ProjectNameSDK, BaseFeature, config, stdutil } from '../../..'
 
 import {
   envOverride,
@@ -39,6 +39,8 @@ describe('EntityNameEntity', async () => {
     const ent = testsdk.EntityName()
     assert(null != ent)
   })
+
+  // <[SLOT:failure]>
 
 
   test('basic', async (t) => {

@@ -36,7 +36,8 @@ function render(spec: {
 }): string {
   const head = `
 import { Context, Spec } from '../types'
-
+` + ('cookie' === spec.where && !spec.suppressed ? `import { cookieKeep } from './PrepareHeadersUtility'
+` : '') + `
 `
 
 
@@ -73,6 +74,12 @@ const OPTION_secret = 'secret'
 const NOTFOUND = '__NOTFOUND__'
 
 
+// The client's \`auth.name\` option, when set, replaces the name the API declares.
+function credName(name: any): string {
+  return 'string' === typeof name && '' !== name ? ${caseFold(spec.where, 'name')} : CRED_name
+}
+
+
 function prepareAuth(ctx: Context): Spec | Error {
   const utility = ctx.utility
 
@@ -94,11 +101,17 @@ ${cookieHelper(spec.where)}
 
   // Public APIs that need no auth omit the options.auth block entirely.
   if (null == options.auth) {
-    ${clear(spec.where)}
+    ${clear(spec.where, 'CRED_name')}
     return spec
   }
 
   const prefix = options.auth.prefix
+  const name = credName(options.auth.name)
+
+  // A credential left under the declared name would travel beside the renamed one.
+  if (CRED_name !== name) {
+    ${clear(spec.where, 'CRED_name')}
+  }
 
   const apikey = getprop(options, OPTION_apikey, NOTFOUND)
 `
@@ -119,14 +132,14 @@ ${cookieHelper(spec.where)}
     const pass = NOTFOUND === secret || null == secret ? '' : secret
 
     if (noApikey) {
-      delprop(headers, CRED_name)
+      delprop(headers, name)
     }
     else {
       const b64 = Buffer.from(apikey + ':' + pass).toString('base64')
       // The joined, encoded pair is a wire form neither credential's own
       // registration covers.
       utility.cleanAdd(ctx, b64)
-      setprop(headers, CRED_name, prefix ? prefix + ' ' + b64 : b64)
+      setprop(headers, name, prefix ? prefix + ' ' + b64 : b64)
     }
 
     return spec
@@ -135,10 +148,10 @@ ${cookieHelper(spec.where)}
 
   return head + preamble + basicBlock + `
   if (NOTFOUND === apikey || null == apikey || '' === apikey) {
-    ${clear(spec.where)}
+    ${clear(spec.where, 'name')}
   }
   else {
-${place(spec.where)}
+${place(spec.where, 'name')}
   }
 
   return spec
@@ -157,18 +170,24 @@ function target(where: string): string {
 }
 
 
+// Header names travel lower-cased; query and cookie names are case-sensitive.
+function caseFold(where: string, expr: string): string {
+  return 'header' === where ? expr + '.toLowerCase()' : expr
+}
+
+
 // A cookie has no header of its own: place() writes it into `cookie` as
-// `CRED_name=value`, so clear() must free that slot, not CRED_name.
-function clear(where: string): string {
+// `name=value`, so clear() frees that pair, not a header of that name.
+function clear(where: string, name: string): string {
   if ('query' === where) {
-    return 'delprop(query, CRED_name)'
+    return `delprop(query, ${name})`
   }
 
   if ('cookie' === where) {
-    return 'cookieSet(headers, null)'
+    return `cookieSet(headers, ${name}, null)`
   }
 
-  return 'delprop(headers, CRED_name)'
+  return `delprop(headers, ${name})`
 }
 
 
@@ -178,22 +197,12 @@ function cookieHelper(where: string): string {
   }
 
   return `
-  function cookieSet(headers: any, value: any) {
+  function cookieSet(headers: any, name: string, value: any) {
     const existing = getprop(headers, COOKIE_header, '')
-    const kept: string[] = []
-
-    if ('string' === typeof existing && '' !== existing) {
-      for (const part of existing.split(';')) {
-        const piece = part.trim()
-        if ('' === piece || piece === CRED_name || piece.startsWith(CRED_name + '=')) {
-          continue
-        }
-        kept.push(piece)
-      }
-    }
+    const kept: string[] = 'string' === typeof existing ? cookieKeep(existing, [name]) : []
 
     if (null != value) {
-      kept.push(CRED_name + '=' + value)
+      kept.push(name + '=' + value)
     }
 
     if (0 === kept.length) {
@@ -207,18 +216,18 @@ function cookieHelper(where: string): string {
 }
 
 
-function place(where: string): string {
+function place(where: string, name: string): string {
   if ('query' === where) {
-    return `    setprop(query, CRED_name, apikey)`
+    return `    setprop(query, ${name}, apikey)`
   }
 
   if ('cookie' === where) {
-    return `    cookieSet(headers, apikey)`
+    return `    cookieSet(headers, ${name}, apikey)`
   }
 
   return `    // A raw credential (empty prefix, e.g. an apiKey scheme) must go in
     // as-is; only a non-empty prefix (Bearer/Basic/OAuth) is space-joined.
-    setprop(headers, CRED_name, prefix ? prefix + ' ' + apikey : apikey)`
+    setprop(headers, ${name}, prefix ? prefix + ' ' + apikey : apikey)`
 }
 
 

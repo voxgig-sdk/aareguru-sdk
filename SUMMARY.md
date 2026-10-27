@@ -1,6 +1,18 @@
 # Aare.guru API
 
-Dienschte hinger aare.guru Bei Requests auf die API bitte frei wählbare &lt;code&gt;app&lt;/code&gt; und &lt;code&gt;version&lt;/code&gt; mitgeben. Z.B.: &lt;code&gt;...v2018/current?app=app.identifier.meine.app&amp;version=1.42&lt;/code&gt;. Diese API ist öffentlich und darf für nicht-kommerzielle Zwecke frei benutzt werden. Sag uns bitte auf &lt;a href=&#39;mailto:aaregurus@existenz.ch&#39;&gt;aaregurus@existenz.ch&lt;/a&gt; Bescheid wenn du das machst. Und setz einen Link zurück auf https://aare.guru. Danke. Die Erläuterung der Parameter innerhalb des Services findest du auf der &lt;a href=&#39;https://aareguru.existenz.ch#parameter&#39;&gt;Aare.guru-API-Startseite.&lt;/a&gt; JSONP erlaubt via callback-Parameter. CORS-Header auf &lt;code&gt;*&lt;/code&gt; gesetzt. Mit viel Liebe, Christian Studer (&lt;a href=&#39;https://bureau.existenz.ch&#39;&gt;Bureau für digitale Existenz&lt;/a&gt;)
+> Dienschte hinger aare.guru
+>
+> Bei Requests auf die API bitte frei wählbare &lt;code&gt;app&lt;/code&gt; und &lt;code&gt;version&lt;/code&gt; mitgeben. Z.B.: &lt;code&gt;...v2018/current?app=`app.identifier.meine.app`&amp;version=1.42&lt;/code&gt;.
+>
+> Diese API ist öffentlich und darf für nicht-kommerzielle Zwecke frei benutzt werden. Sag uns bitte auf &lt;a href=&#39;mailto:aaregurus@existenz.ch&#39;&gt;aaregurus@existenz.ch&lt;/a&gt; Bescheid wenn du das machst. Und setz einen Link zurück auf https://aare.guru.
+>
+> Danke.
+>
+> Die Erläuterung der Parameter innerhalb des Services findest du auf der &lt;a href=&#39;https://aareguru.existenz.ch#parameter&#39;&gt;Aare.guru-API-Startseite.&lt;/a&gt;
+>
+> JSONP erlaubt via callback-Parameter. CORS-Header auf &lt;code&gt;*&lt;/code&gt; gesetzt.
+>
+> Mit viel Liebe, Christian Studer (&lt;a href=&#39;https://bureau.existenz.ch&#39;&gt;Bureau für digitale Existenz&lt;/a&gt;)
 
 ## Start here
 
@@ -43,9 +55,9 @@ Use this map to locate a capability. Consult the entity reference before supplyi
 | Stuff | `load` | `GET /rawdata` | See reference |
 | Stuff | `load` | `GET /slack` | See reference |
 | V2018 | `load` | `GET /v2018/history` | See reference |
+| V2018 | `load` | `GET /v2018/cities` | See reference |
 | V2018 | `load` | `GET /v2018/current` | See reference |
 | V2018 | `load` | `GET /v2018/today` | See reference |
-| V2018 | `load` | `GET /v2018/cities` | See reference |
 | V2018 | `load` | `GET /v2018/widget` | See reference |
 
 ## Connect to the API

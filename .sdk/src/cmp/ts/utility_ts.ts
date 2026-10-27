@@ -7,6 +7,7 @@ import {
   canonScalarKey,
   each,
   opParams,
+  jsQuote,
 } from '@voxgig/sdkgen'
 
 import {
@@ -55,7 +56,7 @@ function exampleValue(entity: any, op: any, paramName: string, placeholder: stri
   if ('NULL' === key) {
     return 'null'
   }
-  return `'${placeholder}'`
+  return jsQuote(placeholder)
 }
 
 

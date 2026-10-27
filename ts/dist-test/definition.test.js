@@ -13,59 +13,13 @@ const PLAN = [
         "accessor": "Stuff",
         "op": "load",
         "method": "GET",
-        "path": "/logs",
-        "args": [],
-        "select": {
-            "app": "my.app.ch",
-            "line": "v1",
-            "service": "v2018_bueber",
-            "version": "1.0.42"
-        },
-        "headers": [],
-        "query": [
-            "service",
-            "lines",
-            "app",
-            "version"
-        ],
-        "auth": null,
-        "status": 200,
-        "sample": null,
-        "idField": "id"
-    },
-    {
-        "entity": "stuff",
-        "accessor": "Stuff",
-        "op": "load",
-        "method": "GET",
-        "path": "/rawdata",
-        "args": [],
-        "select": {
-            "app": "my.app.ch",
-            "service": "v2018_bueber",
-            "version": "1.0.42"
-        },
-        "headers": [],
-        "query": [
-            "service",
-            "app",
-            "version"
-        ],
-        "auth": null,
-        "status": 200,
-        "sample": null,
-        "idField": "id"
-    },
-    {
-        "entity": "stuff",
-        "accessor": "Stuff",
-        "op": "load",
-        "method": "GET",
         "path": "/slack",
         "args": [],
         "select": {},
         "headers": [],
+        "cookies": [],
         "query": [],
+        "queryArgs": [],
         "auth": null,
         "status": 200,
         "sample": null,
@@ -80,14 +34,15 @@ const PLAN = [
         "action": "history",
         "args": [],
         "select": {
-            "app": "my.app.ch",
             "city": "bern",
             "end": "v1",
             "start": "v1",
+            "app": "my.app.ch",
             "value": "v1",
             "version": "1.0.42"
         },
         "headers": [],
+        "cookies": [],
         "query": [
             "city",
             "start",
@@ -96,57 +51,31 @@ const PLAN = [
             "version",
             "values"
         ],
-        "auth": null,
-        "status": 200,
-        "sample": null,
-        "idField": "id"
-    },
-    {
-        "entity": "v2018",
-        "accessor": "V2018",
-        "op": "load",
-        "method": "GET",
-        "path": "/v2018/current",
-        "action": "current",
-        "args": [],
-        "select": {
-            "app": "my.app.ch",
-            "city": "bern",
-            "value": "v1",
-            "version": "1.0.42"
-        },
-        "headers": [],
-        "query": [
-            "city",
-            "app",
-            "version",
-            "values"
-        ],
-        "auth": null,
-        "status": 200,
-        "sample": null,
-        "idField": "id"
-    },
-    {
-        "entity": "v2018",
-        "accessor": "V2018",
-        "op": "load",
-        "method": "GET",
-        "path": "/v2018/today",
-        "action": "today",
-        "args": [],
-        "select": {
-            "app": "my.app.ch",
-            "city": "bern",
-            "value": "v1",
-            "version": "1.0.42"
-        },
-        "headers": [],
-        "query": [
-            "city",
-            "app",
-            "version",
-            "values"
+        "queryArgs": [
+            {
+                "name": "app",
+                "wire": "app"
+            },
+            {
+                "name": "city",
+                "wire": "city"
+            },
+            {
+                "name": "end",
+                "wire": "end"
+            },
+            {
+                "name": "start",
+                "wire": "start"
+            },
+            {
+                "name": "value",
+                "wire": "values"
+            },
+            {
+                "name": "version",
+                "wire": "version"
+            }
         ],
         "auth": null,
         "status": 200,
@@ -167,10 +96,105 @@ const PLAN = [
             "version": "1.0.42"
         },
         "headers": [],
+        "cookies": [],
         "query": [
             "app",
             "version",
             "values"
+        ],
+        "queryArgs": [
+            {
+                "name": "app",
+                "wire": "app"
+            },
+            {
+                "name": "value",
+                "wire": "values"
+            },
+            {
+                "name": "version",
+                "wire": "version"
+            }
+        ],
+        "auth": null,
+        "status": 200,
+        "sample": null,
+        "idField": "id"
+    },
+    {
+        "entity": "v2018",
+        "accessor": "V2018",
+        "op": "load",
+        "method": "GET",
+        "path": "/v2018/current",
+        "action": "current",
+        "args": [],
+        "select": {
+            "app": "my.app.ch",
+            "value": "v1",
+            "version": "1.0.42"
+        },
+        "headers": [],
+        "cookies": [],
+        "query": [
+            "city",
+            "app",
+            "version",
+            "values"
+        ],
+        "queryArgs": [
+            {
+                "name": "app",
+                "wire": "app"
+            },
+            {
+                "name": "value",
+                "wire": "values"
+            },
+            {
+                "name": "version",
+                "wire": "version"
+            }
+        ],
+        "auth": null,
+        "status": 200,
+        "sample": null,
+        "idField": "id"
+    },
+    {
+        "entity": "v2018",
+        "accessor": "V2018",
+        "op": "load",
+        "method": "GET",
+        "path": "/v2018/today",
+        "action": "today",
+        "args": [],
+        "select": {
+            "app": "my.app.ch",
+            "value": "v1",
+            "version": "1.0.42"
+        },
+        "headers": [],
+        "cookies": [],
+        "query": [
+            "city",
+            "app",
+            "version",
+            "values"
+        ],
+        "queryArgs": [
+            {
+                "name": "app",
+                "wire": "app"
+            },
+            {
+                "name": "value",
+                "wire": "values"
+            },
+            {
+                "name": "version",
+                "wire": "version"
+            }
         ],
         "auth": null,
         "status": 200,
@@ -191,10 +215,25 @@ const PLAN = [
             "version": "1.0.42"
         },
         "headers": [],
+        "cookies": [],
         "query": [
             "app",
             "version",
             "values"
+        ],
+        "queryArgs": [
+            {
+                "name": "app",
+                "wire": "app"
+            },
+            {
+                "name": "value",
+                "wire": "values"
+            },
+            {
+                "name": "version",
+                "wire": "version"
+            }
         ],
         "auth": null,
         "status": 200,

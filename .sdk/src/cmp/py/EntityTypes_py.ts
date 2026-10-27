@@ -17,7 +17,7 @@ import {
 const LANG = 'py'
 
 
-// Python keywords that cannot be used as class-syntax TypedDict field names.
+// Python keywords, which cannot be class-syntax TypedDict field names.
 const PY_KEYWORDS = new Set([
   'False', 'None', 'True', 'and', 'as', 'assert', 'async', 'await', 'break',
   'class', 'continue', 'def', 'del', 'elif', 'else', 'except', 'finally',
@@ -32,27 +32,44 @@ function pyIdent(name: string): boolean {
 
 
 function emitTypedDict(typeName: string, items: any[], log?: any): void {
-  const usable = items.filter((it: any) => it && null != it.name && pyIdent(it.name))
+  const named = items.filter((it: any) => it && null != it.name)
 
-  items.forEach((it: any) => {
-    if (it && null != it.name && !pyIdent(it.name) && log && log.warn) {
-      log.warn({
-        point: 'entity-types-skip-field', typeName, field: it.name,
-        note: `py: field "${it.name}" of ${typeName} has no legal class-syntax ` +
-          `TypedDict key form; omitted from the typed model (still reachable ` +
-          `via the runtime dict)`,
-      })
-    }
-  })
-
-  const required = usable.filter((it: any) => !it.optional)
-  const optional = usable.filter((it: any) => it.optional)
+  const required = named.filter((it: any) => !it.optional)
+  const optional = named.filter((it: any) => it.optional)
 
   const field = (it: any) => `    ${it.name}: ${canonToType(it.type, LANG)}
 `
 
-  if (0 === usable.length) {
+  if (0 === named.length) {
     Content(`class ${typeName}(TypedDict):
+    pass
+`)
+    return
+  }
+
+  // A keyword, or a name that is not an identifier, has no class-syntax
+  // form. The functional form takes any string as a key, so the whole type
+  // takes that form; a mixed one inherits a required and an optional half.
+  if (named.some((it: any) => !pyIdent(it.name))) {
+    const entry = (it: any) => `    ${JSON.stringify(it.name)}: ${canonToType(it.type, LANG)},
+`
+    const dict = (name: string, its: any[], total: boolean) =>
+      `${name} = TypedDict('${name}', {
+` + its.map(entry).join('') + `}${total ? '' : ', total=False'})
+`
+
+    if (0 === required.length || 0 === optional.length) {
+      Content(dict(typeName, named, 0 === optional.length))
+      return
+    }
+
+    Content(dict(typeName + 'Required', required, true))
+    Content(`
+`)
+    Content(dict(typeName + 'Optional', optional, false))
+    Content(`
+
+class ${typeName}(${typeName}Required, ${typeName}Optional):
     pass
 `)
     return
@@ -134,7 +151,7 @@ from typing import TypedDict, Any
       })), log)
 
       const ops = ent.op || {}
-      ;['load', 'list', 'create', 'update', 'remove'].forEach((opname: string) => {
+      ;['load', 'list', 'create', 'update', 'patch', 'remove'].forEach((opname: string) => {
         if (null == ops[opname]) {
           return
         }

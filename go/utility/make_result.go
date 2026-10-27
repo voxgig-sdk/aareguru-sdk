@@ -37,9 +37,7 @@ func makeResultUtil(ctx *core.Context) (*core.Result, error) {
 				var entities []any
 				for _, entry := range list {
 					ent := entity.Make()
-					if entryMap, ok := entry.(map[string]any); ok {
-						ent.Data(entryMap)
-					}
+					ent.Data(entry)
 					entities = append(entities, ent)
 				}
 				result.Resdata = entities

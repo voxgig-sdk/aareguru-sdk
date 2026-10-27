@@ -32,16 +32,29 @@ local function strip_action(reqdata)
   return omit(reqdata, { "$action" })
 end
 
--- A header argument travels as a header, which prepare_headers_util sends, so
--- the body is built from the request data without it.
-local function header_arg_names(point)
+local function field_arg(ctx, name)
+  for _, kind in ipairs({ "header", "cookie", "query" }) do
+    local defs = ctx.point ~= nil and vs.getpath(ctx.point, "args." .. kind) or nil
+    if type(defs) == "table" then
+      for _, ad in ipairs(defs) do
+        if vs.getprop(ad, "name") == name and vs.getprop(ad, "field") == true then
+          return true
+        end
+      end
+    end
+  end
+  return false
+end
+
+-- A header, cookie or query argument travels where prepare_headers_util or
+-- prepare_query_util sends it, so the body is built from the request data
+-- without it, unless the point marks it as a field the body keeps.
+local function routed_arg_names(ctx)
   local names = {}
-  local hl = point ~= nil and vs.getpath(point, "args.header") or nil
-  if type(hl) == "table" then
-    for _, hd in ipairs(hl) do
-      local name = vs.getprop(hd, "name")
-      if type(name) == "string" and name ~= "" then
-        names[#names + 1] = name
+  for _, kind in ipairs({ "header", "cookie", "query" }) do
+    for _, arg in ipairs(helpers.call_args(ctx, kind)) do
+      if not field_arg(ctx, arg.name) then
+        names[#names + 1] = arg.name
       end
     end
   end
@@ -56,7 +69,7 @@ local function transform_request_util(ctx)
     spec.step = "reqform"
   end
 
-  local data = omit(ctx.reqdata, header_arg_names(point))
+  local data = omit(ctx.reqdata, routed_arg_names(ctx))
 
   local transform = helpers.to_map(vs.getprop(point, "transform"))
   if transform == nil then

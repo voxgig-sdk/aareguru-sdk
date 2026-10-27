@@ -17,6 +17,9 @@ class AareguruContext:
     def __init__(self, ctxmap=None, basectx=None):
         self.id = "C" + str(random.randint(10000000, 99999999))
         self.out = {}
+        # Set by make_error as it fires PreUnexpected, which fires once per
+        # operation.
+        self.unexpected_fired = False
 
         if ctxmap is None:
             ctxmap = {}
@@ -186,7 +189,7 @@ class AareguruContext:
         opcfg = vs.getpath(self.config, "entity." + entname + ".op." + opname)
 
         inpt = "match"
-        if opname == "update" or opname == "create":
+        if opname == "update" or opname == "create" or opname == "patch":
             inpt = "data"
 
         points = []
@@ -202,8 +205,8 @@ class AareguruContext:
             "points": points,
         })
 
-        self.opmap[cache_key] = op
-        return op
+        # Every request racing to build this Operation gets the one stored first.
+        return self.opmap.setdefault(cache_key, op)
 
     def make_error(self, code, msg):
         return AareguruError(code, msg, self)

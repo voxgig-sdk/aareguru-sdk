@@ -255,7 +255,7 @@ func (ctx *Context) resolveOp(opname string) *Operation {
 	opcfg := vs.GetPath(ctx.Config, []any{"entity", entname, "op", opname})
 
 	input := "match"
-	if opname == "update" || opname == "create" {
+	if opname == "update" || opname == "create" || opname == "patch" {
 		input = "data"
 	}
 
@@ -280,9 +280,13 @@ func (ctx *Context) resolveOp(opname string) *Operation {
 		"points": targets,
 	})
 
+	// Every request racing to build this Operation gets the one stored first.
 	ctx.Opmu.Lock()
+	defer ctx.Opmu.Unlock()
+	if stored, ok := ctx.Opmap[cacheKey]; ok && stored != nil {
+		return stored
+	}
 	ctx.Opmap[cacheKey] = op
-	ctx.Opmu.Unlock()
 	return op
 }
 

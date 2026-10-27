@@ -21,13 +21,14 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   entityList.forEach((e: any) => Object.keys(e.op || {})
     .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
   const opRowDefs: Record<string, string> = {
-    load: '| `load` | `($reqmatch, $ctrl): array` | Load a single entity by match criteria. |',
-    list: '| `list` | `(?array $reqmatch = null, $ctrl): array` | List entities matching the criteria (call with no argument to list all). |',
-    create: '| `create` | `($reqdata, $ctrl): array` | Create a new entity. |',
-    update: '| `update` | `($reqdata, $ctrl): array` | Update an existing entity. |',
-    remove: '| `remove` | `($reqmatch, $ctrl): array` | Remove an entity. |',
+    load: '| `load` | `($reqmatch, $ctrl): mixed` | Load a single entity by match criteria, and return it. |',
+    list: '| `list` | `(?array $reqmatch = null, $ctrl): mixed` | List entities matching the criteria (call with no argument to list all), one per record. |',
+    create: '| `create` | `($reqdata, $ctrl): mixed` | Create a new entity, and return it. |',
+    update: '| `update` | `($reqdata, $ctrl): mixed` | Update an existing entity, and return it. |',
+    patch: '| `patch` | `($reqdata, $ctrl): mixed` | Change part of an existing entity, and return it. |',
+    remove: '| `remove` | `($reqmatch, $ctrl): mixed` | Remove an entity, and return it marked as deleted. |',
   }
-  const opRows = ['load', 'list', 'create', 'update', 'remove']
+  const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
 
   const apikeyOptionRow = isAuthActive(model)
@@ -93,9 +94,9 @@ ${opRows}
 
 ### Result shape
 
-Entity operations return the ENTITY (call data_get() for the record) (an \`array\` for single-entity
-ops, a \`list\` for \`list\`) and throw on error. Wrap calls in
-\`try\`/\`catch\` to handle failures.
+Entity operations return the entity, and \`list\` an \`array\` of entities, one
+per record; an entity's \`data_get()\` reads its record (an \`array\`). They
+throw on error, so wrap calls in \`try\`/\`catch\` to handle failures.
 
 The \`direct()\` escape hatch never throws — it returns a result \`array\`
 you branch on via \`$result["ok"]\`:

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, isHttpBasicAuth, packageName, envName, serverVariables, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, jsKey, matchArg, idLiteral } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, isHttpBasicAuth, packageName, envName, serverVariables, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, jsKey, listMatchArg, matchExampleItems, requiredItems, jsProp, requestExampleItems, sendsId } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -8,12 +8,6 @@ import {
 } from '@voxgig/apidef'
 
 import { exampleValue } from './utility_ts'
-
-
-function listMatchArg(ent: any): string {
-  const idF = entityIdField(ent)
-  return matchArg('ts', ent, 'list', idF, idLiteral(ent, 'list', idF))
-}
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -80,10 +74,10 @@ resolves to entities, not raw records. Iterate them directly, and call
 \`.data()\` on one for the record it holds:
 
 \`\`\`ts
-const ${eVar}s = await client.${eName}().list(${listMatchArg(exampleEntity)})
+const ${eVar}s = await client.${eName}().list(${listMatchArg('ts', exampleEntity)})
 
 for (const ${eVar} of ${eVar}s) {
-  console.log(${eVar})
+  console.log(${eVar}.data())
 }
 \`\`\`
 
@@ -97,8 +91,7 @@ for (const ${eVar} of ${eVar}s) {
       const loadOp = nestedEntity.op && nestedEntity.op.load
 
       const neIdF = entityIdField(nestedEntity)
-      const neRequired = opRequestShape(nestedEntity, 'load').items
-        .filter((it: any) => !it.optional)
+      const neRequired = requiredItems(nestedEntity, 'load')
         .sort((a: any, b: any) =>
           (a.name === neIdF ? 1 : 0) - (b.name === neIdF ? 1 : 0))
       const parentItem = neRequired.find((it: any) => it.name !== neIdF) as any
@@ -111,14 +104,14 @@ for (const ${eVar} of ${eVar}s) {
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
-\`load()\` returns the entity directly and throws on failure:
+\`load()\` returns the entity and throws on failure; \`.data()\` reads its record:
 
 \`\`\`ts
 try {
   const ${neVar} = await client.${neName}().load({
 ${neMatchLines.join('\n')}
   })
-  console.log(${neVar})
+  console.log(${neVar}.data())
 } catch (err) {
   console.error('load failed:', err)
 }
@@ -127,8 +120,7 @@ ${neMatchLines.join('\n')}
 `)
     }
     else if (opnames.includes('load')) {
-      const loadRequired = opRequestShape(exampleEntity, 'load').items
-        .filter((it: any) => !it.optional || it.name === idF)
+      const loadRequired = matchExampleItems(exampleEntity, 'load', idF)
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadRequired.length
@@ -139,12 +131,12 @@ ${neMatchLines.join('\n')}
 
       Content(`### 3. Load ${article} ${eName.toLowerCase()}
 
-\`load()\` returns the entity directly and throws on failure:
+\`load()\` returns the entity and throws on failure; \`.data()\` reads its record:
 
 \`\`\`ts
 try {
   const ${eVar} = await client.${eName}().load(${loadArg})
-  console.log(${eVar})
+  console.log(${eVar}.data())
 } catch (err) {
   console.error('load failed:', err)
 }
@@ -158,9 +150,10 @@ try {
     // (opRequestShape), so the snippet always type-checks. Prefer writable
     // non-id fields and render a type-correct literal per field via
     // exampleValue — never a hardcoded field the entity may not have.
-    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
+    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
+      opnames.includes('remove')) {
       const exampleFields = (opname: string): string[] => {
-        const items = opRequestShape(exampleEntity, opname).items
+        const items = requestExampleItems(exampleEntity, opname)
           .filter((it: any) => (it.name !== idF && it.name !== 'id') ||
             ('create' === opname && !it.optional))
         const required = items.filter((it: any) => !it.optional)
@@ -193,7 +186,7 @@ try {
         return null != matchType && null != dataIdType && matchType === dataIdType
       }
       const idValueFor = (opname: string): string => usesCreatedId(opname)
-        ? `created.data().${dataIdF}!`
+        ? `${jsProp('created.data()', dataIdF as string)}!`
         : exampleValue(exampleEntity, exampleEntity.op[opname], idF as string, 'example_id')
 
       Content(`### 4. Create, update, and remove
@@ -209,16 +202,23 @@ const created = await client.${eName}().create({${createBody}})
 `)
       }
       if (opnames.includes('update')) {
-        const updateLines = (idF ? [`  ${idF}: ${idValueFor('update')},`] : []).concat(exampleFields('update'))
+        const updateLines = (sendsId(exampleEntity, 'update', idF) ? [`  ${jsKey(idF)}: ${idValueFor('update')},`] : []).concat(exampleFields('update'))
         const updateBody = updateLines.length ? '\n' + updateLines.join('\n') + '\n' : ''
         Content(`// Update${usesCreatedId('update') ? ' — the id comes off the returned entity\'s data()' : ''}
 const updated = await client.${eName}().update({${updateBody}})
 
 `)
       }
+      if (opnames.includes('patch')) {
+        const patchLines = (sendsId(exampleEntity, 'patch', idF) ? [`  ${jsKey(idF)}: ${idValueFor('patch')},`] : []).concat(exampleFields('patch'))
+        const patchBody = patchLines.length ? '\n' + patchLines.join('\n') + '\n' : ''
+        Content(`// Patch — sends only the fields given${usesCreatedId('patch') ? '; the id comes off the returned entity\'s data()' : ''}
+const patched = await client.${eName}().patch({${patchBody}})
+
+`)
+      }
       if (opnames.includes('remove')) {
-        const removeLines = opRequestShape(exampleEntity, 'remove').items
-          .filter((it: any) => !it.optional || it.name === idF)
+        const removeLines = matchExampleItems(exampleEntity, 'remove', idF)
           .sort((a: any, b: any) =>
             (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
           .map((it: any) => it.name === idF

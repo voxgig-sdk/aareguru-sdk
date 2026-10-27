@@ -12,6 +12,8 @@ exports.recordOf = recordOf;
 const strict_1 = __importDefault(require("node:assert/strict"));
 const KEY = 'definition-test-key';
 const BASE = 'http://definition.test';
+const RAW_TEXT = 'definition-test-body';
+const RAW_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0xff]);
 async function runDefinitionPoint(SDK, point) {
     const sent = [];
     const body = null == point.sample ? null : JSON.stringify(point.sample);
@@ -34,8 +36,12 @@ async function runDefinitionPoint(SDK, point) {
         input[arg.name] = arg.value;
     for (const h of point.headers || [])
         input[h.name] = h.value;
+    for (const c of point.cookies || [])
+        input[c.name] = c.value;
     if (null != point.action)
         input.$action = point.action;
+    if (null != point.rawBody)
+        input.$body = rawSample(point);
     let result;
     let error;
     try {
@@ -58,8 +64,15 @@ async function runDefinitionPoint(SDK, point) {
     // Only what the definition declares, so never a path parameter again.
     const credentialQuery = (point.auth || []).flat()
         .filter((c) => 'query' === c.in).map((c) => c.name);
+    // prepareAuth sends the key whether or not this operation applies its scheme.
+    if (null != point.ownQuery) {
+        credentialQuery.push(point.ownQuery);
+    }
     for (const key of url.searchParams.keys()) {
         (0, strict_1.default)(point.query.includes(key) || credentialQuery.includes(key), 'query parameter not in the definition: ' + key);
+    }
+    for (const q of point.queryArgs || []) {
+        (0, strict_1.default)(url.searchParams.has(q.wire), 'query parameter not sent: ' + q.wire);
     }
     // From the apikey alone, placed as the definition's security scheme says.
     if (null != point.auth && 0 < point.auth.length) {
@@ -75,7 +88,60 @@ async function runDefinitionPoint(SDK, point) {
         const wire = h.wire.toLowerCase();
         if (credentialHeaders.includes(wire) || 'content-type' === wire)
             continue;
-        strict_1.default.equal(new Headers(init.headers).get(wire), String(h.value), 'header parameter not sent as a header: ' + h.wire);
+        const sentValue = new Headers(init.headers).get(wire);
+        // A Cookie header argument is cookie pieces, which the cookie arguments and
+        // the cookie credential join, each replacing the piece whose name it owns.
+        if ('cookie' === wire) {
+            const owned = (point.cookies || []).map((c) => c.wire).concat((point.auth || []).flat()
+                .filter((c) => 'cookie' === c.in).map((c) => c.name));
+            const pieces = String(sentValue ?? '').split(';').map((c) => c.trim());
+            for (const piece of String(h.value).split(';').map((c) => c.trim()).filter((c) => '' !== c)) {
+                if (owned.includes(piece.split('=')[0].trim()))
+                    continue;
+                (0, strict_1.default)(pieces.includes(piece), 'header parameter not sent as a header: ' + h.wire);
+            }
+            continue;
+        }
+        strict_1.default.equal(sentValue, String(h.value), 'header parameter not sent as a header: ' + h.wire);
+    }
+    // A cookie parameter goes out in the cookie header as name=value, percent-encoded.
+    const cookies = String(new Headers(init.headers).get('cookie') ?? '')
+        .split(';').map((c) => c.trim());
+    for (const c of point.cookies || []) {
+        (0, strict_1.default)(cookies.includes(c.wire + '=' + encodeURIComponent(String(c.value))), 'cookie parameter not sent in the cookie header: ' + c.wire);
+    }
+    // Accept asks only for what a success response declares: its JSON type
+    // alone, when it declares one.
+    if (null != point.responseMedia) {
+        const declared = point.responseMedia;
+        const asked = String(new Headers(init.headers).get('accept') ?? '').split(',')
+            .map(baseMedia).filter((type) => '' !== type);
+        (0, strict_1.default)(0 < asked.length, 'no Accept for a declared response body: ' + declared.join(', '));
+        for (const type of asked) {
+            (0, strict_1.default)(declared.some((d) => covers(d, type)), 'Accept asks for a type no success response declares: ' + type);
+        }
+        if (declared.some(isJson)) {
+            (0, strict_1.default)(1 === asked.length && isJson(asked[0]), 'Accept is not the declared JSON type alone: ' + asked.join(', '));
+        }
+    }
+    // A raw body goes out as given, under a type the definition declares.
+    if (null != point.rawBody) {
+        const type = baseMedia(new Headers(init.headers).get('content-type') ?? '');
+        (0, strict_1.default)(point.rawBody.media.some((d) => covers(d, type)), 'raw body sent as a type the definition does not declare: ' + type);
+        strict_1.default.deepEqual(bytesOf(init.body), bytesOf(rawSample(point)), 'raw body not sent as given');
+    }
+    // An argument the request body declares too goes out in the body as well.
+    if (0 < (point.bodyArgs || []).length) {
+        let sentBody;
+        try {
+            sentBody = JSON.parse(String(init.body));
+        }
+        catch (_e) {
+            sentBody = undefined;
+        }
+        for (const name of point.bodyArgs) {
+            strict_1.default.deepEqual(sentBody?.[name], input[name], 'argument not sent in the body as well: ' + name);
+        }
     }
     if (null != error) {
         throw error;
@@ -91,12 +157,34 @@ async function runDefinitionPoint(SDK, point) {
                 records.length);
         }
     }
-    else if ('load' === point.op || 'create' === point.op || 'update' === point.op) {
+    else if ('load' === point.op || 'create' === point.op || 'update' === point.op ||
+        'patch' === point.op) {
         const record = recordOf(point.sample, point.idField, point.entity);
         if (null != record) {
             strict_1.default.equal(result?.data?.()?.[point.idField], record[point.idField], 'the entity does not hold the record the definition example returns');
         }
     }
+}
+function rawSample(point) {
+    return point.rawBody?.text ? RAW_TEXT : RAW_BYTES;
+}
+function bytesOf(body) {
+    return 'string' === typeof body ? Buffer.from(body, 'utf8') :
+        body instanceof ArrayBuffer ? Buffer.from(new Uint8Array(body)) :
+            ArrayBuffer.isView(body) ? Buffer.from(body.buffer, body.byteOffset, body.byteLength) :
+                Buffer.from(String(body));
+}
+function baseMedia(type) {
+    return type.split(';')[0].trim().toLowerCase();
+}
+function isJson(type) {
+    const media = baseMedia(type);
+    return 'application/json' === media || 'text/json' === media || media.endsWith('+json');
+}
+function covers(declared, type) {
+    const media = baseMedia(declared);
+    return media === type || '*/*' === media ||
+        (media.endsWith('/*') && type.startsWith(media.slice(0, -1)));
 }
 function placed(cred, headers, url) {
     if ('query' === cred.in) {

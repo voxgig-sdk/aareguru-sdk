@@ -98,7 +98,7 @@ end
 
 local function default_method(opname)
   if opname == "create" then return "POST" end
-  if opname == "update" then return "PATCH" end
+  if opname == "update" or opname == "patch" then return "PATCH" end
   if opname == "remove" then return "DELETE" end
   return "GET"
 end

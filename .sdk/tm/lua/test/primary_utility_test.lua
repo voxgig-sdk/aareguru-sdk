@@ -504,6 +504,42 @@ describe("PrimaryUtility", function()
   end)
 
 
+  -- Nothing listens on port 9: a request the guard let through fails there.
+  -- Lua cannot set its own environment, so the test answers for os.getenv.
+  it("fetcher-getonly-guard", function()
+    local live_client = sdk.new({ base = "http://127.0.0.1:9" })
+    local live_utility = live_client:get_utility()
+    local ctx = live_utility.make_context({
+      opname = "create",
+      client = live_client,
+      utility = live_utility,
+    }, nil)
+    local url = "http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01"
+
+    local getenv = os.getenv
+    os.getenv = function(name)
+      if name == "VOXGIG_GETONLY_GUARD" then
+        return "TRUE"
+      end
+      return getenv(name)
+    end
+    local passed, failure = pcall(function()
+      local _, err = live_utility.fetcher(ctx, url, { method = "POST", headers = {} })
+      assert.are.equal("fetch_getonly_block", type(err) == "table" and err.code or tostring(err))
+      assert.is_truthy(string.find(err.msg, "[GET-ONLY GUARD] blocked POST /planet/p1", 1, true))
+      assert.is_falsy(string.find(err.msg, "GUARDKEY01", 1, true))
+
+      local _, geterr = live_utility.fetcher(ctx, url, { method = "GET", headers = {} })
+      assert.is_not_nil(geterr)
+      assert.are_not.equal("fetch_getonly_block", type(geterr) == "table" and geterr.code or geterr)
+    end)
+    os.getenv = getenv
+    if not passed then
+      error(failure, 0)
+    end
+  end)
+
+
   it("makeContext-basic", function()
     runsection("makeContext", function(vin)
       if type(vin) ~= "table" then

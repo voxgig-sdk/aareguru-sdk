@@ -1,10 +1,14 @@
 # Aareguru SDK utility: make_spec
 require_relative 'struct/voxgig_struct'
 require_relative 'graphql'
+require_relative 'prepare_method'
 require_relative '../core/spec'
 module AareguruUtilities
   MakeSpec = ->(ctx) {
     if ctx.out["spec"]
+      # A PreSpec hook (validate) rejects the operation by placing its error
+      # here; the pipeline raises it, and ctx.spec stays a request spec.
+      return nil, ctx.out["spec"] if ctx.out["spec"].is_a?(Exception)
       ctx.spec = ctx.out["spec"]
       return ctx.spec, nil
     end
@@ -28,8 +32,8 @@ module AareguruUtilities
 
     ctx.spec.method = utility.prepare_method.call(ctx)
 
-    allow_method = VoxgigStruct.getpath(options, "allow.method") || ""
-    unless allow_method.include?(ctx.spec.method)
+    allow_method = VoxgigStruct.getpath(options, "allow.method")
+    unless AareguruUtilities.allowed(allow_method, ctx.spec.method)
       return nil, ctx.make_error("spec_method_allow",
         "Method \"#{ctx.spec.method}\" not allowed by SDK option allow.method value: \"#{allow_method}\"")
     end
@@ -57,8 +61,16 @@ module AareguruUtilities
 
     ctx.ctrl.explain["spec"] = ctx.spec if ctx.ctrl.explain
 
+    # Whatever prepare_auth sets in the query, under whichever name, is the
+    # credential; a key it leaves as it was is the caller's.
+    query = (ctx.spec.query || {}).dup
+
     spec, err = utility.prepare_auth.call(ctx)
     return nil, err if err
+
+    spec.authquery = (spec.query || {}).keys.select { |k|
+      !query.key?(k) || query[k] != spec.query[k]
+    }
 
     ctx.spec = spec
     return spec, nil

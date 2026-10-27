@@ -170,7 +170,7 @@ func fhDefaultMethod(op string) string {
 	switch op {
 	case "create":
 		return "POST"
-	case "update":
+	case "update", "patch":
 		return "PATCH"
 	case "remove":
 		return "DELETE"

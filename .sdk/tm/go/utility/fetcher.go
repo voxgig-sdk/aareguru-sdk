@@ -1,10 +1,12 @@
 package utility
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 
@@ -52,15 +54,47 @@ func clientFor(fetchdef map[string]any) *http.Client {
 	return client
 }
 
+const getOnlyEnv = "VOXGIG_GETONLY_GUARD"
+
+// A GET-only live run refuses any other method before it is sent. The error
+// names the path alone: the query can carry a credential.
+func getOnlyRefusal(fullurl string, method string) error {
+	method = strings.ToUpper(method)
+	if os.Getenv(getOnlyEnv) != "TRUE" || method == "GET" {
+		return nil
+	}
+	rest := fullurl
+	if i := strings.Index(rest, "://"); i >= 0 {
+		rest = rest[i+3:]
+		rest = rest[strings.IndexAny(rest+"/", "/?#"):]
+	}
+	path := rest[:strings.IndexAny(rest+"?", "?#")]
+	if path == "" {
+		path = "/"
+	}
+	return core.NewAareguruError("fetch_getonly_block",
+		"[GET-ONLY GUARD] blocked "+method+" "+path, nil)
+}
+
 func defaultHTTPFetch(fullurl string, fetchdef map[string]any) (map[string]any, error) {
 	method, _ := fetchdef["method"].(string)
 	if method == "" {
 		method = "GET"
 	}
+	if err := getOnlyRefusal(fullurl, method); err != nil {
+		return nil, err
+	}
 
 	var bodyReader io.Reader
-	if body, ok := fetchdef["body"].(string); ok && body != "" {
-		bodyReader = strings.NewReader(body)
+	switch body := fetchdef["body"].(type) {
+	case string:
+		if body != "" {
+			bodyReader = strings.NewReader(body)
+		}
+	case []byte:
+		bodyReader = bytes.NewReader(body)
+	case io.Reader:
+		bodyReader = body
 	}
 
 	req, err := http.NewRequest(method, fullurl, bodyReader)
@@ -81,9 +115,13 @@ func defaultHTTPFetch(fullurl string, fetchdef map[string]any) (map[string]any, 
 	}
 	// Default User-Agent — Go's net/http defaults to "Go-http-client/1.1"
 	// which some CDNs block. Use a Mozilla-shaped UA unless the caller
-	// already set one.
+	// already set one, and record it with the headers the request sent.
 	if !hasUA {
-		req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; AareguruSDK/1.0)")
+		agent := "Mozilla/5.0 (compatible; AareguruSDK/1.0)"
+		req.Header.Set("User-Agent", agent)
+		if headers, ok := fetchdef["headers"].(map[string]any); ok {
+			headers["user-agent"] = agent
+		}
 	}
 
 	resp, err := clientFor(fetchdef).Do(req)
@@ -107,8 +145,9 @@ func defaultHTTPFetch(fullurl string, fetchdef map[string]any) (map[string]any, 
 	}
 
 	var jsonBody any
-	if len(bodyBytes) > 0 {
-		json.Unmarshal(bodyBytes, &jsonBody)
+	unreadable := false
+	if len(bytes.TrimSpace(bodyBytes)) > 0 {
+		unreadable = json.Unmarshal(bodyBytes, &jsonBody) != nil
 	}
 
 	statusText := resp.Status
@@ -122,6 +161,7 @@ func defaultHTTPFetch(fullurl string, fetchdef map[string]any) (map[string]any, 
 		"headers":    headers,
 		"json":       (func() any)(func() any { return jsonBody }),
 		"body":       string(bodyBytes),
+		"unreadable": unreadable,
 	}, nil
 }
 

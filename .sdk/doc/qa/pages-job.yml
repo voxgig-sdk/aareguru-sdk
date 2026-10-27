@@ -1,6 +1,37 @@
-  deploy:
+  # A repository without a Pages site skips the deployment with a notice
+  # rather than failing every push. This job only reads the site: creating one
+  # is a repository setting, which .sdk/admin/setup-github-pages.sh changes.
+  pages:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/{{branch}}'
     needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      pages: read
+    outputs:
+      site: ${{ steps.site.outputs.site }}
+    steps:
+      - name: Look for the GitHub Pages site
+        id: site
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+            --header "Authorization: Bearer $GITHUB_TOKEN" \
+            --header 'Accept: application/vnd.github+json' \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/pages")"
+          case "$status" in
+            200)
+              echo 'site=true' >> "$GITHUB_OUTPUT" ;;
+            404)
+              echo 'site=false' >> "$GITHUB_OUTPUT"
+              echo "::notice title=GitHub Pages is not enabled::This repository has no GitHub Pages site, so the documentation website was not deployed. To publish it, run .sdk/admin/setup-github-pages.sh, which sets GitHub Actions as the Pages source. To stop generating it, set main: kit: doc: edition: 'github-pages': active: false in .sdk/model/project.aontu and regenerate." ;;
+            *)
+              echo "::error::Reading the GitHub Pages site returned HTTP $status, so the deployment cannot tell whether the site exists."
+              exit 1 ;;
+          esac
+  deploy:
+    needs: pages
+    if: needs.pages.outputs.site == 'true'
     runs-on: ubuntu-latest
     permissions:
       pages: write

@@ -32,6 +32,9 @@ function Response.new(resmap)
 
   self.body = vs.getprop(resmap, "body")
 
+  -- Set by a transport that could not read a non-blank body as JSON.
+  self.unreadable = vs.getprop(resmap, "unreadable") == true
+
   self.err = nil
   local e = vs.getprop(resmap, "err")
   if e ~= nil then

@@ -17,5 +17,6 @@ declare class BaseFeature implements Feature {
     PreResult(this: any, _ctx: any): void;
     PreDone(this: any, _ctx: any): void;
     PreUnexpected(this: any, _ctx: any): void;
+    _untilAbort(this: any, wait: Promise<any>, signal?: any, stop?: () => void): Promise<any>;
 }
 export { BaseFeature };

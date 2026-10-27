@@ -20,7 +20,7 @@ module AareguruUtilities
       if resdata.is_a?(Array) && !resdata.empty? && entity
         entities = resdata.map do |entry|
           ent = entity.make
-          ent.data_set(entry) if entry.is_a?(Hash)
+          ent.data_set(entry)
           ent
         end
         result.resdata = entities

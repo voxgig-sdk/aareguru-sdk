@@ -6,7 +6,7 @@ import {
   File, Content, Folder,
 } from '@voxgig/sdkgen'
 
-import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions , deriveEntityNames, phpSafeTypeName } from '@voxgig/sdkgen'
+import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions , deriveEntityNames, phpTypeName, entityCollection } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -76,7 +76,7 @@ declare(strict_types=1);
         const fields = (ent.fields ? each(ent.fields) : [])
           .filter((f: any) => f.a !== false && validName(f.n))
 
-        const TypeName = phpSafeTypeName(Name)
+        const TypeName = phpTypeName(ent, entityCollection(model))
 
         Content(`/** ${Name} entity data model. */
 class ${TypeName}
@@ -90,7 +90,7 @@ class ${TypeName}
 `)
 
         const ops = ent.op || {}
-        ;['load', 'list', 'create', 'update', 'remove'].forEach((opname: string) => {
+        ;['load', 'list', 'create', 'update', 'patch', 'remove'].forEach((opname: string) => {
           if (null == ops[opname]) {
             return
           }

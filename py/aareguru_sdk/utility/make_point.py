@@ -1,8 +1,15 @@
 # Aareguru SDK utility: make_point
 
 from __future__ import annotations
+import re
+
 from aareguru_sdk.utility.voxgig_struct import voxgig_struct as vs
 from aareguru_sdk.core.helpers import to_map
+from aareguru_sdk.utility.param import param_value
+from aareguru_sdk.utility.prepare_method import allowed
+
+
+_PATH_PARAM = re.compile(r"\{([^{}/]+)\}")
 
 
 def _parts_len(point):
@@ -37,6 +44,18 @@ def _own_point(points):
     return best
 
 
+def _unfilled(ctx, point):
+    # The path parameters of a point that neither the call nor the entity
+    # gives a value for, looked up as prepare_params looks them up.
+    missing = []
+    parts = vs.getprop(point, "parts")
+    for part in (parts if isinstance(parts, list) else []):
+        found = _PATH_PARAM.fullmatch(str(part))
+        if found is not None and param_value(ctx, point, found.group(1)) is None:
+            missing.append(found.group(1))
+    return missing
+
+
 def make_point_util(ctx):
     pre = ctx.out.get("point")
     if pre is not None:
@@ -51,11 +70,11 @@ def make_point_util(ctx):
     op = ctx.op
     options = ctx.options
 
-    allow_op = vs.getpath(options, "allow.op") or ""
-    if isinstance(allow_op, str) and op.name not in allow_op:
+    allow_op = vs.getpath(options, "allow.op")
+    if not allowed(allow_op, op.name):
         return None, ctx.make_error("point_op_allow",
             'Operation "' + op.name +
-            '" not allowed by SDK option allow.op value: "' + allow_op + '"')
+            '" not allowed by SDK option allow.op value: "' + str(allow_op) + '"')
 
     if len(op.points) == 0:
         return None, ctx.make_error("point_no_points",
@@ -117,7 +136,24 @@ def make_point_util(ctx):
                     'Operation "' + op.name + '" action "' +
                     vs.stringify(req_action) + '" is not valid.')
 
-            point = _own_point(op.points)
+            # A call without an action falls back to a point without one, as
+            # generation does, and only to a route the call can fill.
+            plain = [cand for cand in op.points
+                     if vs.getprop(to_map(vs.getprop(cand, "select")), "$action") is None]
+            if 0 == len(plain):
+                return None, ctx.make_error("point_action_required",
+                    'Operation "' + op.name +
+                    '" has only action endpoints; pass $action to choose one.')
+
+            fillable = [cand for cand in plain if 0 == len(_unfilled(ctx, cand))]
+
+            if 0 == len(fillable):
+                return None, ctx.make_error("point_no_match",
+                    'Operation "' + op.name +
+                    '" has no endpoint whose path parameters are all given (missing: ' +
+                    ", ".join(_unfilled(ctx, _own_point(plain))) + ').')
+
+            point = _own_point(fillable)
 
         if reqselector is not None:
             req_action = vs.getprop(reqselector, "$action")

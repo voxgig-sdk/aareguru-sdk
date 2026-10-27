@@ -135,12 +135,7 @@
                   "k": "http",
                   "m": "GET",
                   "o": "/current",
-                  "q": {
-                    "exist": [
-                      "app",
-                      "version"
-                    ]
-                  },
+                  "q": {},
                   "r": {},
                   "s": [
                     {
@@ -184,12 +179,7 @@
                   "k": "http",
                   "m": "GET",
                   "o": "/currentV2",
-                  "q": {
-                    "exist": [
-                      "app",
-                      "version"
-                    ]
-                  },
+                  "q": {},
                   "r": {},
                   "s": [
                     {
@@ -233,12 +223,7 @@
                   "k": "http",
                   "m": "GET",
                   "o": "/today",
-                  "q": {
-                    "exist": [
-                      "app",
-                      "version"
-                    ]
-                  },
+                  "q": {},
                   "r": {},
                   "s": [
                     {
@@ -321,10 +306,7 @@
                   "o": "/logs",
                   "q": {
                     "exist": [
-                      "app",
-                      "line",
-                      "service",
-                      "version"
+                      "service"
                     ]
                   },
                   "r": {},
@@ -381,9 +363,7 @@
                   "o": "/rawdata",
                   "q": {
                     "exist": [
-                      "app",
-                      "service",
-                      "version"
+                      "service"
                     ]
                   },
                   "r": {},
@@ -510,12 +490,9 @@
                   "q": {
                     "$action": "history",
                     "exist": [
-                      "app",
                       "city",
                       "end",
-                      "start",
-                      "value",
-                      "version"
+                      "start"
                     ]
                   },
                   "r": {},
@@ -525,6 +502,64 @@
                     },
                     {
                       "lit": "history"
+                    }
+                  ],
+                  "t": {
+                    "req": "`reqdata`",
+                    "res": "`body`"
+                  }
+                },
+                {
+                  "a": true,
+                  "co": {
+                    "id": "GET /v2018/cities",
+                    "source": "openapi3",
+                    "version": 2
+                  },
+                  "g": {
+                    "query": [
+                      {
+                        "a": true,
+                        "ex": "my.app.ch",
+                        "k": "query",
+                        "n": "app",
+                        "or": "app",
+                        "r": false,
+                        "t": "`$STRING`"
+                      },
+                      {
+                        "a": true,
+                        "ex": null,
+                        "k": "query",
+                        "n": "value",
+                        "or": "values",
+                        "r": false,
+                        "t": "`$STRING`"
+                      },
+                      {
+                        "a": true,
+                        "ex": "1.0.42",
+                        "k": "query",
+                        "n": "version",
+                        "or": "version",
+                        "r": false,
+                        "t": "`$STRING`"
+                      }
+                    ]
+                  },
+                  "k": "http",
+                  "m": "GET",
+                  "o": "/v2018/cities",
+                  "q": {
+                    "$action": "city"
+                  },
+                  "r": {},
+                  "s": [
+                    {
+                      "lit": "v2018"
+                    },
+                    {
+                      "lit": "cities"
                     }
                   ],
                   "t": {
@@ -583,13 +618,7 @@
                   "m": "GET",
                   "o": "/v2018/current",
                   "q": {
-                    "$action": "current",
-                    "exist": [
-                      "app",
-                      "city",
-                      "value",
-                      "version"
-                    ]
+                    "$action": "current"
                   },
                   "r": {},
                   "s": [
@@ -656,13 +685,7 @@
                   "m": "GET",
                   "o": "/v2018/today",
                   "q": {
-                    "$action": "today",
-                    "exist": [
-                      "app",
-                      "city",
-                      "value",
-                      "version"
-                    ]
+                    "$action": "today"
                   },
                   "r": {},
                   "s": [
@@ -671,69 +694,6 @@
                     },
                     {
                       "lit": "today"
-                    }
-                  ],
-                  "t": {
-                    "req": "`reqdata`",
-                    "res": "`body`"
-                  }
-                },
-                {
-                  "a": true,
-                  "co": {
-                    "id": "GET /v2018/cities",
-                    "source": "openapi3",
-                    "version": 2
-                  },
-                  "g": {
-                    "query": [
-                      {
-                        "a": true,
-                        "ex": "my.app.ch",
-                        "k": "query",
-                        "n": "app",
-                        "or": "app",
-                        "r": false,
-                        "t": "`$STRING`"
-                      },
-                      {
-                        "a": true,
-                        "ex": null,
-                        "k": "query",
-                        "n": "value",
-                        "or": "values",
-                        "r": false,
-                        "t": "`$STRING`"
-                      },
-                      {
-                        "a": true,
-                        "ex": "1.0.42",
-                        "k": "query",
-                        "n": "version",
-                        "or": "version",
-                        "r": false,
-                        "t": "`$STRING`"
-                      }
-                    ]
-                  },
-                  "k": "http",
-                  "m": "GET",
-                  "o": "/v2018/cities",
-                  "q": {
-                    "$action": "city",
-                    "exist": [
-                      "app",
-                      "value",
-                      "version"
-                    ]
-                  },
-                  "r": {},
-                  "s": [
-                    {
-                      "lit": "v2018"
-                    },
-                    {
-                      "lit": "cities"
                     }
                   ],
                   "t": {
@@ -783,12 +743,7 @@
                   "m": "GET",
                   "o": "/v2018/widget",
                   "q": {
-                    "$action": "widget",
-                    "exist": [
-                      "app",
-                      "value",
-                      "version"
-                    ]
+                    "$action": "widget"
                   },
                   "r": {},
                   "s": [
@@ -1134,6 +1089,7 @@
             },
             "optspec": {
               "clearTimer": "`$FUNCTION`",
+              "now": "`$FUNCTION`",
               "setTimer": "`$FUNCTION`"
             },
             "strict": false
@@ -1333,7 +1289,7 @@
             "url": "https://aareguru-test.existenz.ch"
           }
         ],
-        "summary": "Dienschte hinger aare.guru<p>Bei Requests auf die API bitte frei wählbare <code>app</code> und <code>version</code> mitgeben.",
+        "summary": "Dienschte hinger aare.guru",
         "title": "Aare.guru API",
         "version": "2018",
         "website": "https://aareguru.existenz.ch"
@@ -1342,7 +1298,7 @@
       "optspec": {
         "allow": {
           "method": "GET,PUT,POST,PATCH,DELETE,OPTIONS",
-          "op": "create,update,load,list,remove,command,direct,graphql"
+          "op": "create,update,patch,load,list,remove,command,direct,graphql"
         },
         "apikey": "",
         "auth": {
@@ -1395,6 +1351,11 @@
         "top": {
           "active": true
         }
+      },
+      "publisher": {
+        "name": "",
+        "security": "",
+        "url": ""
       },
       "repo": {
         "host": "github.com",
@@ -1625,7 +1586,10 @@
             "version": "0.0.1"
           },
           "superseded": [],
-          "title": "Go MCP server"
+          "title": "Go MCP server",
+          "tool": {
+            "write": false
+          }
         },
         "lua": {
           "active": true,
@@ -2002,6 +1966,17 @@
           "base": "",
           "strict": true
         }
+      },
+      "text": {
+        "about_md": "",
+        "docs_url": "",
+        "entity_desc": {},
+        "homepage": "",
+        "meta_source": "",
+        "summary": "",
+        "tagline": "",
+        "title": "",
+        "website": ""
       }
     }
   },

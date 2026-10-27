@@ -15,6 +15,8 @@ import type {
   Model,
 } from '@voxgig/apidef'
 
+import { formatRubyValue } from './utility_rb'
+
 
 const Package = cmp(async function Package(props: any) {
   const ctx$ = props.ctx$
@@ -40,9 +42,9 @@ const Package = cmp(async function Package(props: any) {
     Content(`Gem::Specification.new do |spec|
   spec.name          = "${gemName}"
   spec.version       = "${packageVersion(model, target.name)}"
-  spec.authors       = ["${author.name}"]
-  spec.summary       = "${pkgDescription(model, target.name)}"
-  spec.description   = "${pkgDescription(model, target.name)}"
+  spec.authors       = [${formatRubyValue(author.name)}]
+  spec.summary       = ${formatRubyValue(pkgDescription(model, target.name))}
+  spec.description   = ${formatRubyValue(pkgDescription(model, target.name))}
   spec.license       = "MIT"
   spec.homepage      = "${repoUrl}"
   spec.metadata      = {

@@ -359,7 +359,31 @@ local function has_feature(name)
 end
 
 
-local function make_sdk(scenario, sinks, cleanopts, extra)
+-- Offline, as every generated suite is: the test OPTION resolves a required
+-- server variable to test-<name>, and installs no transport.
+local function offline(opts)
+  local out = {}
+  for k, v in pairs(opts) do
+    out[k] = v
+  end
+  out.test = { active = true }
+  return out
+end
+
+
+-- A client the sweep cannot build leaves nothing swept: a harness error, not
+-- a leak.
+local function construct(opts)
+  local ok, client = pcall(sdk.new, offline(opts))
+  if not ok then
+    error("clean harness: the client could not be constructed, so nothing was swept: " ..
+      tostring(client), 0)
+  end
+  return client
+end
+
+
+local function make_sdk(scenario, sinks, cleanopts, extra, auth)
   local function capture(name)
     return function(rec) append(sinks, surfaces(name, rec)) end
   end
@@ -401,7 +425,7 @@ local function make_sdk(scenario, sinks, cleanopts, extra)
     extend[#extend + 1] = f
   end
 
-  return sdk.new({
+  return construct({
     apikey = CANARY.apikey,
     secret = CANARY.secret,
     headers = { ["X-Custom-Token"] = CANARY.header },
@@ -411,6 +435,7 @@ local function make_sdk(scenario, sinks, cleanopts, extra)
     utility = {
       fetcher = function(_ctx, url, fetchdef) return scenario.respond(url, fetchdef) end,
     },
+    auth = auth,
   })
 end
 
@@ -418,7 +443,7 @@ end
 -- The first operation that completes against a plain 200: with no
 -- arguments, else with every path parameter its points declare filled in.
 local function usable_op()
-  local plain = sdk.new({
+  local plain = construct({
     apikey = CANARY.apikey,
     utility = { fetcher = function() return response(200, { id = "i1" }) end },
   })
@@ -489,6 +514,8 @@ local function drive(client, target, ctrl, sinks)
   if out ~= nil then
     append(sinks, surfaces("result", out))
   end
+  -- Raw, as a caller copying the match into another query reads it.
+  append(sinks, surfaces("match", ent:match_get()))
   if ctrl.explain ~= nil then
     append(sinks, surfaces("explain", ctrl.explain))
   end
@@ -532,12 +559,16 @@ describe("clean", function()
       end
     end
 
+    -- A name given at run time replaces the declared one: the match leaves
+    -- out whichever name prepare_auth placed.
+    drive(make_sdk(SCENARIOS[1], sinks, nil, nil, { name = "zzcred" }), target, {}, sinks)
+
     -- A credential mistyped as a table is rejected by validation, whose
     -- message quotes the value it rejected.
-    local built, rejected = pcall(sdk.new, {
+    local built, rejected = pcall(sdk.new, offline({
       apikey = { value = CANARY.apikey },
       clean = { values = CANARY.value },
-    })
+    }))
     assert.is_false(built, "a credential mistyped as a table should be rejected")
     append(sinks, surfaces("rejected", rejected))
 
@@ -563,13 +594,13 @@ describe("clean", function()
 
     -- Iterating a stream runs inside the same catch path as the operation,
     -- and the explain record the caller passed is cleaned however it ends.
-    -- A step's error ends a stream without raising. The caller stops at the
-    -- first item, leaving the stream open.
+    -- A step's error raises from the stream, as it fails the operation. The
+    -- caller stops at the first item, leaving the stream open.
     for _, case in ipairs({
       { name = "stream", extra = { StreamThrowFeature.new() }, raises = true },
       { name = "stream-ok", extra = { StreamOkFeature.new() } },
       { name = "stream-plain", extra = {} },
-      { name = "stream-step", extra = { StepFailFeature.new() } },
+      { name = "stream-step", extra = { StepFailFeature.new() }, raises = true },
     }) do
       local streamed = make_sdk(SCENARIOS[1], sinks, nil, case.extra)
       local sent = streamed[target.accessor](streamed)
@@ -587,7 +618,7 @@ describe("clean", function()
     end
 
     -- A client given no clean block at all masks by the schema defaults.
-    local bare = sdk.new({
+    local bare = construct({
       apikey = CANARY.apikey,
       secret = CANARY.secret,
       headers = { ["X-Custom-Token"] = CANARY.header },
@@ -686,12 +717,14 @@ describe("clean", function()
   -- A feature's name is not a field name: a feature called secrets does not
   -- make its settings secret, though a sensitive field inside it still is. An
   -- entity block, of per-entity settings or seeded records keyed by entity
-  -- name and id, is not read at all.
+  -- name and id, is not read at all, and nor are rbac's rules, keyed by entity
+  -- and operation names.
   it("a feature's name is read as a name", function()
-    local client = sdk.new({
+    local client = construct({
       apikey = CANARY.apikey,
       feature = {
         secrets = { active = false, name = "ZZNAME-feat123", token = "ZZTOKEN-feat456" },
+        rbac = { active = false, rules = { ["zztoken.load"] = "PLAINRULE-k7j5h3g1" } },
         test = { active = false, entity = { zztoken = { ZZTOKEN01 = { note = "PLAINRECORD-t5r3e1w9" } } } },
       },
       entity = { zztoken = { alias = { zzkey = "PLAINALIAS-m2n4b6v8" } } },
@@ -701,11 +734,12 @@ describe("clean", function()
     assert.are.equal("ZZNAME-feat123 " .. MASK, clean(ctx, "ZZNAME-feat123 ZZTOKEN-feat456"))
     assert.are.equal("record PLAINRECORD-t5r3e1w9", clean(ctx, "record PLAINRECORD-t5r3e1w9"))
     assert.are.equal("alias PLAINALIAS-m2n4b6v8", clean(ctx, "alias PLAINALIAS-m2n4b6v8"))
+    assert.are.equal("rule PLAINRULE-k7j5h3g1", clean(ctx, "rule PLAINRULE-k7j5h3g1"))
   end)
 
 
   it("the generated config's own clean block is honoured", function()
-    local utility = sdk.new({}):get_utility()
+    local utility = construct({}):get_utility()
     local config = { options = { clean = { keys = "zzsens", values = "CONFIG-SEEDED-1" } } }
     local opts = utility.make_options({
       utility = utility,

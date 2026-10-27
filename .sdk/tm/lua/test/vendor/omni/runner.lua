@@ -1,5 +1,5 @@
--- VENDORED: @voxgig/omni sdk-20260925-1316-0 (lua/src/runner.lua)
--- Source: https://github.com/voxgig/omni @ b909ff51fc644e4955c850e30cc65e74be076df2  [tag: sdk-20260925-1316-0]
+-- VENDORED: @voxgig/omni sdk-20261016-0845-0 (lua/src/runner.lua)
+-- Source: https://github.com/voxgig/omni @ e9cb45a308a4da47ffdbc1b3149b9c59199190b2  [tag: sdk-20261016-0845-0]
 -- License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 -- Omni: the shared multi-language test runner (Lua port).
 --
@@ -36,14 +36,17 @@ M.SPECVERSION = 1
 -- Capability strings this runner supports beyond the version baseline. A
 -- spec's OMNI.requires list is checked against this: an unknown capability
 -- refuses the spec loudly at load time, instead of a lagging port silently
--- mis-running it. (Empty today; future format features mint a string here.)
-M.CAPABILITIES = {}
+-- mis-running it. A spec turns each on only by requiring it.
+M.CAPABILITIES = { 'ctxargs', 'fn', 'wait' }
 
 -- The complete set of fields an entry may carry. Under version 1 anything
 -- else is an error: an unrecognised key is almost always a typo'd
 -- assertion, and a typo'd assertion is a test that silently stopped
 -- testing.
 local ENTRYFIELDS = { 'in', 'args', 'ctx', 'out', 'err', 'match', 'client', 'id', 'doc' }
+
+-- Entry fields a capability adds, permitted only in a spec that requires it.
+local CAPFIELDS = { fn = 'fn', wait = 'wait' }
 
 -- Linear membership check (Lua has no Array#includes).
 local function contains(list, value)
@@ -149,6 +152,29 @@ local function resolveversion(alltests)
   end
 
   return version
+end
+
+-- The capabilities a spec requires, which resolveversion has already
+-- checked against CAPABILITIES.
+local function resolverequires(alltests)
+  local requires = u.get(u.get(alltests, 'OMNI'), 'requires')
+  if u.islist(requires) then
+    return requires
+  end
+  return {}
+end
+
+-- A flag is a plain Lua table, so a flag map need not carry the map tag.
+local function isflagmap(val)
+  return u.ismap(val) or ('table' == type(val) and nil == getmetatable(val))
+end
+
+local function iswait(wait)
+  if not isflagmap(wait) then
+    return false
+  end
+  local cause = rawget(wait, 'cause')
+  return u.isstr(cause) and '' ~= cause
 end
 
 --- Nulls (and absent values) become NULLMARK. Always a fresh copy.
@@ -285,25 +311,41 @@ end
 -- Strict entry validation, applied when the spec declares version 1 or
 -- later. The lenient format converts each of these mistakes into a silent
 -- pass or a dead field; here they fail with the entry named.
-local function checkentry(label, index, entry)
+local function checkentry(label, index, entry, requires)
   if not u.ismap(entry) then
     error(fail(label, index, entry, 'entry is not a map'))
   end
 
   for key in pairs(entry) do
-    if not contains(ENTRYFIELDS, key) then
+    if not contains(ENTRYFIELDS, key)
+      and not (nil ~= CAPFIELDS[key] and contains(requires, CAPFIELDS[key])) then
       error(fail(label, index, entry, 'unknown entry field: ' .. key))
     end
   end
 
-  local argsources = 0
-  for _, key in ipairs({ 'in', 'args', 'ctx' }) do
-    if u.has(entry, key) then
-      argsources = argsources + 1
+  if contains(requires, 'ctxargs') then
+    if u.has(entry, 'in') and (u.has(entry, 'args') or u.has(entry, 'ctx')) then
+      error(fail(label, index, entry, 'entry has in beside args or ctx'))
+    end
+  else
+    local argsources = 0
+    for _, key in ipairs({ 'in', 'args', 'ctx' }) do
+      if u.has(entry, key) then
+        argsources = argsources + 1
+      end
+    end
+    if 1 < argsources then
+      error(fail(label, index, entry, 'entry has more than one of in, args, ctx'))
     end
   end
-  if 1 < argsources then
-    error(fail(label, index, entry, 'entry has more than one of in, args, ctx'))
+
+  local fn = u.get(entry, 'fn')
+  if u.has(entry, 'fn') and (not u.isstr(fn) or '' == fn) then
+    error(fail(label, index, entry, 'entry fn is not a name'))
+  end
+
+  if u.has(entry, 'wait') and not iswait(u.get(entry, 'wait')) then
+    error(fail(label, index, entry, 'entry wait has no cause'))
   end
 
   if not u.isnone(u.get(entry, 'err')) and u.has(entry, 'out') then
@@ -320,7 +362,7 @@ end
 -- id: null) into a sentinel string and hide it from validation. A
 -- malformed spec is a spec error, not a test result, so it fails before
 -- any subject runs.
-local function checkset(label, testspec, normalset)
+local function checkset(label, testspec, normalset, requires)
   local origset = normalset
   if u.ismap(testspec) and u.islist(u.get(testspec, 'set')) then
     origset = u.get(testspec, 'set')
@@ -336,7 +378,7 @@ local function checkset(label, testspec, normalset)
   end
 
   for at, entry in ipairs(origset) do
-    checkentry(label, at - 1, entry)
+    checkentry(label, at - 1, entry, requires)
   end
 end
 
@@ -484,18 +526,59 @@ local function handleerror(label, index, entry, err, provider)
   error(fail(label, index, entry, 'unexpected error', nil, M.errmessage(err)))
 end
 
--- Build the argument list: `ctx`, `args`, or `in`. `client` is the
--- provider that owns this entry's subject (the root provider, unless
--- `entry.client` names a DEF.client override) - the runner attaches it to
--- a contextified map argument, so a subject can reach the provider that
--- owns it.
-local function resolveargs(entry, client, provider)
+-- The provider that owns this entry's subject, and the subject itself: the
+-- root provider unless `entry.client` names a DEF.client override, and the
+-- subject `entry.fn` names when the spec requires fn.
+local function resolvetestpack(name, entry, subject, provider, clients, fnon)
+  local testpack = { client = provider, subject = subject }
+
+  local clientname = u.get(entry, 'client')
+  if u.isstr(clientname) then
+    local client = clients[clientname]
+    if nil == client then
+      error(M.OmniError('omni: unknown client: ' .. clientname, entry))
+    end
+    testpack.client = client
+    if nil ~= client.subject then
+      local clientsubject = client.subject(name)
+      if nil ~= clientsubject then
+        testpack.subject = clientsubject
+      end
+    end
+  end
+
+  local fn = u.get(entry, 'fn')
+  if fnon and not u.isnone(fn) then
+    local fnsubject = nil
+    if nil ~= testpack.client.subject then
+      fnsubject = testpack.client.subject(fn)
+    end
+    if nil == fnsubject then
+      error(M.OmniError('omni: unknown fn: ' .. u.stringify(fn), entry))
+    end
+    testpack.subject = fnsubject
+  end
+
+  return testpack
+end
+
+-- Build the argument list: `ctx`, `args`, or `in`. Under `ctxargs` an entry
+-- with both passes the context first, then each argument. `client` is the
+-- provider that owns this entry's subject - the runner attaches it to a
+-- contextified map argument, so a subject can reach the provider that owns
+-- it.
+local function resolveargs(entry, client, provider, ctxargs)
   local args
 
   local hasctx = u.has(entry, 'ctx')
   local hasargs = u.has(entry, 'args')
 
-  if hasctx then
+  if ctxargs and hasctx and hasargs then
+    args = { u.get(entry, 'ctx') }
+    for _, value in ipairs(u.get(entry, 'args')) do
+      args[#args + 1] = value
+    end
+  elseif hasctx then
     args = { u.get(entry, 'ctx') }
   elseif hasargs then
     local raw = u.get(entry, 'args')
@@ -522,10 +605,69 @@ local function resolveargs(entry, client, provider)
   return args
 end
 
+-- The runner-side waits: entry id to its declaration. Each must name an
+-- entry of the set, so a declaration cannot outlive the entry it held.
+local function resolvewaits(label, flags, origset)
+  local waits = flags.wait
+  if u.isnone(waits) then
+    return {}
+  end
+  if not isflagmap(waits) then
+    error(M.OmniError('omni: ' .. label .. ': wait flag is not a map'))
+  end
+
+  local ids = {}
+  for _, entry in ipairs(origset) do
+    local id = u.get(entry, 'id')
+    if u.isstr(id) then
+      ids[id] = true
+    end
+  end
+
+  local keys = {}
+  for id in pairs(waits) do
+    keys[#keys + 1] = id
+  end
+  table.sort(keys, function(a, b) return tostring(a) < tostring(b) end)
+
+  for _, id in ipairs(keys) do
+    if nil == ids[id] then
+      error(M.OmniError('omni: ' .. label .. ': wait names no entry: ' .. u.stringify(id)))
+    end
+    if not iswait(waits[id]) then
+      error(M.OmniError('omni: ' .. label .. ': wait for ' .. u.stringify(id) .. ' has no cause'))
+    end
+  end
+
+  return waits
+end
+
+local function runentry(label, donull, index, entry, testpack, provider, ctxargs)
+  local args
+  local ok, result = pcall(function()
+    args = resolveargs(entry, testpack.client, provider, ctxargs)
+    return testpack.subject(table.unpack(args))
+  end)
+
+  if ok then
+    local res = M.fixjson(result, donull)
+    rawset(entry, 'res', res)
+    checkresult(label, index, entry, args, res)
+  elseif M.isomnierror(result) then
+    error(result)
+  else
+    handleerror(label, index, entry, result, provider)
+  end
+end
+
 --- Make a runner for a spec file path (or spec value) and a provider.
 function M.makeRunner(specref, provider)
   local alltests = u.isstr(specref) and M.loadspec(specref) or specref
   local specversion = resolveversion(alltests)
+  local requires = resolverequires(alltests)
+  local ctxargs = contains(requires, 'ctxargs')
+  local fnon = contains(requires, 'fn')
+  local waiton = contains(requires, 'wait')
   local useprovider = provider or {}
 
   return function(name, store)
@@ -569,7 +711,7 @@ function M.makeRunner(specref, provider)
       local label = flags.name or ((nil == name or '' == name) and 'set' or name)
 
       local usesubject = testsubject or subject
-      if nil == usesubject then
+      if nil == usesubject and not fnon then
         error(M.OmniError('omni: no test subject for: ' .. label))
       end
 
@@ -581,52 +723,91 @@ function M.makeRunner(specref, provider)
       end
 
       if 1 <= specversion then
-        checkset(label, testspec, testset)
+        checkset(label, testspec, testset, requires)
       end
+
+      local origset = testset
+      if u.ismap(testspec) and u.islist(u.get(testspec, 'set')) then
+        origset = u.get(testspec, 'set')
+      end
+      local waits = resolvewaits(label, flags, origset)
+      local failures = {}
 
       for at, entry in ipairs(testset) do
         local index = at - 1
 
-        if not u.ismap(entry) then
-          error(M.OmniError('omni: ' .. label .. '[' .. index .. ']: entry is not a map'))
-        end
+        local ok, err = pcall(function()
+          local testpack = nil
+          local prestarted = false
+          local prestart = nil
 
-        -- An entry with no `out` expects a null (or absent) result.
-        if donull and u.isnone(u.get(entry, 'out')) then
-          rawset(entry, 'out', u.NULLMARK)
-        end
+          -- A hook's raw error before the subject starts is still the entry's.
+          local resolved, rerr = pcall(function()
+            if not u.ismap(entry) then
+              error(M.OmniError('omni: ' .. label .. '[' .. index .. ']: entry is not a map'))
+            end
 
-        local entrysubject = usesubject
-        local entryclient = useprovider
-        local clientname = u.get(entry, 'client')
+            -- An entry with no `out` expects a null (or absent) result.
+            if donull and u.isnone(u.get(entry, 'out')) then
+              rawset(entry, 'out', u.NULLMARK)
+            end
 
-        if u.isstr(clientname) then
-          local client = clients[clientname]
-          if nil == client then
-            error(M.OmniError('omni: unknown client: ' .. clientname, entry))
+            testpack = resolvetestpack(name, entry, usesubject, useprovider, clients, fnon)
+          end)
+          if not resolved then
+            if M.isomnierror(rerr) then
+              error(rerr)
+            end
+            prestarted = true
+            prestart = rerr
           end
-          entryclient = client
-          if nil ~= client.subject then
-            local clientsubject = client.subject(name)
-            if nil ~= clientsubject then
-              entrysubject = clientsubject
+
+          if not prestarted and nil == testpack.subject then
+            error(M.OmniError('omni: no test subject for: ' .. label))
+          end
+
+          local function run()
+            if prestarted then
+              handleerror(label, index, entry, prestart, useprovider)
+            else
+              runentry(label, donull, index, entry, testpack, useprovider, ctxargs)
             end
           end
+
+          local wait = nil
+          local id = u.get(entry, 'id')
+          if waiton and u.has(entry, 'wait') then
+            wait = u.get(entry, 'wait')
+          elseif not u.isnone(id) then
+            wait = waits[id]
+          end
+
+          if nil == wait then
+            run()
+          else
+            local passed, held = pcall(run)
+            if passed then
+              local cause = 'table' == type(wait) and rawget(wait, 'cause') or u.ABSENT
+              error(fail(label, index, entry, 'stale wait: ' .. u.stringify(cause)))
+            end
+            if not M.isomnierror(held) then
+              error(held, 0)
+            end
+          end
+        end)
+
+        if not ok then
+          if true == flags.all and M.isomnierror(err) then
+            failures[#failures + 1] = err.message
+          else
+            error(err, 0)
+          end
         end
+      end
 
-        local args = resolveargs(entry, entryclient, useprovider)
-
-        local ok, result = pcall(entrysubject, table.unpack(args))
-
-        if ok then
-          local res = M.fixjson(result, donull)
-          rawset(entry, 'res', res)
-          checkresult(label, index, entry, args, res)
-        elseif M.isomnierror(result) then
-          error(result)
-        else
-          handleerror(label, index, entry, result, useprovider)
-        end
+      if 0 < #failures then
+        error(M.OmniError('omni: ' .. label .. ': ' .. #failures .. ' of ' .. #testset ..
+          ' entries failed\n' .. table.concat(failures, '\n')))
       end
     end
 

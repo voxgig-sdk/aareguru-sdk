@@ -21,7 +21,7 @@ module AareguruFeatureHarness
 
   def self.default_method(opname)
     return "POST" if opname == "create"
-    return "PATCH" if opname == "update"
+    return "PATCH" if opname == "update" || opname == "patch"
     return "DELETE" if opname == "remove"
     "GET"
   end
@@ -412,7 +412,7 @@ class FeatureTest < Minitest::Test
     skip_unless_feature("retry")
     clock = H::Clock.new
     server, calls = H.recording_server { |n, _fd|
-      n < 3 ? [nil, AareguruError.new("boom", "boom")] : [H.make_response(200, { "ok" => true }), nil]
+      n < 3 ? [nil, AareguruError.new("boom", code: "boom")] : [H.make_response(200, { "ok" => true }), nil]
     }
     h = harness([fspec("retry",
       "retries" => 2, "minDelay" => 1, "jitter" => false, "sleep" => clock.sleeper)],
@@ -425,7 +425,7 @@ class FeatureTest < Minitest::Test
   def test_retry_exhausted_transport_error_surfaces
     skip_unless_feature("retry")
     clock = H::Clock.new
-    server, calls = H.recording_server { |_n, _fd| [nil, AareguruError.new("boom", "boom")] }
+    server, calls = H.recording_server { |_n, _fd| [nil, AareguruError.new("boom", code: "boom")] }
     h = harness([fspec("retry",
       "retries" => 2, "minDelay" => 1, "jitter" => false, "sleep" => clock.sleeper)],
       server: server)

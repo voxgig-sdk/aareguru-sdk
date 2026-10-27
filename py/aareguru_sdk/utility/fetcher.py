@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 import json
+import os
+import re
 import threading
 from http.cookiejar import DefaultCookiePolicy
 from aareguru_sdk.utility.voxgig_struct import voxgig_struct as vs
+from aareguru_sdk.core.error import AareguruError
 
 
 # Default User-Agent — many CDNs (notably Cloudflare) reject requests with
@@ -32,15 +35,42 @@ def _session():
     return _SESSION
 
 
+# Text as UTF-8, and bytes or a file object as they are.
+def _request_data(body):
+    if isinstance(body, str):
+        return body.encode("utf-8")
+    if isinstance(body, (bytearray, memoryview)):
+        return bytes(body)
+    if isinstance(body, bytes) or hasattr(body, "read"):
+        return body
+    return None
+
+
+_GETONLY_ENV = "VOXGIG_GETONLY_GUARD"
+
+
+# A GET-only live run refuses any other method before it is sent. The error
+# names the path alone: the query can carry a credential.
+def _getonly_refusal(fullurl, method):
+    method = str(method or "GET").upper()
+    if os.environ.get(_GETONLY_ENV) != "TRUE" or method == "GET":
+        return None
+    rest = fullurl
+    if "://" in rest:
+        rest = re.sub(r"^[^/?#]*", "", rest.split("://", 1)[1])
+    path = re.split(r"[?#]", rest, maxsplit=1)[0] or "/"
+    return AareguruError(
+        "fetch_getonly_block", "[GET-ONLY GUARD] blocked " + method + " " + path)
+
+
 def _default_http_fetch(fullurl, fetchdef):
     method = fetchdef.get("method", "GET")
-    body_str = fetchdef.get("body")
+    refused = _getonly_refusal(fullurl, method)
+    if refused is not None:
+        return None, refused
     headers = fetchdef.get("headers", {})
 
-    if not isinstance(body_str, str):
-        body_str = None
-
-    data = body_str.encode("utf-8") if body_str is not None else None
+    data = _request_data(fetchdef.get("body"))
 
     req_headers = {}
     has_ua = False
@@ -50,6 +80,7 @@ def _default_http_fetch(fullurl, fetchdef):
         req_headers[k] = v
     if not has_ua:
         req_headers["User-Agent"] = _DEFAULT_USER_AGENT
+        headers["user-agent"] = _DEFAULT_USER_AGENT
 
     # Manual redirects: fetchdef["redirect"] == "manual" surfaces a 3xx as
     # an ordinary response instead of auto-following it, which would replay
@@ -77,11 +108,12 @@ def _default_http_fetch(fullurl, fetchdef):
         resp_headers[k.lower()] = v
 
     json_body = None
-    if len(body) > 0:
+    unreadable = False
+    if body.strip():
         try:
             json_body = json.loads(body)
         except Exception:
-            pass
+            unreadable = True
 
     status = resp.status_code
     status_text = resp.reason or ("OK" if status < 400 else "Error")
@@ -92,6 +124,7 @@ def _default_http_fetch(fullurl, fetchdef):
         "headers": resp_headers,
         "json": lambda: json_body,
         "body": body,
+        "unreadable": unreadable,
     }, None
 
 

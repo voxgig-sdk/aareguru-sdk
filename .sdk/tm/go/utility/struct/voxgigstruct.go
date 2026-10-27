@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/struct 0.1.0 (go/voxgigstruct.go)
-// Source: https://github.com/voxgig/struct @ 3a42881b1d26c75ebbed9f1897f0ba94cf3cf780  [tag: sdk-20260925-1316-0]
+// VENDORED: @voxgig/struct 0.1.6 (go/voxgigstruct.go)
+// Source: https://github.com/voxgig/struct @ 621057e24eb5f3e3da6fd3820ff24a36aaacb21b  [tag: sdk-20261016-0845-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Copyright (c) 2025 Voxgig Ltd. MIT LICENSE. */
 
@@ -1452,6 +1452,9 @@ func DelProp(parent any, key any) any {
 	return parent
 }
 
+// Safely set a property. A list key past the end appends and a negative key
+// prepends. A nil value is stored like any other; DelProp removes a key.
+// Returns the parent, which for a slice may be a new slice: keep the result.
 func SetProp(parent any, key any, newval any) any {
 	if !IsKey(key) {
 		return parent
@@ -1459,44 +1462,16 @@ func SetProp(parent any, key any, newval any) any {
 
 	if IsMap(parent) {
 		m := parent.(map[string]any)
-
-		// Convert key to string
-		ks := ""
-		ks = StrKey(key)
-
-		// Preserve nil values (like JS null). Use DelProp for explicit key removal.
-		m[ks] = newval
+		m[StrKey(key)] = newval
 
 	} else if IsList(parent) {
-
-		// Convert key to integer
-		var ki int
-		switch k := key.(type) {
-		case int:
-			ki = k
-		case float64:
-			ki = int(k)
-		case string:
-			kiParsed, e := _parseInt(k)
-			if e == nil {
-				ki = kiParsed
-			} else {
-				// no-op, can't set
-				return parent
-			}
-		default:
+		ki, ok := _listKey(key)
+		if !ok {
 			return parent
 		}
 
 		// ListRef: modify .List in place, return same pointer for reference stability.
 		if lr, isLR := parent.(*ListRef[any]); isLR {
-			if newval == nil {
-				if ki >= 0 && ki < len(lr.List) {
-					copy(lr.List[ki:], lr.List[ki+1:])
-					lr.List = lr.List[:len(lr.List)-1]
-				}
-				return parent
-			}
 			if ki >= 0 {
 				if ki >= len(lr.List) {
 					lr.List = append(lr.List, newval)
@@ -1514,27 +1489,11 @@ func SetProp(parent any, key any, newval any) any {
 
 		arr, genarr := parent.([]any)
 
-		// If newval == nil, remove element [shift down].
-
 		if !genarr {
 			rv := reflect.ValueOf(parent)
 			arr = make([]any, rv.Len())
 			for i := 0; i < rv.Len(); i++ {
 				arr[i] = rv.Index(i).Interface()
-			}
-		}
-
-		if newval == nil {
-			if ki >= 0 && ki < len(arr) {
-				copy(arr[ki:], arr[ki+1:])
-				arr = arr[:len(arr)-1]
-			}
-
-			if !genarr {
-				return _makeArrayType(arr, parent)
-			} else {
-
-				return arr
 			}
 		}
 
@@ -1568,6 +1527,20 @@ func SetProp(parent any, key any, newval any) any {
 	}
 
 	return parent
+}
+
+// The list index SetProp reads from key; false when key names no index.
+func _listKey(key any) (int, bool) {
+	switch k := key.(type) {
+	case int:
+		return k, true
+	case float64:
+		return int(k), true
+	case string:
+		ki, err := _parseInt(k)
+		return ki, nil == err
+	}
+	return 0, false
 }
 
 func Walk(
@@ -1809,7 +1782,7 @@ func Merge(val any, maxdepths ...int) any {
 
 				if md <= pI {
 					if key != nil {
-						SetProp(cur[pI-1], *key, val)
+						cur[pI-1] = SetProp(cur[pI-1], *key, val)
 					}
 				} else if !IsNode(val) {
 					// Scalars just override directly.
@@ -1821,20 +1794,21 @@ func Merge(val any, maxdepths ...int) any {
 					}
 					tval := dst[pI]
 
-					// Destination empty, create node (unless override is class instance).
-					if nil == tval && 0 == (T_instance&Typify(val)) {
+					if Typify(val) == Typify(tval) {
+						// Matching override and destination, continue with their values.
+						cur[pI] = tval
+					} else if 0 == (T_instance & Typify(val)) {
+						// Otherwise the override wins: a plain node is copied, taking
+						// nothing from the destination, so no later merge writes into it.
 						if IsList(val) {
 							cur[pI] = make([]any, 0)
 						} else {
 							cur[pI] = make(map[string]any)
 						}
-					} else if Typify(val) == Typify(tval) {
-						// Matching override and destination, continue with their values.
-						cur[pI] = tval
+						dst[pI] = nil
 					} else {
-						// Override wins.
+						// A class instance is kept as is, so there is nothing to descend.
 						cur[pI] = val
-						// No need to descend (destination is discarded).
 						val = nil
 					}
 				}
@@ -1845,7 +1819,7 @@ func Merge(val any, maxdepths ...int) any {
 			after := func(
 				key *string,
 				_val any,
-				_parent any,
+				parent any,
 				path []string,
 			) any {
 				cI := len(path)
@@ -1855,10 +1829,11 @@ func Merge(val any, maxdepths ...int) any {
 					return cur[0]
 				}
 
-				value := cur[cI]
+				cur[cI-1] = SetProp(cur[cI-1], *key, cur[cI])
 
-				cur[cI-1] = SetProp(cur[cI-1], *key, value)
-				return value
+				// Walk writes this back into the override, so it is the
+				// override's own child, leaving the override unchanged.
+				return GetProp(parent, *key)
 			}
 
 			// Walk overriding node, creating paths in output as needed.
@@ -2055,10 +2030,17 @@ func SetPath(store any, path any, val any, injdefs ...map[string]any) any {
 	}
 
 	numparts := len(parts)
-	parent := GetProp(store, base, store)
 
-	var grandparent any
-	var grandKey any
+	// The nodes above parent on the path, and the key that leads down from each.
+	var holders []any
+	var keys []any
+
+	parent := store
+	if HasKey(store, base) {
+		parent = GetProp(store, base)
+		holders = []any{store}
+		keys = []any{base}
+	}
 
 	for pI := 0; pI < numparts-1; pI++ {
 		partKey := GetElem(parts, pI)
@@ -2070,27 +2052,53 @@ func SetPath(store any, path any, val any, injdefs ...map[string]any) any {
 			} else {
 				nextParent = map[string]any{}
 			}
-			SetProp(parent, partKey, nextParent)
+			slot := _listSlot(parent, partKey)
+			parent = _keepList(holders, keys, parent, SetProp(parent, partKey, nextParent))
+			partKey = slot
 		}
-		grandparent = parent
-		grandKey = partKey
+		holders = append(holders, parent)
+		keys = append(keys, partKey)
 		parent = nextParent
 	}
 
 	lastKey := GetElem(parts, -1)
 	if val == DELETE {
-		newParent := DelProp(parent, lastKey)
-		if grandparent != nil && IsList(parent) {
-			SetProp(grandparent, grandKey, newParent)
-		}
-		return newParent
-	} else {
-		newParent := SetProp(parent, lastKey, val)
-		if grandparent != nil && IsList(parent) {
-			SetProp(grandparent, grandKey, newParent)
-		}
-		return newParent
+		return _keepList(holders, keys, parent, DelProp(parent, lastKey))
 	}
+	return _keepList(holders, keys, parent, SetProp(parent, lastKey, val))
+}
+
+// The index where SetProp puts a value written to list under key.
+func _listSlot(list any, key any) any {
+	ki, ok := _listKey(key)
+	if !ok || !IsList(list) {
+		return key
+	}
+	return max(0, min(ki, Size(list)))
+}
+
+// A write to a slice can return a new slice, so it goes back into the holder,
+// and on up the path while each holder is a slice in turn.
+func _keepList(holders []any, keys []any, list any, written any) any {
+	out := written
+	for i := len(holders) - 1; 0 <= i && IsList(list); i-- {
+		list = holders[i]
+		written = _writeBack(list, keys[i], written)
+		holders[i] = written
+	}
+	return out
+}
+
+// A map slot that already holds the list takes the grown slice directly:
+// SetProp refuses some keys GetProp reads, such as "".
+func _writeBack(holder any, key any, val any) any {
+	if m, ok := holder.(map[string]any); ok {
+		if _, has := m[StrKey(key)]; has {
+			m[StrKey(key)] = val
+			return m
+		}
+	}
+	return SetProp(holder, key, val)
 }
 
 func _injectStr(
@@ -4760,7 +4768,7 @@ func _makeArrayType(values []any, target any) any {
 
 	for i, v := range values {
 		elemVal := reflect.ValueOf(v)
-		if !elemVal.Type().ConvertibleTo(targetElem) {
+		if !elemVal.IsValid() || !elemVal.Type().ConvertibleTo(targetElem) {
 			return values
 		}
 

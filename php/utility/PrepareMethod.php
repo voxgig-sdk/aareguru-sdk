@@ -33,4 +33,19 @@ class AareguruPrepareMethod
         // shared corpus (prepareMethod, opname "bad" -> null) pins it now.
         return self::METHOD_MAP[$ctx->op->name] ?? null;
     }
+
+    // Whether a comma-separated allow option names the item: whole names, any case.
+    public static function allowed(mixed $names, mixed $item): bool
+    {
+        $want = is_string($item) ? strtoupper($item) : '';
+        if ('' === $want || !is_string($names)) {
+            return false;
+        }
+        foreach (explode(',', $names) as $name) {
+            if (strtoupper(trim($name)) === $want) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

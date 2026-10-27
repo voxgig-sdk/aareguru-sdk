@@ -6,7 +6,7 @@ import {
   File, Content,
 } from '@voxgig/sdkgen'
 
-import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions , deriveEntityNames, rbSafeTypeName } from '@voxgig/sdkgen'
+import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions , deriveEntityNames, rbTypeName, entityCollection } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -19,7 +19,8 @@ const LANG = 'rb'
 
 // A Ruby symbol literal for a member name: bare for identifiers, quoted otherwise.
 function symName(name: string): string {
-  return /^[A-Za-z_][A-Za-z0-9_]*[?!=]?$/.test(name) ? ':' + name : ':"' + name + '"'
+  return /^[A-Za-z_][A-Za-z0-9_]*[?!=]?$/.test(name) ? ':' + name
+    : ':' + JSON.stringify(name).replace(/#(?=[{$@])/g, '\\#')
 }
 
 
@@ -81,7 +82,7 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
 
     entityList.forEach((ent: any) => {
       const Name = ent.Name
-      const TypeName = rbSafeTypeName(Name)
+      const TypeName = rbTypeName(ent, entityCollection(model))
       const fields = (ent.fields ? each(ent.fields) : [])
         .filter((f: any) => f.a !== false)
 
@@ -92,7 +93,7 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
       )
 
       const ops = ent.op || {}
-      ;['load', 'list', 'create', 'update', 'remove'].forEach((opname: string) => {
+      ;['load', 'list', 'create', 'update', 'patch', 'remove'].forEach((opname: string) => {
         if (null == ops[opname]) {
           return
         }

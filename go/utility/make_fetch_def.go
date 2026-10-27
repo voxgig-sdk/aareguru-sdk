@@ -1,8 +1,6 @@
 package utility
 
 import (
-	vs "github.com/voxgig-sdk/aareguru-sdk/go/utility/struct"
-
 	"github.com/voxgig-sdk/aareguru-sdk/go/core"
 )
 
@@ -33,11 +31,7 @@ func makeFetchDefUtil(ctx *core.Context) (map[string]any, error) {
 	}
 
 	if spec.Body != nil {
-		if _, ok := spec.Body.(map[string]any); ok {
-			fetchdef["body"] = vs.Jsonify(spec.Body)
-		} else {
-			fetchdef["body"] = spec.Body
-		}
+		fetchdef["body"] = requestBody(ctx.Point, spec.Body)
 	}
 
 	return fetchdef, nil

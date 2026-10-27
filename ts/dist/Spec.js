@@ -16,6 +16,9 @@ class Spec {
     body;
     url;
     path;
+    // The query parameters prepareAuth placed: the credential, which the
+    // request sends and the entity's match leaves out.
+    authquery;
     constructor(specmap) {
         this.parts = (0, StructUtility_1.getprop)(specmap, 'parts', []);
         this.headers = (0, StructUtility_1.getprop)(specmap, 'headers', {});
@@ -30,6 +33,7 @@ class Spec {
         this.body = (0, StructUtility_1.getprop)(specmap, 'body');
         this.url = (0, StructUtility_1.getprop)(specmap, 'url');
         this.path = (0, StructUtility_1.getprop)(specmap, 'path');
+        this.authquery = (0, StructUtility_1.getprop)(specmap, 'authquery', []);
     }
 }
 exports.Spec = Spec;

@@ -96,6 +96,7 @@ def make_config():
         },
         "optspec": {
           "clearTimer": "`$FUNCTION`",
+          "now": "`$FUNCTION`",
           "setTimer": "`$FUNCTION`",
         },
         "strict": False,
@@ -157,12 +158,7 @@ def make_config():
                     },
                   ],
                 },
-                "select": {
-                  "exist": [
-                    "app",
-                    "version",
-                  ],
-                },
+                "select": {},
               },
               {
                 "kind": "http",
@@ -199,12 +195,7 @@ def make_config():
                     },
                   ],
                 },
-                "select": {
-                  "exist": [
-                    "app",
-                    "version",
-                  ],
-                },
+                "select": {},
               },
               {
                 "kind": "http",
@@ -241,12 +232,7 @@ def make_config():
                     },
                   ],
                 },
-                "select": {
-                  "exist": [
-                    "app",
-                    "version",
-                  ],
-                },
+                "select": {},
               },
             ],
           },
@@ -315,10 +301,7 @@ def make_config():
                 },
                 "select": {
                   "exist": [
-                    "app",
-                    "line",
                     "service",
-                    "version",
                   ],
                 },
               },
@@ -367,9 +350,7 @@ def make_config():
                 },
                 "select": {
                   "exist": [
-                    "app",
                     "service",
-                    "version",
                   ],
                 },
               },
@@ -481,13 +462,60 @@ def make_config():
                 "select": {
                   "$action": "history",
                   "exist": [
-                    "app",
                     "city",
                     "end",
                     "start",
-                    "value",
-                    "version",
                   ],
+                },
+              },
+              {
+                "kind": "http",
+                "method": "GET",
+                "orig": "/v2018/cities",
+                "segments": [
+                  {
+                    "lit": "v2018",
+                  },
+                  {
+                    "lit": "cities",
+                  },
+                ],
+                "parts": [
+                  "v2018",
+                  "cities",
+                ],
+                "rename": {},
+                "transform": {
+                  "req": "`reqdata`",
+                  "res": "`body`",
+                },
+                "args": {
+                  "query": [
+                    {
+                      "name": "app",
+                      "orig": "app",
+                      "type": "`$STRING`",
+                      "kind": "query",
+                      "example": "my.app.ch",
+                    },
+                    {
+                      "name": "value",
+                      "orig": "values",
+                      "type": "`$STRING`",
+                      "kind": "query",
+                      "example": None,
+                    },
+                    {
+                      "name": "version",
+                      "orig": "version",
+                      "type": "`$STRING`",
+                      "kind": "query",
+                      "example": "1.0.42",
+                    },
+                  ],
+                },
+                "select": {
+                  "$action": "city",
                 },
               },
               {
@@ -545,12 +573,6 @@ def make_config():
                 },
                 "select": {
                   "$action": "current",
-                  "exist": [
-                    "app",
-                    "city",
-                    "value",
-                    "version",
-                  ],
                 },
               },
               {
@@ -608,67 +630,6 @@ def make_config():
                 },
                 "select": {
                   "$action": "today",
-                  "exist": [
-                    "app",
-                    "city",
-                    "value",
-                    "version",
-                  ],
-                },
-              },
-              {
-                "kind": "http",
-                "method": "GET",
-                "orig": "/v2018/cities",
-                "segments": [
-                  {
-                    "lit": "v2018",
-                  },
-                  {
-                    "lit": "cities",
-                  },
-                ],
-                "parts": [
-                  "v2018",
-                  "cities",
-                ],
-                "rename": {},
-                "transform": {
-                  "req": "`reqdata`",
-                  "res": "`body`",
-                },
-                "args": {
-                  "query": [
-                    {
-                      "name": "app",
-                      "orig": "app",
-                      "type": "`$STRING`",
-                      "kind": "query",
-                      "example": "my.app.ch",
-                    },
-                    {
-                      "name": "value",
-                      "orig": "values",
-                      "type": "`$STRING`",
-                      "kind": "query",
-                      "example": None,
-                    },
-                    {
-                      "name": "version",
-                      "orig": "version",
-                      "type": "`$STRING`",
-                      "kind": "query",
-                      "example": "1.0.42",
-                    },
-                  ],
-                },
-                "select": {
-                  "$action": "city",
-                  "exist": [
-                    "app",
-                    "value",
-                    "version",
-                  ],
                 },
               },
               {
@@ -719,11 +680,6 @@ def make_config():
                 },
                 "select": {
                   "$action": "widget",
-                  "exist": [
-                    "app",
-                    "value",
-                    "version",
-                  ],
                 },
               },
             ],

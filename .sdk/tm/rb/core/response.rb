@@ -3,7 +3,7 @@
 require_relative '../utility/struct/voxgig_struct'
 
 class AareguruResponse
-  attr_accessor :status, :status_text, :headers, :json_func, :body, :err
+  attr_accessor :status, :status_text, :headers, :json_func, :body, :err, :unreadable
 
   def initialize(resmap = {})
     resmap ||= {}
@@ -16,5 +16,7 @@ class AareguruResponse
     @json_func = jf.is_a?(Proc) ? jf : nil
     @body = VoxgigStruct.getprop(resmap, "body")
     @err = VoxgigStruct.getprop(resmap, "err")
+    # Set by a transport that could not read a non-blank body as JSON.
+    @unreadable = true == VoxgigStruct.getprop(resmap, "unreadable")
   end
 end

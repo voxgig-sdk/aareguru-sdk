@@ -121,7 +121,13 @@ class ProjectNameSDK
     path = VoxgigStruct.getprop(fetchargs, "path") || ""
     path = "" unless path.is_a?(String)
     method_val = VoxgigStruct.getprop(fetchargs, "method") || "GET"
-    method_val = "GET" unless method_val.is_a?(String)
+    method_val = "GET" unless method_val.is_a?(String) && "" != method_val
+    method_val = method_val.upcase
+    allow_method = VoxgigStruct.getpath(opts, "allow.method")
+    unless ProjectNameUtilities.allowed(allow_method, method_val)
+      raise ctx.make_error("spec_method_allow",
+        "Method \"#{method_val}\" not allowed by SDK option allow.method value: \"#{allow_method}\"")
+    end
     params = ProjectNameHelpers.to_map(VoxgigStruct.getprop(fetchargs, "params")) || {}
     query = ProjectNameHelpers.to_map(VoxgigStruct.getprop(fetchargs, "query")) || {}
     headers = utility.prepare_headers.call(ctx)
@@ -171,8 +177,7 @@ class ProjectNameSDK
 
   # Is this raw-access op permitted by the SDK's allow.op option?
   def op_allowed?(op)
-    allow_op = VoxgigStruct.getpath(@options, "allow.op")
-    allow_op.is_a?(String) && allow_op.include?(op)
+    ProjectNameUtilities.allowed(VoxgigStruct.getpath(@options, "allow.op"), op)
   end
 
   def op_denied(op)
@@ -180,9 +185,9 @@ class ProjectNameSDK
     {
       "ok" => false,
       "err" => ProjectNameError.new(
-        "#{op}_allow",
         "ProjectNameSDK: #{op}: operation not allowed by" \
-        " SDK option allow.op value: \"#{allow_op}\""),
+        " SDK option allow.op value: \"#{allow_op}\"",
+        code: "#{op}_allow"),
     }
   end
 
@@ -232,6 +237,7 @@ class ProjectNameSDK
       no_body = status == 204 || status == 304 || content_length.to_s == "0"
 
       json_data = nil
+      body_err = nil
       unless no_body
         jf = VoxgigStruct.getprop(fetched, "json")
         if jf.is_a?(Proc)
@@ -242,14 +248,22 @@ class ProjectNameSDK
             json_data = nil
           end
         end
+        if true == VoxgigStruct.getprop(fetched, "unreadable")
+          failed = status >= 200 && status < 300 ? nil : ctx.make_error("request_status",
+            "request: #{status}: #{VoxgigStruct.getprop(fetched, 'statusText')}")
+          body_err = ProjectNameUtilities::UnreadableBody.call(ctx, status, headers,
+            VoxgigStruct.getprop(fetched, "body"), fetchdef["headers"], failed)
+        end
       end
 
-      return {
-        "ok" => status >= 200 && status < 300,
+      out = {
+        "ok" => body_err.nil? && status >= 200 && status < 300,
         "status" => status,
         "headers" => headers,
         "data" => json_data,
       }
+      out["err"] = utility.clean.call(ctx, body_err) unless body_err.nil?
+      return out
     end
 
     return {
@@ -292,7 +306,7 @@ class ProjectNameSDK
       msg = "graphql error" if msg.nil? || msg.to_s.empty?
       res["ok"] = false
       res["err"] = ProjectNameError.new(
-        "graphql_error", "ProjectNameSDK: graphql: #{msg}")
+        "ProjectNameSDK: graphql: #{msg}", code: "graphql_error")
       res["graphql"] = errors
     end
 

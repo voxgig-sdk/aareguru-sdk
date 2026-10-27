@@ -21,6 +21,9 @@ function Spec.new(specmap)
   self.body = specmap.body
   self.url = specmap.url or ""
   self.path = specmap.path or ""
+  -- The query parameters prepare_auth placed: the credential, which the
+  -- request sends and the entity's match leaves out.
+  self.authquery = specmap.authquery or {}
 
   return self
 end

@@ -241,11 +241,11 @@ class TestMakeResult:
         entity = self._EntityFactory()
         ctx.entity = entity
         ctx.spec = _full_spec()
-        ctx.result = AareguruResult({"resdata": [{"a": 1}, {"a": 2}]})
+        ctx.result = AareguruResult({"resdata": [{"a": 1}, "b.md"]})
         result, err = client._utility.make_result(ctx)
         assert err is None
         assert len(result.resdata) == 2
-        assert entity.made == [{"a": 1}, {"a": 2}]
+        assert entity.made == [{"a": 1}, "b.md"]
 
     def test_an_empty_list_yields_an_empty_resdata_array(self):
         client = _client()

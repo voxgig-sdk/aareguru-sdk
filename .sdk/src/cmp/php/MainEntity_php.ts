@@ -17,7 +17,7 @@ const MainEntity = cmp(async function MainEntity(props: any) {
 
   // Collision-free entity CLASS name (entityClassName); the accessor METHOD name
   // (below) is unchanged so callers still write $client->${entity.Name}().
-  const cls = entityClassName(entity, entityCollection(model))
+  const cls = entityClassName(entity, entityCollection(model), true)
 
   const accessor = phpEntityAccessor(entity.Name)
 

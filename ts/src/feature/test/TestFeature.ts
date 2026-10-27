@@ -22,7 +22,7 @@ function mintId(): string {
 function ownIdField(config: any, getpath: any, entityName: string): string {
   let fallback = ''
 
-  for (const opname of ['load', 'remove', 'update']) {
+  for (const opname of ['load', 'remove', 'update', 'patch']) {
     const points = getpath(config, ['entity', entityName, 'op', opname, 'points']) || []
     const canonical = points.filter((pt: any) =>
       null == (pt && pt.select && pt.select['$action']))
@@ -41,8 +41,9 @@ function ownIdField(config: any, getpath: any, entityName: string): string {
     // No path param at all (or the route ends in a literal, e.g.
     // /orgs/{org}/private-registries/public-key): a single required QUERY
     // param can still be the record's own key (e.g. GET /result?trace_id=).
+    // The config omits `reqd` where it is false, so only `true` is required.
     const query = (best && best.args && best.args.query) || []
-    const reqdQuery = query.filter((q: any) => false !== q.reqd)
+    const reqdQuery = query.filter((q: any) => true === q.reqd)
     if (1 === reqdQuery.length) return String(reqdQuery[0].name)
 
     // The last path parameter of a literal-terminal route is remembered as
@@ -63,6 +64,28 @@ function ownIdField(config: any, getpath: any, entityName: string): string {
   }
 
   return 'id'
+}
+
+
+// The record the mock keeps: the request data without `$body`, which only the
+// wire carries.
+function recordOf(reqdata: any): any {
+  const out = { ...(reqdata || {}) }
+  delete out.$body
+  return out
+}
+
+
+// The key a list response wraps each record under, where the response
+// transform is `["`$EACH`", "body", { "`$MERGE`": "`.<key>`" }]`.
+function itemEnvelopeKey(restf: any): string | null {
+  if (!Array.isArray(restf) || 3 !== restf.length ||
+    '`$EACH`' !== restf[0] || 'body' !== restf[1]) {
+    return null
+  }
+  const merge = restf[2]?.['`$MERGE`']
+  const m = 'string' === typeof merge ? merge.match(/^`\.([^.`$]+)`$/) : null
+  return null == m ? null : m[1]
 }
 
 
@@ -118,6 +141,10 @@ class TestFeature extends BaseFeature {
 
       function envelope(data: any) {
         const restf = getprop(getprop(ctx.point, 'transform', {}), 'res')
+        const itemkey = itemEnvelopeKey(restf)
+        if (null != itemkey && Array.isArray(data)) {
+          return data.map((item: any) => ({ [itemkey]: item }))
+        }
         if (null == data || 'string' !== typeof restf) {
           return data
         }
@@ -188,8 +215,8 @@ class TestFeature extends BaseFeature {
           return respond(200, out)
         }
       }
-      else if ('update' === op.name) {
-        const args = self.buildArgs(ctx, op, ctx.reqdata)
+      else if ('update' === op.name || 'patch' === op.name) {
+        const args = self.buildArgs(ctx, op, recordOf(ctx.reqdata))
         const found = select(entmap, args)
         const ent = getelem(found, 0)
         if (null == ent) {
@@ -197,7 +224,7 @@ class TestFeature extends BaseFeature {
           return respond(404, undefined, { statusText: S_NOT_FOUND })
         }
         else {
-          merge([ent, (ctx.reqdata || {})])
+          merge([ent, recordOf(ctx.reqdata)])
           delprop(ent, '$KEY')
           const out = clone(ent)
           return respond(200, out)
@@ -215,13 +242,13 @@ class TestFeature extends BaseFeature {
         return respond(200)
       }
       else if ('create' === op.name) {
-        const args = self.buildArgs(ctx, op, ctx.reqdata)
+        const args = self.buildArgs(ctx, op, recordOf(ctx.reqdata))
         let id = param(ctx, 'id')
         if (null == id) {
           id = mintId()
         }
 
-        const ent = clone(ctx.reqdata)
+        const ent = clone(recordOf(ctx.reqdata))
         setprop(ent, 'id', id)
 
         // A record created during the run needs the same real-key seeding
@@ -268,10 +295,12 @@ class TestFeature extends BaseFeature {
       return max <= min ? min : min + ((max - min) >> 1)
     }
 
-    function sleep(ms: number): Promise<void> {
+    function sleep(ms: number, signal?: any): Promise<void> {
       if (null == ms || 0 >= ms) { return Promise.resolve() }
-      if ('function' === typeof net.sleep) { return Promise.resolve(net.sleep(ms)) }
-      return new Promise((r) => setTimeout(r, ms))
+      if ('function' === typeof net.sleep) { return self._untilAbort(Promise.resolve(net.sleep(ms)), signal) }
+      let timer: any
+      return self._untilAbort(new Promise((r) => { timer = setTimeout(r, ms) }), signal,
+        () => clearTimeout(timer))
     }
 
     return async function netsimFetcher(ctx: any, url: string, fetchdef: any) {
@@ -279,15 +308,15 @@ class TestFeature extends BaseFeature {
       const call = self._netcalls
 
       if (true === net.offline) {
-        await sleep(pickLatency())
+        await sleep(pickLatency(), fetchdef?.signal)
         return ctx.error('netsim_offline', 'Simulated network offline (URL was: "' + url + '")')
       }
       if (call <= (net.errorTimes | 0)) {
-        await sleep(pickLatency())
+        await sleep(pickLatency(), fetchdef?.signal)
         return ctx.error('netsim_conn', 'Simulated connection error (call ' + call + ')')
       }
       if (call <= (net.failTimes | 0)) {
-        await sleep(pickLatency())
+        await sleep(pickLatency(), fetchdef?.signal)
         const status = null == net.failStatus ? 503 : net.failStatus
         return {
           status,
@@ -297,7 +326,7 @@ class TestFeature extends BaseFeature {
           headers: { forEach(_cb: any) { }, get(_k: string) { return undefined } },
         }
       }
-      await sleep(pickLatency())
+      await sleep(pickLatency(), fetchdef?.signal)
       return inner(ctx, url, fetchdef)
     }
   }

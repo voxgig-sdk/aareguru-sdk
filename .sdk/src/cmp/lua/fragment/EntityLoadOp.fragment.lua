@@ -7,7 +7,7 @@ local entityLoadOp = {}
 
 ---@param reqmatch EntityNameLoadMatch
 ---@param ctrl? table
----@return EntityName
+---@return EntyClass
 ---@return string? err
 function EntyClass:load(reqmatch, ctrl)
   local utility = self._utility

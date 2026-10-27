@@ -14,7 +14,9 @@ The Go SDK uses \`map[string]any\` throughout rather than typed structs.
 This mirrors the dynamic nature of the API and keeps the SDK
 flexible \u2014 no code generation is needed when the API schema changes.
 
-Use \`core.ToMapAny()\` to safely cast results and nested data.
+An operation returns the entity, and its \`Data()\` returns the record. Use
+\`core.ToMapAny()\` to safely cast that record, or data nested in it, to
+\`map[string]any\`: it returns \`nil\` for anything else, an entity included.
 
 ### Package structure
 

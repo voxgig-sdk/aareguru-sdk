@@ -23,9 +23,9 @@ func (e *EntyClass) Create(reqdata map[string]any, ctrl map[string]any) (any, er
 	return e.runOp(ctx, func() {
 		if ctx.Result != nil {
 			if ctx.Result.Resdata != nil {
-				e.data = core.ToMapAny(vs.Clone(ctx.Result.Resdata))
-				if e.data == nil {
-					e.data = map[string]any{}
+				e.data = map[string]any{}
+				if data := core.ToMapAny(vs.Clone(ctx.Result.Resdata)); data != nil {
+					e.data = data
 				}
 			}
 		}

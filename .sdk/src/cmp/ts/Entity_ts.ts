@@ -4,7 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, each, camelify, names,
   File, Content, Folder, Fragment, Line, FeatureHook, Slot,
-  opTypeName, entityClassName, entityCollection, tsSafeTypeName,
+  opTypeName, entityClassName, entityCollection, tsTypeName,
 } from '@voxgig/sdkgen'
 
 import {
@@ -33,13 +33,13 @@ const Entity = cmp(function Entity(props: any) {
   names(entrep, entity.Name, 'EntityName')
 
   // A TS/JS global (Record, Array, Promise, ...) would shadow itself for
-  // the rest of the file — see tsSafeTypeName. The runtime `this.Name`
+  // the rest of the file — see tsTypeName. The runtime `this.Name`
   // string stays entity.Name; only the TYPE reference is ever renamed.
-  const dataType = tsSafeTypeName(entity.Name)
+  const dataType = tsTypeName(entity, entityColl)
 
   const typeNames = [dataType]
   const opnamesAll = Object.keys(entity.op || {})
-  ;['load', 'list', 'create', 'update', 'remove'].forEach((opname: string) => {
+  ;['load', 'list', 'create', 'update', 'patch', 'remove'].forEach((opname: string) => {
     if (opnamesAll.includes(opname)) {
       typeNames.push(opTypeName(entity.Name, opname))
     }
@@ -57,7 +57,7 @@ const Entity = cmp(function Entity(props: any) {
       const opnames = Object.keys(entity.op || {})
 
       const opfrags =
-        (['load', 'list', 'create', 'update', 'remove']
+        (['load', 'list', 'create', 'update', 'patch', 'remove']
           .reduce((a: any, opname: string) =>
           (a['#' + camelify(opname) + 'Op'] =
             !opnames.includes(opname) ? '' : ({ indent }: any) => {

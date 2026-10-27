@@ -4,9 +4,9 @@ exports.TimeoutFeature = void 0;
 const BaseFeature_1 = require("../base/BaseFeature");
 // Per-request timeout. Wraps the active transport and races each attempt
 // against a deadline; if the deadline wins, the request resolves to a
-// timeout error instead of hanging. An `AbortController` is signalled (via
-// `fetchdef.signal`) so a live `fetch` is actually cancelled, while the
-// mock transport simply loses the race.
+// timeout error instead of hanging. The `AbortController` behind
+// `fetchdef.signal` cancels a live `fetch` at the deadline or at the caller's
+// own abort, while the mock transport simply loses the race.
 class TimeoutFeature extends BaseFeature_1.BaseFeature {
     version = '0.0.1';
     name = 'timeout';
@@ -34,9 +34,20 @@ class TimeoutFeature extends BaseFeature_1.BaseFeature {
         }
         // Attach an abort signal so a real fetch can be cancelled on timeout.
         let controller;
+        const caller = fetchdef.signal;
+        let follow;
         if ('function' === typeof globalThis.AbortController) {
             controller = new globalThis.AbortController();
             fetchdef = { ...fetchdef, signal: controller.signal };
+            if (null != caller) {
+                follow = () => controller.abort(caller.reason);
+                if (caller.aborted) {
+                    follow();
+                }
+                else {
+                    caller.addEventListener('abort', follow, { once: true });
+                }
+            }
         }
         let timer;
         const timeout = new Promise((resolve) => {
@@ -70,6 +81,9 @@ class TimeoutFeature extends BaseFeature_1.BaseFeature {
             }
             else if (null != timer) {
                 clearTimeout(timer);
+            }
+            if (null != follow) {
+                caller.removeEventListener('abort', follow);
             }
         }
     }

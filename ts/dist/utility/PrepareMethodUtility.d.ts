@@ -1,3 +1,4 @@
 import { Context } from '../types';
 declare function prepareMethod(ctx: Context): any;
-export { prepareMethod };
+declare function allowed(list: any, item: any): boolean;
+export { allowed, prepareMethod };

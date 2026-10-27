@@ -1,5 +1,5 @@
 
-import { cmp, Content } from '@voxgig/sdkgen'
+import { cmp, Content, modelText } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -10,7 +10,7 @@ import {
 
 const ReadmeIntro = cmp(function ReadmeIntro(props: any) {
   const { target, ctx$: { model } } = props
-  const info = (model.main && model.main.kit && model.main.kit.info) || {}
+  const info = modelText(model)
   const tagline = info.tagline || ''
 
   // Derive a real entity accessor from the model for the semantic-entity
@@ -23,7 +23,7 @@ const ReadmeIntro = cmp(function ReadmeIntro(props: any) {
   // expose (a read-only entity has just List+Load); never claim
   // Create/Update/Remove exist when no entity has them. Go method names are
   // capitalised, so present the ops that way.
-  const CANON_OPS = ['list', 'load', 'create', 'update', 'remove']
+  const CANON_OPS = ['list', 'load', 'create', 'update', 'patch', 'remove']
   const cap = (o: string) => o.charAt(0).toUpperCase() + o.slice(1)
   const opSet = new Set<string>()
   Object.values(entity || {}).forEach((e: any) => {

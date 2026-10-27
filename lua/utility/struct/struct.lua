@@ -1,5 +1,5 @@
 -- VENDORED: @voxgig/struct 0.1.1 (lua/src/struct.lua)
--- Source: https://github.com/voxgig/struct @ 3a42881b1d26c75ebbed9f1897f0ba94cf3cf780  [tag: sdk-20260925-1316-0]
+-- Source: https://github.com/voxgig/struct @ 621057e24eb5f3e3da6fd3820ff24a36aaacb21b  [tag: sdk-20261016-0845-0]
 -- License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 -- Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE.
 
@@ -1603,18 +1603,19 @@ local function merge(val, maxdepth)
           end
           local tval = dst[pI + 1]
 
-          -- Destination empty, so create node (unless override is class instance).
-          if NONE == tval and 0 == (T_instance & typify(bval)) then
-            cur[pI + 1] = islist(bval) and setmetatable({}, { __jsontype = "array" }) or {}
-
           -- Matching override and destination so continue with their values.
-          elseif typify(bval) == typify(tval) then
+          if typify(bval) == typify(tval) then
             cur[pI + 1] = tval
 
-          -- Override wins.
+          -- Otherwise the override wins: a plain node is copied, taking
+          -- nothing from the destination, so no later merge writes into it.
+          elseif 0 == (T_instance & typify(bval)) then
+            cur[pI + 1] = islist(bval) and setmetatable({}, { __jsontype = "array" }) or {}
+            dst[pI + 1] = NONE
+
+          -- A class instance is kept as is, so there is nothing to descend.
           else
             cur[pI + 1] = bval
-            -- No need to descend when override wins.
             bval = NONE
           end
         end
@@ -1622,13 +1623,23 @@ local function merge(val, maxdepth)
         return bval
       end
 
-      local function after(key, _aval, _parent, path)
+      local function after(key, _aval, parent, path)
         local cI = size(path)
         local target = cur[cI]
         local value = cur[cI + 1]
 
         setprop(target, key, value)
-        return value
+
+        if 0 == cI then
+          return value
+        end
+
+        -- walk writes this back into the override, so it is the override's
+        -- own child. Read directly: getprop scans a list for each index.
+        if islist(parent) then
+          return parent[tonumber(key) + 1]
+        end
+        return parent[key]
       end
 
       -- Walk overriding node, creating paths in output as needed.
@@ -2843,6 +2854,16 @@ end
 ----------------------------------------------------------
 local validate
 
+-- Join the alternatives, lowering every `$NAME` marker, nested ones included.
+local function describeAlternatives(tvals)
+  local valdesc = {}
+  for _, v in ipairs(tvals) do
+    table.insert(valdesc, stringify(v))
+  end
+  local out = table.concat(valdesc, ", "):gsub("`%$([A-Z]+)`", string.lower)
+  return out
+end
+
 -- Match at least one of the specified shapes.
 -- Syntax: ['`$ONE`', alt0, alt1, ...]
 local function validate_ONE(inj, _val, _ref, store)
@@ -2901,14 +2922,7 @@ local function validate_ONE(inj, _val, _ref, store)
     end
 
     -- There was no match.
-    local valdesc = {}
-    for _, v in ipairs(tvals) do
-      table.insert(valdesc, stringify(v))
-    end
-    local valdesc_str = table.concat(valdesc, ", ")
-    valdesc_str = valdesc_str:gsub("`%$([A-Z]+)`", function(p1)
-      return string.lower(p1)
-    end)
+    local valdesc_str = describeAlternatives(tvals)
 
     table.insert(
       inj.errs,
@@ -2977,11 +2991,7 @@ local function validate_EXACT(inj)
       end
     end
 
-    local valdesc = {}
-    for _, v in ipairs(tvals) do
-      table.insert(valdesc, stringify(v))
-    end
-    local valdesc_str = table.concat(valdesc, ", ")
+    local valdesc_str = describeAlternatives(tvals)
 
     table.insert(
       inj.errs,

@@ -15,6 +15,9 @@ import {
   authorInfo,
   targetFeatures, envName,
   hasLiveScenarios,
+  npmScriptRm,
+  npmScriptEnv,
+  npmScriptTestSome,
 } from '@voxgig/sdkgen'
 
 
@@ -73,35 +76,40 @@ const Package = cmp(async function Package(props: any) {
     type: 'commonjs',
     types: `dist/${SdkName}SDK.d.ts`,
 
-    files: ['dist', 'src', 'README.md'],
+    files: ['dist', '!dist/**/*.tsbuildinfo', 'src', 'README.md', 'REFERENCE.md'],
     scripts: {
       ...(hasLiveScenarios(model) ? {
-        'test:live': `npm run build && ${envName(model)}_TEST_LIVE=TRUE node --test dist-test/live.test.js`,
+        'test:live': 'npm run build && node ' +
+          npmScriptEnv(envName(model) + '_TEST_LIVE', 'TRUE') + ' --test dist-test/live.test.js',
       } : {}),
 
       'pretest': 'npm run build',
-      'test': 'node --enable-source-maps --test-concurrency=1 --test \'dist-test/**/*.test.js\'',
-      'test-some': 'node --enable-source-maps --experimental-test-isolation=none ' +
-        '--test-name-pattern=\"$TEST_PATTERN\" --test \'dist-test/**/*.test.js\'',
-      'test-utility': 'node --enable-source-maps --test test/utility/*.test.ts',
+      'test': 'node --enable-source-maps --test-concurrency=1 --test "dist-test/**/*.test.js"',
+      'test-some': npmScriptTestSome(
+        ['--enable-source-maps', '--experimental-test-isolation=none'], 'dist-test/**/*.test.js'),
+      'pretest-utility': 'npm run build',
+      'test-utility': 'node --enable-source-maps --test "dist-test/utility/*.test.js"',
 
       'pretest-coverage': 'npm run build',
       'test-coverage': 'node --test-concurrency=1 --experimental-test-coverage ' +
-        '--test-coverage-exclude=\'**/dist-test/**\' ' +
+        '--test-coverage-exclude="**/dist-test/**" ' +
         '--test-coverage-lines=85 --test-coverage-branches=68 --test-coverage-functions=88 ' +
-        '--test \'dist-test/**/*.test.js\'',
+        '--test "dist-test/**/*.test.js"',
 
       "watch": "tsc --build src test -w",
       // Prune compiled output before building: `tsc --build` is incremental and
       // never deletes .js for a removed source, so entity tests that the model
       // folds away would otherwise keep running from stale dist-test/ and fail.
-      "build": "rm -rf dist dist-test && tsc --build src test",
-      "clean": "rm -rf node_modules yarn.lock package-lock.json dist dist-test",
+      "build": npmScriptRm(['dist', 'dist-test']) + ' && tsc --build src test',
+      "clean": npmScriptRm(['node_modules', 'yarn.lock', 'package-lock.json', 'dist', 'dist-test']),
       "reset": "npm run clean && npm i && npm run build && npm test",
     },
     author,
 
     license: 'MIT',
+
+    // node:module strips the README examples' types under TypeScript 7.
+    engines: { node: '>=22.13' },
 
     dependencies: deps.prod,
     peerDependencies: deps.peer,

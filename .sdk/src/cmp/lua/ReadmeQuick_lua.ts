@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, luaKey } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, luaKey, listMatchArg, matchExampleItems, requiredItems, litString, requestExampleItems, sendsId } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -57,10 +57,11 @@ local client = ${ctor}
     // placeholder would not parse). Non-identifier keys use bracket syntax.
     const luaLit = (type: any, placeholder: string = 'example'): string => {
       const k = canonScalarKey(type)
+      if ('NULL' === k) return 'nil'
       if ('INTEGER' === k || 'NUMBER' === k) return '1'
       if ('BOOLEAN' === k) return 'true'
       if ('ARRAY' === k || 'OBJECT' === k) return '{}'
-      return `"${placeholder}"`
+      return litString('lua', placeholder)
     }
 
     // MODEL-DRIVEN display field: the list example must reference a field
@@ -77,19 +78,24 @@ local client = ${ctor}
       fields.find((f: any) => f && !idNames.has(f.n) && isStringField(f)) ||
       fields.find((f: any) => f && !idNames.has(f.n))
     const displayField = displayFieldObj ? displayFieldObj.name : null
-    const idCol = dataIdF ? `item["${dataIdF}"]` : null
-    const dispCol = displayField ? `item["${displayField}"]` : null
+    const idCol = dataIdF ? `rec[${litString('lua', dataIdF)}]` : null
+    const dispCol = displayField ? `rec[${litString('lua', displayField)}]` : null
     const printCols = [idCol, dispCol].filter(Boolean).join(', ')
-    const printLine = printCols ? `  print(${printCols})` : `  print(item)`
+    // A record with neither column prints every field it holds.
+    const printRecord = (v: string, cols: string, pad: string): string => cols
+      ? `${pad}local rec = ${v}:data_get()\n${pad}print(${cols})`
+      : `${pad}for k, val in pairs(${v}:data_get()) do print(k, val) end`
+    const printLine = printRecord('item', printCols, '  ')
 
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
 
-Entity operations return \`(value, err)\`. For \`list\`, \`value\` is the
-array of records itself — iterate it directly (there is no wrapper).
+Entity operations return \`(value, err)\`. For \`list\`, \`value\` is an
+array of entities, one per record — iterate it directly (there is no
+wrapper), and read each record with \`data_get()\`.
 
 \`\`\`lua
-local ${eVar}s, err = client:${eName}():list()
+local ${eVar}s, err = client:${eName}():list(${listMatchArg('lua', exampleEntity)})
 if err then error(err) end
 
 for _, item in ipairs(${eVar}s) do
@@ -104,10 +110,10 @@ end
       const neName = nom(nestedEntity, 'Name')
       const neArticle = /^[aeiou]/i.test(neName) ? "an" : "a"
       const neVar = exampleVarName(neName.toLowerCase(), 'lua')
+      const neDataIdF = entityDataIdField(nestedEntity)
 
       const neIdF = entityIdField(nestedEntity)
-      const neRequired = opRequestShape(nestedEntity, 'load').items
-        .filter((it: any) => !it.optional)
+      const neRequired = requiredItems(nestedEntity, 'load')
         .sort((a: any, b: any) =>
           (a.name === neIdF ? 1 : 0) - (b.name === neIdF ? 1 : 0))
       const parentItem = neRequired.find((it: any) => it.name !== neIdF) as any
@@ -121,17 +127,18 @@ end
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 
+\`load\` returns the entity; \`data_get()\` reads its record.
+
 \`\`\`lua
 local ${neVar}, err = client:${neName}():load({ ${neMatch.join(', ')} })
 if err then error(err) end
-print(${neVar})
+${printRecord(neVar, neDataIdF ? `rec[${litString('lua', neDataIdF)}]` : '', '')}
 \`\`\`
 
 `)
     }
     else if (opnames.includes('load')) {
-      const loadRequired = opRequestShape(exampleEntity, 'load').items
-        .filter((it: any) => !it.optional || it.name === idF)
+      const loadRequired = matchExampleItems(exampleEntity, 'load', idF)
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadRequired.length
@@ -142,17 +149,19 @@ print(${neVar})
 
       Content(`### 3. Load ${article} ${eName.toLowerCase()}
 
+\`load\` returns the entity; \`data_get()\` reads its record.
+
 \`\`\`lua
 local ${eVar}, err = client:${eName}():load(${loadArg})
 if err then error(err) end
-print(${eVar})
+${printRecord(eVar, printCols, '')}
 \`\`\`
 
 `)
     }
 
     const examplePairs = (opname: string): string[] => {
-      const items = opRequestShape(exampleEntity, opname).items
+      const items = requestExampleItems(exampleEntity, opname)
         .filter((it: any) => !idNames.has(it.name) ||
           ('create' === opname && !it.optional))
       const required = items.filter((it: any) => !it.optional)
@@ -169,10 +178,11 @@ print(${eVar})
       return it && it.type
     }
     const idValueFor = (opname: string): string => (null != dataIdF && opnames.includes('create'))
-      ? `created:data_get()["${dataIdF}"]`
+      ? `created:data_get()[${litString('lua', dataIdF)}]`
       : luaLit(idParamType(opname), 'example_id')
 
-    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
+    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
+      opnames.includes('remove')) {
       Content(`### 4. Create, update, and remove
 
 \`\`\`lua
@@ -185,15 +195,21 @@ if err then error(err) end
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`${idF} = ${idValueFor('update')}`] : []).concat(examplePairs('update'))
+        const updatePairs = (sendsId(exampleEntity, 'update', idF) ? [`${luaKey(idF)} = ${idValueFor('update')}`] : []).concat(examplePairs('update'))
         Content(`-- Update
 client:${eName}():update({ ${updatePairs.join(', ')} })
 
 `)
       }
+      if (opnames.includes('patch')) {
+        const patchPairs = (sendsId(exampleEntity, 'patch', idF) ? [`${luaKey(idF)} = ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
+        Content(`-- Patch — sends only the fields given
+client:${eName}():patch({ ${patchPairs.join(', ')} })
+
+`)
+      }
       if (opnames.includes('remove')) {
-        const removePairs = opRequestShape(exampleEntity, 'remove').items
-          .filter((it: any) => !it.optional || it.name === idF)
+        const removePairs = matchExampleItems(exampleEntity, 'remove', idF)
           .sort((a: any, b: any) =>
             (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
           .map((it: any) => it.name === idF

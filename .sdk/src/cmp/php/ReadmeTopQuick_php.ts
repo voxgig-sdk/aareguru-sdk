@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, phpEntityAccessor } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, phpEntityAccessor, listMatchArg, matchExampleItems, litString, entityOps } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -13,10 +13,11 @@ import {
 // doc test EXECUTES this block, so a comment placeholder would break it).
 function phpLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'null'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k || 'OBJECT' === k) return '[]'
-  return `"${placeholder}"`
+  return litString('php', placeholder)
 }
 
 
@@ -42,7 +43,7 @@ $client = ${ctor};
 
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
-    const opnames = Object.keys(exampleEntity.op || {})
+    const opnames = entityOps(exampleEntity)
     // Model-driven id key: null when the entity has no id-like field, in which
     // case the load example takes no match argument.
     const idF = entityIdField(exampleEntity)
@@ -50,8 +51,8 @@ $client = ${ctor};
     let hasCall = false
 
     if (opnames.includes('list')) {
-      Content(`// List all ${eName.toLowerCase()}s (returns an array; throws on error)
-$${eName.toLowerCase()}s = $client->${phpEntityAccessor(eName)}()->list();
+      Content(`// List all ${eName.toLowerCase()}s (an array of entities, one per record; throws on error)
+$${eName.toLowerCase()}s = $client->${phpEntityAccessor(eName)}()->list(${listMatchArg('php', exampleEntity)});
 print_r(array_map(fn($item) => $item->data_get(), $${eName.toLowerCase()}s));
 `)
       hasCall = true
@@ -61,17 +62,16 @@ print_r(array_map(fn($item) => $item->data_get(), $${eName.toLowerCase()}s));
       // Every REQUIRED load-match key (id first, then parent path params like
       // page_id) — the same shape the runtime resolves path params from, so
       // the example always works.
-      const loadItems = opRequestShape(exampleEntity, 'load').items
-        .filter((it: any) => !it.optional || it.name === idF)
+      const loadItems = matchExampleItems(exampleEntity, 'load', idF)
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? `[${loadItems.map((it: any) =>
-          `"${it.name}" => ${phpLit(it.type,
+          `${litString('php', it.name)} => ${phpLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')}]`
         : ''
       Content(`
-// Load a specific ${eName.toLowerCase()} (returns the ENTITY; call data_get() for the record; throws on error)
+// Load a specific ${eName.toLowerCase()} (returns the entity; data_get() reads its record; throws on error)
 $${eName.toLowerCase()} = $client->${phpEntityAccessor(eName)}()->load(${loadArg});
 print_r($${eName.toLowerCase()}->data_get());
 `)

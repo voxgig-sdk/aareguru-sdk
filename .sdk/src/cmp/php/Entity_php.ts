@@ -21,9 +21,10 @@ const Entity = cmp(function Entity(props: any) {
 
   // Collision-free entity CLASS name (see entityClassName): normally
   // `<Name>Entity`, disambiguated when it would clash with another entity's
-  // data-type name. The snake-cased source-file name is unaffected.
+  // data-type name, compared as PHP does, ignoring case. The snake-cased
+  // source-file name is unaffected.
   const entityColl = entityCollection(model)
-  const cls = entityClassName(entity, entityColl)
+  const cls = entityClassName(entity, entityColl, true)
 
   const entrep = {
     ...stdrep,
@@ -41,7 +42,7 @@ const Entity = cmp(function Entity(props: any) {
       const opnames = Object.keys(entity.op || {})
 
       const opfrags =
-        (['load', 'list', 'create', 'update', 'remove']
+        (['load', 'list', 'create', 'update', 'patch', 'remove']
           .reduce((a: any, opname: string) =>
           (a['// #' + camelify(opname) + 'Op'] =
             !opnames.includes(opname) ? '' : ({ indent }: any) => {

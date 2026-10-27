@@ -23,9 +23,9 @@ pip install -e .
 
   // Publish pending: not yet on PyPI. Install from the git release tag or
   // from a local source checkout.
-  const { releasesUrl } = repoInfo(model)
-  Content(`This package is not yet published to PyPI. Install it from the GitHub
-release tag (\`${target.name}/vX.Y.Z\`, see [Releases](${releasesUrl})) or
+  const { hostName, tagsUrl } = repoInfo(model)
+  Content(`This package is not yet published to PyPI. Install it from the ${hostName}
+release tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})) or
 from a source checkout:
 
 \`\`\`bash

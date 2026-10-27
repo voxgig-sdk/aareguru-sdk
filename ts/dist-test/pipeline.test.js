@@ -59,9 +59,34 @@ function utilWith(fetcher) {
         const preset = { method: 'GET' };
         (0, node_assert_1.strictEqual)(__1.stdutil.makePoint(base({ out: { point: preset } })), preset);
     });
+    (0, node_test_1.test)('an allow list names whole operations, in any case', () => {
+        const point = { method: 'GET', parts: ['a'] };
+        const op = { name: 'load', points: [point] };
+        (0, node_assert_1.strictEqual)(__1.stdutil.makePoint(base({ op, options: { allow: { op: 'reload,unload' } } })).code, 'point_op_allow');
+        (0, node_assert_1.strictEqual)(__1.stdutil.makePoint(base({ op, options: { allow: { op: 'list, LOAD' } } })), point);
+    });
+    (0, node_test_1.test)('an allow list names whole methods', () => {
+        const ctx = base({
+            op: { name: 'update', points: [] },
+            point: { method: 'pu', parts: ['a'] },
+            options: { allow: { method: 'GET,PUT' }, base: 'http://x' },
+        });
+        (0, node_assert_1.strictEqual)(__1.stdutil.makeSpec(ctx).code, 'spec_method_allow');
+    });
     (0, node_test_1.test)('makeSpec short-circuits a feature-supplied spec', () => {
         const preset = { method: 'GET' };
         (0, node_assert_1.strictEqual)(__1.stdutil.makeSpec(base({ out: { spec: preset } })), preset);
+    });
+});
+(0, node_test_1.describe)('pipeline:direct', () => {
+    (0, node_test_1.test)('direct and graphql answer a method allow.method refuses with a result map', async () => {
+        const sdk = __1.AareguruSDK.test({}, { allow: { method: 'GET' } });
+        const direct = await sdk.direct({ path: '/a', method: 'POST' });
+        (0, node_assert_1.strictEqual)(direct.ok, false);
+        (0, node_assert_1.strictEqual)(direct.err.code, 'spec_method_allow');
+        const graphql = await sdk.graphql('{ a }');
+        (0, node_assert_1.strictEqual)(graphql.ok, false);
+        (0, node_assert_1.strictEqual)(graphql.err.code, 'spec_method_allow');
     });
 });
 (0, node_test_1.describe)('pipeline:makeResponse', () => {
@@ -258,6 +283,28 @@ function utilWith(fetcher) {
         (0, node_assert_1.strictEqual)(o.__derived__.featureorder.join(','), 'cache,retry');
     });
 });
+(0, node_test_1.describe)('pipeline:makeOptions', () => {
+    (0, node_test_1.test)('clients built from one options object keep its maps and see its edits', () => {
+        const probe = { x: 1 };
+        const testopts = { active: true };
+        const options = { entity: { probe }, feature: { test: testopts } };
+        const first = new __1.AareguruSDK(options);
+        (0, node_assert_1.strictEqual)(options.entity.probe, probe);
+        (0, node_assert_1.strictEqual)(options.feature.test, testopts);
+        probe.x = 2;
+        const second = new __1.AareguruSDK(options);
+        (0, node_assert_1.strictEqual)(second.options().entity.probe.x, 2);
+        (0, node_assert_1.strictEqual)(first.options().entity.probe.x, 1);
+    });
+    (0, node_test_1.test)('a config option does not reach the caller\'s maps', () => {
+        const options = { entity: { probe: { x: 1 } } };
+        const ctx = { utility: __1.stdutil, options, config: { options: { entity: { probe: { y: 5 } } } } };
+        const o = __1.stdutil.makeOptions(ctx);
+        (0, node_assert_1.strictEqual)(o.entity.probe.x, 1);
+        (0, node_assert_1.strictEqual)(o.entity.probe.y, 5);
+        (0, node_assert_1.deepStrictEqual)(options, { entity: { probe: { x: 1 } } });
+    });
+});
 // A cookie credential as prepareAuth writes it: `<scheme>=K` for the probe
 // key, with no scheme prefix and nothing else in the bag.
 const COOKIE_PAIR = /^[^=;]+=K$/;
@@ -396,6 +443,25 @@ const COOKIE_PAIR = /^[^=;]+=K$/;
         const ctx = base({ response: { json: async () => ({ a: 1 }), body: null }, result: {} });
         await __1.stdutil.resultBody(ctx);
         (0, node_assert_1.strictEqual)(ctx.result.body, undefined);
+    });
+    // The agent and the body preview may carry a registered value; the body is
+    // cleaned before the bound so a split value cannot leave its prefix.
+    (0, node_test_1.test)('resultBody masks a registered value in the agent and across the preview bound', async () => {
+        const secret = 'PIPELINE-SECRET-a1b2c3d4e5f6';
+        const text = 'x'.repeat(150) + secret + 'y'.repeat(100);
+        const ctx = base({
+            options: { __derived__: { clean: { active: true, keys: [], values: [], mask: '[redacted]', hint: 0, min: 4 } } },
+            spec: { headers: { 'user-agent': 'Probe ' + secret } },
+            response: { body: 'body', json: async () => { throw Object.assign(new SyntaxError('bad json'), { text }); } },
+            result: { status: 200, headers: { 'content-type': 'text/html' } },
+        });
+        __1.stdutil.cleanAdd(ctx, secret);
+        await __1.stdutil.resultBody(ctx);
+        const message = String(ctx.result.err.message);
+        (0, node_assert_1.strictEqual)(ctx.result.err.code, 'response_content_type');
+        (0, node_assert_1.ok)(message.includes('user-agent Probe [redacted]'), message);
+        (0, node_assert_1.ok)(message.includes('body: ' + 'x'.repeat(150) + '[redacted]'), message);
+        (0, node_assert_1.ok)(!message.includes(secret.slice(0, 8)), message);
     });
 });
 //# sourceMappingURL=pipeline.test.js.map

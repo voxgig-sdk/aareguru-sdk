@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.makeResponse = makeResponse;
+const MakeRequestUtility_1 = require("./MakeRequestUtility");
 async function makeResponse(ctx) {
     // PreResponse feature hook has already provided a result.
     if (ctx.out.response) {
@@ -39,7 +40,7 @@ async function makeResponse(ctx) {
         }
     }
     catch (err) {
-        result.err = err;
+        result.err = (0, MakeRequestUtility_1.abortError)(ctx, err);
     }
     if (ctx.ctrl.explain) {
         ctx.ctrl.explain.result = result;

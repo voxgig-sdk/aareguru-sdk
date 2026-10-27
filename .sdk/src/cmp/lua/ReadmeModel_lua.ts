@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, entityIdField } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityIdField, listMatchArg, matchExampleItems, litPair, litFor } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -17,20 +17,21 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   entityList.forEach((e: any) => Object.keys(e.op || {})
     .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
   const opRowDefs: Record<string, string> = {
-    load: '| `load` | `(reqmatch, ctrl) -> any, err` | Load a single entity by match criteria. |',
-    list: '| `list` | `(reqmatch, ctrl) -> any, err` | List entities matching the criteria. |',
-    create: '| `create` | `(reqdata, ctrl) -> any, err` | Create a new entity. |',
-    update: '| `update` | `(reqdata, ctrl) -> any, err` | Update an existing entity. |',
-    remove: '| `remove` | `(reqmatch, ctrl) -> any, err` | Remove an entity. |',
+    load: '| `load` | `(reqmatch, ctrl) -> any, err` | Load a single entity by match criteria, and return it. |',
+    list: '| `list` | `(reqmatch, ctrl) -> any, err` | List entities matching the criteria, one per record. |',
+    create: '| `create` | `(reqdata, ctrl) -> any, err` | Create a new entity, and return it. |',
+    update: '| `update` | `(reqdata, ctrl) -> any, err` | Update an existing entity, and return it. |',
+    patch: '| `patch` | `(reqdata, ctrl) -> any, err` | Change part of an existing entity, and return it. |',
+    remove: '| `remove` | `(reqmatch, ctrl) -> any, err` | Remove an entity, and return it marked as deleted. |',
   }
-  const opRows = ['load', 'list', 'create', 'update', 'remove']
+  const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
 
-  const recordOps = ['load', 'create', 'update', 'remove'].filter((o) => opUnion.has(o))
+  const recordOps = ['load', 'create', 'update', 'patch', 'remove'].filter((o) => opUnion.has(o))
     .map((o) => '`' + o + '`')
   const resultRows: string[] = []
-  if (recordOps.length) resultRows.push('| ' + recordOps.join(' / ') + ' | the entity record (a `table`) |')
-  if (opUnion.has('list')) resultRows.push('| `list` | an array (`table`) of entity records |')
+  if (recordOps.length) resultRows.push('| ' + recordOps.join(' / ') + ' | the entity, whose `data_get()` reads its record (a `table`) |')
+  if (opUnion.has('list')) resultRows.push('| `list` | an array (`table`) of entities, one per record |')
   const resultShapeRows = resultRows.join('\n')
 
   // The Result-shape illustration calls `load`, so the example entity must
@@ -44,6 +45,10 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const eLower = String(exEnt.name || 'entity').toLowerCase()
   const hasLoad = null != (exEnt.op || {}).load
   const idF = entityIdField(exEnt)
+  const loadItems = hasLoad ? matchExampleItems(exEnt, 'load', idF)
+    .sort((a: any, b: any) => (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1)) : []
+  const loadArg = 0 < loadItems.length ? `{ ${loadItems.map((it: any) =>
+    litPair('lua', it.name, it.name === idF ? '"example_id"' : litFor('lua', it.type))).join(', ')} }` : ''
 
   const apikeyOptionRow = isAuthActive(model)
     ? '| `apikey` | `string` | API key for authentication. |\n'
@@ -108,8 +113,8 @@ ${opRows}
 
 ### Result shape
 
-Entity operations return \`(value, err)\`. The \`value\` is the operation's
-data **directly** — there is no wrapper:
+Entity operations return \`(value, err)\`. The \`value\` is the entity
+itself — there is no wrapper:
 
 | Operation | \`value\` |
 | --- | --- |
@@ -118,9 +123,9 @@ ${resultShapeRows}
 Check \`err\` first (it is non-\`nil\` on failure), then use \`value\`:
 
     local ${eLower}, err = client:${eName}():${hasLoad ? 'load' : 'list'}(${
-      hasLoad && idF ? `{ ${idF} = "example_id" }` : ''})
+      hasLoad ? loadArg : listMatchArg('lua', exEnt)})
     if err then error(err) end
-    -- ${eLower} is the ${hasLoad ? 'loaded record' : 'record list'}
+    -- ${eLower} is ${hasLoad ? 'the loaded entity' : 'an array of entities, one per record'}
 
 Only \`direct()\` returns a response envelope — a \`table\` with \`ok\`,
 \`status\`, \`headers\`, and \`data\` keys.

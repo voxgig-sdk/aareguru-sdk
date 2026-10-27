@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName , targetFeatures } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, safeVarName, exampleVarName , targetFeatures, opNeedsAction, bodyNote, matchExampleItems, litString, requestExampleItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -7,45 +7,53 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
+import { rbListArgs } from './utility_rb'
+
 
 // A type-correct Ruby literal for a field's canonical type — the create body
 // is EXECUTED by the doc test, so it must carry a real value per field.
 // Strings render the quoted placeholder.
 function rbLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'nil'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k) return '[]'
   if ('OBJECT' === k) return '{}'
-  return `"${placeholder}"`
+  return litString('rb', placeholder)
 }
 
 
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
     sig: 'load(reqmatch, ctrl = nil) -> result',
-    returns: 'result',
-    desc: 'Load a single entity matching the given criteria. Raises on error.',
+    returns: 'the entity',
+    desc: 'Load a single entity matching the given criteria. Returns the entity, whose record `data_get` reads, and raises on error.',
   },
   list: {
     sig: 'list(reqmatch = nil, ctrl = nil) -> Array',
-    returns: 'Array',
-    desc: 'List entities matching the given criteria (call with no argument to list all). Returns an array. Raises on error.',
+    returns: 'Array of entities, one per record',
+    desc: 'List entities matching the given criteria (call with no argument to list all). Returns an array of entities, one per record; `data_get` reads each record. Raises on error.',
   },
   create: {
     sig: 'create(reqdata, ctrl = nil) -> result',
-    returns: 'result',
-    desc: 'Create a new entity with the given data. Raises on error.',
+    returns: 'the created entity',
+    desc: 'Create a new entity with the given data. Returns the created entity and raises on error.',
   },
   update: {
     sig: 'update(reqdata, ctrl = nil) -> result',
-    returns: 'result',
-    desc: 'Update an existing entity. The data must include the entity `id`. Raises on error.',
+    returns: 'the updated entity',
+    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity and raises on error.',
+  },
+  patch: {
+    sig: 'patch(reqdata, ctrl = nil) -> result',
+    returns: 'the patched entity',
+    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity and raises on error.',
   },
   remove: {
     sig: 'remove(reqmatch, ctrl = nil) -> result',
-    returns: 'result',
-    desc: 'Remove the entity matching the given criteria. Raises on error.',
+    returns: 'the removed entity',
+    desc: 'Remove the entity matching the given criteria. Returns the entity, marked as deleted, and raises on error.',
   },
 }
 
@@ -218,7 +226,7 @@ ${eVar} = client.${ent.Name}
         if (hasFieldOps) {
           // Only emit columns for operations this entity actually exposes —
           // never advertise a create/update/remove column the entity lacks.
-          const opcols = ['load', 'list', 'create', 'update', 'remove']
+          const opcols = ['load', 'list', 'create', 'update', 'patch', 'remove']
             .filter((op: string) => opnames.includes(op) && ent.op[op]?.active !== false)
           Content(`### Field Usage by Operation
 
@@ -258,17 +266,20 @@ ${info.desc}
 
 `)
 
+          if (opNeedsAction(ent.op[opname])) {
+            return
+          }
+
           if ('load' === opname || 'remove' === opname) {
             // The id key plus every REQUIRED match key (parent path params
             // like page_id) — the same shape the runtime resolves path
             // params from, so the example always works.
-            const matchItems = opRequestShape(ent, opname).items
-              .filter((it: any) => !it.optional || it.name === idF)
+            const matchItems = matchExampleItems(ent, opname, idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const arg = 0 < matchItems.length
               ? `{ ${matchItems.map((it: any) =>
-                `"${it.name}" => ${rbLit(it.type,
+                `${litString('rb', it.name)} => ${rbLit(it.type,
                   it.name === idF ? ent.name + '_id' : it.name)}`).join(', ')} }`
               : ''
             Content(`\`\`\`ruby
@@ -279,7 +290,8 @@ result = client.${ent.Name}.${opname}(${arg})
           }
           else if ('list' === opname) {
             Content(`\`\`\`ruby
-results = client.${ent.Name}.list
+results = client.${ent.Name}.list${rbListArgs(ent)}
+results.each { |item| puts item.data_get }
 \`\`\`
 
 `)
@@ -290,13 +302,13 @@ results = client.${ent.Name}.list
             // a required id and parent keys like page_id — with a real,
             // executable literal (the doc test RUNS this block, so a comment
             // placeholder would break it).
-            const createItems = opRequestShape(ent, 'create').items
+            const createItems = requestExampleItems(ent, 'create')
               .filter((it: any) => !it.optional)
             Content(`\`\`\`ruby
 result = client.${ent.Name}.create({
 `)
             createItems.map((it: any) => {
-              Content(`  "${it.name}" => ${rbLit(it.type, 'example_' + it.name)}, # ${canonToType(it.type, target.name)}
+              Content(`  ${litString('rb', it.name)} => ${rbLit(it.type, 'example_' + it.name)}, # ${canonToType(it.type, target.name)}
 `)
             })
             Content(`})
@@ -304,23 +316,31 @@ result = client.${ent.Name}.create({
 
 `)
           }
-          else if ('update' === opname) {
+          else if ('update' === opname || 'patch' === opname) {
             // The id key plus every REQUIRED data member — the same shape the
             // runtime validates — then the patch-fields note.
-            const updateItems = opRequestShape(ent, 'update').items
+            const updateItems = requestExampleItems(ent, opname)
               .filter((it: any) => !it.optional || it.name === idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const updateLines = updateItems.map((it: any) =>
-              `  "${it.name}" => ${rbLit(it.type,
+              `  ${litString('rb', it.name)} => ${rbLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
             Content(`\`\`\`ruby
-result = client.${ent.Name}.update({
-${updateLines}  # Fields to update
+result = client.${ent.Name}.${opname}({
+${updateLines}  # ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}
 })
 \`\`\`
 
 `)
+          }
+
+          if ('create' === opname || 'update' === opname || 'patch' === opname) {
+            const note = bodyNote(ent.op[opname], {
+              values: 'a `String`, or an IO that responds to `read`',
+              once: 'an IO',
+            })
+            if ('' !== note) Content(note)
           }
         })
       }

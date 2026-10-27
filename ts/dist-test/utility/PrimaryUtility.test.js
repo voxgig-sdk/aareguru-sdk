@@ -1,7 +1,11 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const node_test_1 = require("node:test");
 const node_assert_1 = require("node:assert");
+const node_assert_2 = __importDefault(require("node:assert"));
 const omni_1 = require("../omni");
 const index_1 = require("./index");
 (0, node_test_1.describe)('PrimaryUtility', async () => {
@@ -398,6 +402,29 @@ const index_1 = require("./index");
         const result = await blockedUtility.fetcher(ctx, 'http://example.com/test', fetchdef);
         (0, node_assert_1.ok)(result instanceof Error);
         (0, node_assert_1.ok)(result.message.includes('mode'));
+    });
+    // Nothing listens on port 9: a request the guard let through fails there.
+    (0, node_test_1.test)('fetcher-getonly-guard', async () => {
+        const liveClient = new index_1.SDK({ base: 'http://127.0.0.1:9' });
+        const liveUtility = liveClient.utility();
+        const ctx = liveUtility.makeContext({ opname: 'create' }, liveClient._rootctx);
+        ctx.client = liveClient;
+        const url = 'http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01';
+        const prior = process.env.VOXGIG_GETONLY_GUARD;
+        process.env.VOXGIG_GETONLY_GUARD = 'TRUE';
+        try {
+            const refused = await liveUtility.fetcher(ctx, url, { method: 'POST', headers: {} });
+            (0, node_assert_1.equal)(refused?.code, 'fetch_getonly_block');
+            (0, node_assert_1.ok)(refused.message.includes('[GET-ONLY GUARD] blocked POST /planet/p1'), refused.message);
+            (0, node_assert_1.ok)(!refused.message.includes('GUARDKEY01'));
+            await node_assert_2.default.rejects(liveUtility.fetcher(ctx, url, { method: 'GET', headers: {} }));
+        }
+        finally {
+            if (undefined === prior)
+                delete process.env.VOXGIG_GETONLY_GUARD;
+            else
+                process.env.VOXGIG_GETONLY_GUARD = prior;
+        }
     });
     (0, node_test_1.test)('makeError-no-throw', () => {
         const ctx = makeFullCtx();

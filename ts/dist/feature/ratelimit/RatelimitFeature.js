@@ -24,11 +24,11 @@ class RatelimitFeature extends BaseFeature_1.BaseFeature {
         const utility = ctx.utility;
         const inner = utility.fetcher;
         utility.fetcher = async function (ctx2, url, fetchdef) {
-            await self._acquire(ctx2);
+            await self._acquire(ctx2, fetchdef?.signal);
             return inner(ctx2, url, fetchdef);
         };
     }
-    async _acquire(ctx) {
+    async _acquire(ctx, signal) {
         const rate = this._options.rate || 5;
         const burst = null == this._options.burst ? rate : this._options.burst;
         // Refill according to elapsed time.
@@ -44,7 +44,7 @@ class RatelimitFeature extends BaseFeature_1.BaseFeature {
         const needed = 1 - this._tokens;
         const waitMs = Math.ceil((needed / rate) * 1000);
         this._track(ctx, waitMs);
-        await this._sleep(waitMs);
+        await this._sleep(waitMs, signal);
         this._last = this._now();
         this._tokens = 0;
     }
@@ -55,15 +55,16 @@ class RatelimitFeature extends BaseFeature_1.BaseFeature {
         }
         return Date.now();
     }
-    _sleep(ms) {
+    _sleep(ms, signal) {
         if (null == ms || 0 >= ms) {
             return Promise.resolve();
         }
         const sleep = this._options.sleep;
         if ('function' === typeof sleep) {
-            return Promise.resolve(sleep(ms));
+            return this._untilAbort(Promise.resolve(sleep(ms)), signal);
         }
-        return new Promise((r) => setTimeout(r, ms));
+        let timer;
+        return this._untilAbort(new Promise((r) => { timer = setTimeout(r, ms); }), signal, () => clearTimeout(timer));
     }
     _track(ctx, waitMs) {
         const client = this._client;

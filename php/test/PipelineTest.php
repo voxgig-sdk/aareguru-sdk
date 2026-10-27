@@ -46,9 +46,9 @@ class PlClient
 // records the data it was given.
 class PlEntityItem
 {
-    public array $data = [];
+    public mixed $data = [];
 
-    public function data_set(array $d): void
+    public function data_set(mixed $d): void
     {
         $this->data = $d;
     }
@@ -115,6 +115,20 @@ class PipelineTest extends TestCase
     private static function code(mixed $err): string
     {
         return ($err instanceof AareguruError) ? $err->sdk_code : '';
+    }
+
+    // An object is a map to the struct port, so it is a map to a cookie
+    // argument: its properties go out as pairs, read through the port.
+    public function test_prepare_headers_cookie_object(): void
+    {
+        $utility = self::utility();
+        $ctx = self::ctx([
+            'utility' => $utility,
+            'point' => ['args' => ['cookie' => [['name' => 'prefs', 'orig' => 'prefs', 'kind' => 'cookie']]]],
+            'reqmatch' => ['prefs' => (object) ['size' => 2, 'lang' => 'en gb']],
+        ]);
+        $headers = ($utility->prepare_headers)($ctx);
+        $this->assertSame('lang=en%20gb; size=2', $headers['cookie'] ?? null);
     }
 
 
@@ -351,7 +365,7 @@ class PipelineTest extends TestCase
         $ctx = self::ctx([
             'entity' => $entity,
             'spec' => new AareguruSpec(['step' => 's']),
-            'result' => new AareguruResult(['ok' => true, 'resdata' => [['a' => 1], ['a' => 2]]]),
+            'result' => new AareguruResult(['ok' => true, 'resdata' => [['a' => 1], 'b.md']]),
         ]);
         $ctx->op = new AareguruOperation(['name' => 'list', 'entity' => 'x']);
         [$result, $err] = AareguruMakeResult::call($ctx);
@@ -359,6 +373,7 @@ class PipelineTest extends TestCase
         $this->assertCount(2, $result->resdata);
         $this->assertCount(2, $entity->made);
         $this->assertSame(['a' => 1], $result->resdata[0]->data);
+        $this->assertSame('b.md', $result->resdata[1]->data);
     }
 
     public function test_make_result_empty_list_yields_empty_resdata(): void
@@ -495,6 +510,56 @@ class PipelineTest extends TestCase
         return self::resp($status, $data, $headers);
     }
 
+
+    // The guard writes to STDERR, so it is read from a child process. Nothing
+    // listens on port 9: a request the guard let through fails there.
+    public function test_get_only_guard_prints_no_query_credential(): void
+    {
+        if (!function_exists('proc_open')) {
+            $this->markTestSkipped('the guard is read from a child process');
+        }
+        $sdk = realpath(__DIR__ . '/../aareguru_sdk.php');
+        $code = 'require ' . var_export($sdk, true) . ';'
+            . ' $client = new AareguruSDK(["base" => "http://127.0.0.1:9"]);'
+            . ' $utility = $client->get_utility();'
+            . ' $ctx = ($utility->make_context)(["opname" => "create", "client" => $client,'
+            . ' "utility" => $utility], null);'
+            . ' $url = "http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01&x=1";'
+            . ' [, $err] = ($utility->fetcher)($ctx, $url, ["method" => "POST"]);'
+            . ' echo $err->sdk_code, " ", $err->msg, "\n";'
+            . ' [, $geterr] = ($utility->fetcher)($ctx, $url, ["method" => "GET"]);'
+            . ' echo $geterr instanceof AareguruError ? $geterr->sdk_code : "sent";';
+        $env = array_merge(getenv(), ['VOXGIG_GETONLY_GUARD' => 'TRUE']);
+        $proc = proc_open([PHP_BINARY, '-r', $code],
+            [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, null, $env);
+        $out = stream_get_contents($pipes[1]);
+        $errout = stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        proc_close($proc);
+
+        $this->assertStringContainsString('[GET-ONLY GUARD] blocked POST /planet/p1', $errout);
+        $this->assertStringStartsWith('fetch_getonly_block [GET-ONLY GUARD] blocked POST /planet/p1', $out);
+        $this->assertStringEndsWith("\nsent", $out);
+        $this->assertStringNotContainsString('GUARDKEY01', $errout);
+        $this->assertStringNotContainsString('GUARDKEY01', $out);
+    }
+
+    // The struct port's UNDEF sentinel is one object per process, and the
+    // struct corpus writes into it: no client may take it for a fetcher.
+    public function test_fetcher_without_system_fetch_uses_the_default_transport(): void
+    {
+        $sentinel = \Voxgig\Struct\Struct::undef();
+        $sentinel->pipelinetest = true;
+        try {
+            $client = new AareguruSDK(['base' => 'http://localhost:8080']);
+            $this->assertArrayNotHasKey('fetch', $client->options['system'] ?? []);
+            $this->assertNull(AareguruFetcher::systemFetch($client->options_map()));
+            $this->assertTrue(AareguruFetcher::usesDefault(self::ctx(['client' => $client])));
+        } finally {
+            unset($sentinel->pipelinetest);
+        }
+    }
 
     // --- make_fetch_def ----------------------------------------------------------
 
@@ -750,7 +815,10 @@ class PipelineTest extends TestCase
         if ('' !== $cred['pair']) {
             // A cookie credential is a `<scheme>=<key>` pair, and the scheme
             // name leaves no room for the option's prefix.
-            $this->assertMatchesRegularExpression(self::COOKIE_PAIR, $cred['value']);
+            // preg_match rather than assertMatchesRegularExpression, which
+            // PHPUnit 8 does not have.
+            $this->assertSame(1, preg_match(self::COOKIE_PAIR, (string) $cred['value']),
+                (string) $cred['value']);
             return;
         }
         // A header credential is prefix-joined; a query credential is the raw

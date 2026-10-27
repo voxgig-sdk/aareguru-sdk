@@ -29,6 +29,43 @@ local function terminal_param(point)
 end
 
 
+-- The entity's own route among some points.
+local function own_point(points)
+  local best = points[1]
+  for i = 1, #points do
+    local cand = points[i]
+    local cand_term = terminal_param(cand)
+    local best_term = terminal_param(best)
+    if cand_term ~= best_term then
+      if cand_term then
+        best = cand
+      end
+    elseif parts_len(cand) < parts_len(best) then
+      best = cand
+    end
+  end
+  return best
+end
+
+
+-- The path parameters of a point that neither the call nor the entity gives
+-- a value for, looked up as param looks them up.
+local function unfilled(ctx, point)
+  local missing = {}
+  local parts = vs.getprop(point, "parts")
+  if type(parts) ~= "table" then
+    return missing
+  end
+  for _, part in ipairs(parts) do
+    local name = type(part) == "string" and part:match("^{([^{}/]+)}$") or nil
+    if name ~= nil and helpers.param_value(ctx, point, name) == nil then
+      missing[#missing + 1] = name
+    end
+  end
+  return missing
+end
+
+
 local function make_point_util(ctx)
   if ctx.out["point"] ~= nil then
     local preset = ctx.out["point"]
@@ -45,11 +82,11 @@ local function make_point_util(ctx)
   local op = ctx.op
   local options = ctx.options
 
-  local allow_op = vs.getpath(options, "allow.op") or ""
-  if type(allow_op) == "string" and not string.find(allow_op, op.name, 1, true) then
+  local allow_op = vs.getpath(options, "allow.op")
+  if not helpers.allowed(allow_op, op.name) then
     return nil, ctx:make_error("point_op_allow",
       'Operation "' .. op.name ..
-      '" not allowed by SDK option allow.op value: "' .. allow_op .. '"')
+      '" not allowed by SDK option allow.op value: "' .. tostring(allow_op or "") .. '"')
   end
 
   if #op.points == 0 then
@@ -125,19 +162,35 @@ local function make_point_util(ctx)
           '" action "' .. vs.stringify(unmatched_action) .. '" is not valid.')
       end
 
-      point = op.points[1]
+      -- A call without an action falls back to a point without one, as
+      -- generation does, and only to a route the call can fill.
+      local plain = {}
       for i = 1, #op.points do
         local cand = op.points[i]
-        local cand_term = terminal_param(cand)
-        local best_term = terminal_param(point)
-        if cand_term ~= best_term then
-          if cand_term then
-            point = cand
-          end
-        elseif parts_len(cand) < parts_len(point) then
-          point = cand
+        if vs.getprop(helpers.to_map(vs.getprop(cand, "select")), "$action") == nil then
+          plain[#plain + 1] = cand
         end
       end
+      if #plain == 0 then
+        return nil, ctx:make_error("point_action_required",
+          'Operation "' .. op.name ..
+          '" has only action endpoints; pass $action to choose one.')
+      end
+      local fillable = {}
+      for _, cand in ipairs(plain) do
+        if #unfilled(ctx, cand) == 0 then
+          fillable[#fillable + 1] = cand
+        end
+      end
+
+      if #fillable == 0 then
+        return nil, ctx:make_error("point_no_match",
+          'Operation "' .. op.name ..
+          '" has no endpoint whose path parameters are all given (missing: ' ..
+          table.concat(unfilled(ctx, own_point(plain)), ", ") .. ').')
+      end
+
+      point = own_point(fillable)
     end
 
     if reqselector ~= nil then

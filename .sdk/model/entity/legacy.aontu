@@ -37,12 +37,6 @@ main: kit: entity: legacy: {
           }
           m: "GET"
           o: "/current"
-          q: {
-            exist: [
-              "app"
-              "version"
-            ]
-          }
           s: [
             {
               lit: "current"
@@ -81,12 +75,6 @@ main: kit: entity: legacy: {
           }
           m: "GET"
           o: "/currentV2"
-          q: {
-            exist: [
-              "app"
-              "version"
-            ]
-          }
           s: [
             {
               lit: "currentV2"
@@ -125,12 +113,6 @@ main: kit: entity: legacy: {
           }
           m: "GET"
           o: "/today"
-          q: {
-            exist: [
-              "app"
-              "version"
-            ]
-          }
           s: [
             {
               lit: "today"

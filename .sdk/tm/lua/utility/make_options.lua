@@ -49,13 +49,13 @@ local function densify_lists(v, seen)
   return v
 end
 
-local function noentity(settings)
+local function plain(settings, name)
   if type(settings) ~= "table" then
     return settings
   end
   local out = {}
   for k, v in pairs(settings) do
-    if k ~= "entity" then
+    if k ~= "entity" and not (name == "rbac" and k == "rules") then
       out[k] = v
     end
   end
@@ -65,20 +65,23 @@ end
 -- The options to scan for secrets. The feature map is keyed by feature
 -- names, not field names, so it is scanned as a list: `secrets` must not
 -- make every setting of that feature a secret. Entity blocks hold entity
--- settings and seeded records, never a credential, so none is scanned. The
--- raw scan still sees the feature list form, whose entries each carry `name`.
+-- settings and seeded records, never a credential, so none is scanned, and
+-- nor are rbac's rules, keyed by entity and operation names. The raw scan
+-- still sees the feature list form, whose entries each carry `name`.
 local function secret_scan(opts, omit)
   local out = {}
   for k, v in pairs(opts) do
     if not omit[k] and k ~= "entity" then
       if k == "feature" and type(v) == "table" then
         local list = {}
-        for _, fopts in pairs(v) do
-          list[#list + 1] = noentity(fopts)
+        for fname, fopts in pairs(v) do
+          local name = type(fname) == "string" and fname or
+            (type(fopts) == "table" and fopts.name or nil)
+          list[#list + 1] = plain(fopts, name)
         end
         v = list
       elseif k == "test" then
-        v = noentity(v)
+        v = plain(v, nil)
       end
       out[k] = v
     end

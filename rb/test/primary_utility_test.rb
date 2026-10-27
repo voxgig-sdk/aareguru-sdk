@@ -81,7 +81,7 @@ class PrimaryUtilityTest < Minitest::Test
     return nil unless m.is_a?(Hash)
     msg = m["message"]
     return nil unless msg.is_a?(String) && !msg.empty?
-    AareguruError.new(m["code"] || "", msg)
+    AareguruError.new(msg, code: m["code"] || "")
   end
 
 
@@ -276,6 +276,33 @@ class PrimaryUtilityTest < Minitest::Test
     _, err = blocked_utility.fetcher.call(ctx, "http://example.com/test", fetchdef)
     assert err, "expected blocked error"
     assert_includes err.to_s.downcase, "blocked"
+  end
+
+  # Nothing listens on port 9: a request the guard let through fails there.
+  def test_fetcher_getonly_guard
+    live_client = AareguruSDK.new({ "base" => "http://127.0.0.1:9" })
+    live_utility = live_client.get_utility
+    ctx = live_utility.make_context.call({
+      "opname" => "create",
+      "client" => live_client,
+      "utility" => live_utility,
+    }, nil)
+    url = "http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01"
+    prior = ENV["VOXGIG_GETONLY_GUARD"]
+    ENV["VOXGIG_GETONLY_GUARD"] = "TRUE"
+    begin
+      _, err = live_utility.fetcher.call(ctx, url, { "method" => "POST", "headers" => {} })
+      assert_kind_of AareguruError, err
+      assert_equal "fetch_getonly_block", err.code
+      assert_includes err.msg, "[GET-ONLY GUARD] blocked POST /planet/p1"
+      refute_includes err.msg, "GUARDKEY01"
+
+      _, geterr = live_utility.fetcher.call(ctx, url, { "method" => "GET", "headers" => {} })
+      assert geterr, "expected the GET to reach the closed port"
+      refute_kind_of AareguruError, geterr
+    ensure
+      ENV["VOXGIG_GETONLY_GUARD"] = prior
+    end
   end
 
 

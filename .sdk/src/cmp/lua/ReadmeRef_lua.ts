@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName, luaKey , targetFeatures } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, safeVarName, exampleVarName, luaKey, targetFeatures, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -14,10 +14,11 @@ import {
 // parse).
 function luaLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'nil'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k || 'OBJECT' === k) return '{}'
-  return `"${placeholder}"`
+  return litString('lua', placeholder)
 }
 
 // Non-identifier table keys use bracket syntax.
@@ -27,27 +28,32 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
   load: {
     sig: 'load(reqmatch, ctrl) -> any, err',
     returns: 'any, err',
-    desc: 'Load a single entity matching the given criteria.',
+    desc: 'Load a single entity matching the given criteria. Returns the entity, whose record `data_get()` reads, or `nil` and an error on failure.',
   },
   list: {
     sig: 'list(reqmatch, ctrl) -> any, err',
     returns: 'any, err',
-    desc: 'List entities matching the given criteria. Returns an array.',
+    desc: 'List entities matching the given criteria. Returns an array of entities, one per record, or `nil` and an error on failure.',
   },
   create: {
     sig: 'create(reqdata, ctrl) -> any, err',
     returns: 'any, err',
-    desc: 'Create a new entity with the given data.',
+    desc: 'Create a new entity with the given data. Returns the created entity, or `nil` and an error on failure.',
   },
   update: {
     sig: 'update(reqdata, ctrl) -> any, err',
     returns: 'any, err',
-    desc: 'Update an existing entity. The data must include the entity `id`.',
+    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity, or `nil` and an error on failure.',
+  },
+  patch: {
+    sig: 'patch(reqdata, ctrl) -> any, err',
+    returns: 'any, err',
+    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity, or `nil` and an error on failure.',
   },
   remove: {
     sig: 'remove(reqmatch, ctrl) -> any, err',
     returns: 'any, err',
-    desc: 'Remove the entity matching the given criteria.',
+    desc: 'Remove the entity matching the given criteria. Returns the entity, marked as deleted, or `nil` and an error on failure.',
   },
 }
 
@@ -215,7 +221,7 @@ local ${eVar} = client:${ent.Name}(nil)
         if (hasFieldOps) {
           // Only emit columns for operations this entity actually exposes —
           // never advertise a create/update/remove column the entity lacks.
-          const opcols = ['load', 'list', 'create', 'update', 'remove']
+          const opcols = ['load', 'list', 'create', 'update', 'patch', 'remove']
             .filter((op: string) => opnames.includes(op) && ent.op[op]?.active !== false)
           Content(`### Field Usage by Operation
 
@@ -255,12 +261,15 @@ ${info.desc}
 
 `)
 
+          if (opNeedsAction(ent.op[opname])) {
+            return
+          }
+
           if ('load' === opname || 'remove' === opname) {
             // The id key plus every REQUIRED match key (parent path params
             // like page_id) — the same shape the runtime resolves path
             // params from, so the example always works.
-            const matchItems = opRequestShape(ent, opname).items
-              .filter((it: any) => !it.optional || it.name === idF)
+            const matchItems = matchExampleItems(ent, opname, idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const arg = 0 < matchItems.length
@@ -276,7 +285,7 @@ local result, err = client:${ent.Name}():${opname}(${arg})
           }
           else if ('list' === opname) {
             Content(`\`\`\`lua
-local results, err = client:${ent.Name}():list()
+local results, err = client:${ent.Name}():list(${listMatchArg('lua', ent)})
 \`\`\`
 
 `)
@@ -287,7 +296,7 @@ local results, err = client:${ent.Name}():list()
             // a required id and parent keys like page_id (the --[[ type ]]
             // placeholders mark the block as an illustration for the doc
             // gate).
-            const createItems = opRequestShape(ent, 'create').items
+            const createItems = requestExampleItems(ent, 'create')
               .filter((it: any) => !it.optional)
             Content(`\`\`\`lua
 local result, err = client:${ent.Name}():create({
@@ -301,10 +310,10 @@ local result, err = client:${ent.Name}():create({
 
 `)
           }
-          else if ('update' === opname) {
+          else if ('update' === opname || 'patch' === opname) {
             // The id key plus every REQUIRED data member — the same shape the
             // runtime validates — then the patch-fields note.
-            const updateItems = opRequestShape(ent, 'update').items
+            const updateItems = requestExampleItems(ent, opname)
               .filter((it: any) => !it.optional || it.name === idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
@@ -312,12 +321,19 @@ local result, err = client:${ent.Name}():create({
               `  ${luaKey(it.name)} = ${luaLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
             Content(`\`\`\`lua
-local result, err = client:${ent.Name}():update({
-${updateLines}  -- Fields to update
+local result, err = client:${ent.Name}():${opname}({
+${updateLines}  -- ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}
 })
 \`\`\`
 
 `)
+          }
+
+          if ('create' === opname || 'update' === opname || 'patch' === opname) {
+            const note = bodyNote(ent.op[opname], {
+              values: 'a string',
+            })
+            if ('' !== note) Content(note)
           }
         })
       }

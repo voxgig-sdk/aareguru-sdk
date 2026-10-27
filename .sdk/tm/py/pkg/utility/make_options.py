@@ -248,20 +248,26 @@ def make_options_util(ctx):
 
 # A feature's name is not a field name: only the sensitive names inside its
 # settings count, so `secrets` does not make every setting a secret. Entity
-# blocks (per-entity settings, seeded records) hold no credential.
+# blocks (per-entity settings, seeded records) hold no credential, and nor do
+# rbac's rules, keyed by entity and operation names.
 def _clean_add_options(cleanctx, opts):
     top = {k: v for k, v in opts.items() if k not in ("feature", "entity")}
     if "test" in top:
-        top["test"] = _no_entity(top["test"])
+        top["test"] = _plain(top["test"], None)
     clean_add_sensitive(cleanctx, top)
     feature = opts.get("feature")
-    blocks = feature.values() if isinstance(feature, dict) else (
-        feature if isinstance(feature, list) else [feature])
-    for fopts in blocks:
-        clean_add_sensitive(cleanctx, _no_entity(fopts))
+    if isinstance(feature, dict):
+        blocks = list(feature.items())
+    elif isinstance(feature, list):
+        blocks = [(b.get("name") if isinstance(b, dict) else None, b) for b in feature]
+    else:
+        blocks = [(None, feature)]
+    for name, fopts in blocks:
+        clean_add_sensitive(cleanctx, _plain(fopts, name))
 
 
-def _no_entity(block):
+def _plain(block, name):
     if isinstance(block, dict):
-        return {k: v for k, v in block.items() if k != "entity"}
+        omit = ("entity", "rules") if "rbac" == name else ("entity",)
+        return {k: v for k, v in block.items() if k not in omit}
     return block

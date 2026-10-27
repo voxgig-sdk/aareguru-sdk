@@ -1,0 +1,2 @@
+# The admin scripts run under bash, which fails on a CRLF line ending.
+*.sh text eol=lf

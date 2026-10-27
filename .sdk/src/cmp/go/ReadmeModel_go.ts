@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, entityIdField, entityPrimaryOp, goModule } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityIdField, entityPrimaryOp, goModule, listMatchArg, matchExampleItems, litPair, litFor } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -24,20 +24,21 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   entityList.forEach((e: any) => Object.keys(e.op || {})
     .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
   const opRowDefs: Record<string, string> = {
-    load: '| `Load` | `(reqmatch, ctrl map[string]any) (any, error)` | Load a single entity by match criteria. |',
-    list: '| `List` | `(reqmatch, ctrl map[string]any) (any, error)` | List entities matching the criteria. |',
-    create: '| `Create` | `(reqdata, ctrl map[string]any) (any, error)` | Create a new entity. |',
-    update: '| `Update` | `(reqdata, ctrl map[string]any) (any, error)` | Update an existing entity. |',
-    remove: '| `Remove` | `(reqmatch, ctrl map[string]any) (any, error)` | Remove an entity. |',
+    load: '| `Load` | `(reqmatch, ctrl map[string]any) (any, error)` | Load a single entity by match criteria, and return it. |',
+    list: '| `List` | `(reqmatch, ctrl map[string]any) (any, error)` | List entities matching the criteria, one per record. |',
+    create: '| `Create` | `(reqdata, ctrl map[string]any) (any, error)` | Create a new entity, and return it. |',
+    update: '| `Update` | `(reqdata, ctrl map[string]any) (any, error)` | Update an existing entity, and return it. |',
+    patch: '| `Patch` | `(reqdata, ctrl map[string]any) (any, error)` | Change part of an existing entity, and return it. |',
+    remove: '| `Remove` | `(reqmatch, ctrl map[string]any) (any, error)` | Remove an entity, and return it marked as deleted. |',
   }
-  const opRows = ['load', 'list', 'create', 'update', 'remove']
+  const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
 
-  const recordOps = ['load', 'create', 'update', 'remove'].filter((o) => opUnion.has(o))
+  const recordOps = ['load', 'create', 'update', 'patch', 'remove'].filter((o) => opUnion.has(o))
     .map((o) => '`' + o.charAt(0).toUpperCase() + o.slice(1) + '`')
   const resultRows: string[] = []
-  if (recordOps.length) resultRows.push('| ' + recordOps.join(' / ') + ' | the entity record (`map[string]any`) |')
-  if (opUnion.has('list')) resultRows.push('| `List` | a `[]any` of entity records |')
+  if (recordOps.length) resultRows.push('| ' + recordOps.join(' / ') + ' | the entity, whose `Data()` reads its record (`map[string]any`) |')
+  if (opUnion.has('list')) resultRows.push('| `List` | a `[]any` of entities, one per record |')
   const resultShapeRows = resultRows.join('\n')
 
   const gomodule = goModule(model, target.name)
@@ -59,9 +60,15 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     ? firstPrimaryOp.charAt(0).toUpperCase() + firstPrimaryOp.slice(1)
     : ''
   const firstIsMatchOp = 'load' === firstPrimaryOp || 'remove' === firstPrimaryOp
+  const firstMatch = firstIsMatchOp
+    ? matchExampleItems(firstWithOp, firstPrimaryOp!, firstIdF)
+      .sort((a: any, b: any) => (a.name === firstIdF ? 0 : 1) - (b.name === firstIdF ? 0 : 1))
+    : []
   const firstOpArg = firstIsMatchOp
-    ? (firstIdF ? `map[string]any{"${firstIdF}": "example_id"}` : 'nil')
-    : 'map[string]any{/* fields */}'
+    ? (0 < firstMatch.length ? `map[string]any{${firstMatch.map((it: any) =>
+      litPair('go', it.name, it.name === firstIdF ? '"example_id"' : litFor('go', it.type))).join(', ')}}` : 'nil')
+    : 'list' === firstPrimaryOp ? listMatchArg('go', firstWithOp)
+      : 'map[string]any{/* fields */}'
 
   const resultCallExample = firstPrimaryOp
     ? `Check \`err\` first, then use the value directly (or the typed
@@ -70,7 +77,9 @@ slice):
 
     ${firstEntityVar}, err := client.${firstEntityName}(nil).${firstPrimaryMethod}(${firstOpArg}, nil)
     if err != nil { /* handle */ }
-    // ${firstEntityVar} is the returned record
+    // ${'list' === firstPrimaryOp
+    ? `${firstEntityVar} is a []any of entities, one per record`
+    : `${firstEntityVar} is the entity; ${firstEntityVar}.(sdk.Entity).Data() reads its record`}
 
 `
     : ''
@@ -131,8 +140,8 @@ ${opRows}
 
 ### Result shape
 
-Entity operations return \`(value, error)\`. The \`value\` is the
-operation's data **directly** — there is no wrapper:
+Entity operations return \`(value, error)\`. The \`value\` is the entity
+itself — there is no wrapper:
 
 | Operation | \`value\` |
 | --- | --- |

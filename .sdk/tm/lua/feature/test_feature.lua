@@ -19,6 +19,31 @@ function TestFeature.new()
 end
 
 
+-- The key a list's response transform
+-- {"`$EACH`", "body", {["`$MERGE`"] = "`.<key>`"}} reads each item's record under.
+local function item_envelope_key(restf)
+  if type(restf) ~= "table" or #restf ~= 3 or restf[1] ~= "`$EACH`" or restf[2] ~= "body" then
+    return nil
+  end
+  local child = restf[3]
+  local merge = type(child) == "table" and child["`$MERGE`"] or nil
+  if type(merge) ~= "string" then
+    return nil
+  end
+  return string.match(merge, "^`%.([^.`$]+)`$")
+end
+
+-- The record the mock keeps: the request data without `$body`, which only the
+-- wire carries.
+local function record(reqdata)
+  if type(reqdata) ~= "table" then return reqdata end
+  local out = {}
+  for k, v in pairs(reqdata) do
+    if k ~= "$body" then out[k] = v end
+  end
+  return out
+end
+
 function TestFeature:init(ctx, options)
   self.client = ctx.client
   self.options = options
@@ -58,6 +83,14 @@ function TestFeature:init(ctx, options)
         return data
       end
       local restf = transform.res
+      local key = item_envelope_key(restf)
+      if key ~= nil and type(data) == "table" then
+        local out = setmetatable({}, getmetatable(data))
+        for i, item in ipairs(data) do
+          out[i] = { [key] = item }
+        end
+        return out
+      end
       if type(restf) ~= "string" then
         return data
       end
@@ -144,7 +177,7 @@ function TestFeature:init(ctx, options)
       local out = vs.clone(found)
       return respond(200, out, nil)
 
-    elseif op.name == "update" then
+    elseif op.name == "update" or op.name == "patch" then
       -- Match the existing entity by id only (or its alias). reqdata also
       -- contains the new field values, which would otherwise cause select
       -- to filter out the entity we want to update. When reqdata has no id,
@@ -172,7 +205,7 @@ function TestFeature:init(ctx, options)
         return respond(404, nil, { statusText = "Not found" })
       end
       if type(ent) == "table" and type(fctx.reqdata) == "table" then
-        vs.merge({ ent, fctx.reqdata })
+        vs.merge({ ent, record(fctx.reqdata) })
       end
       vs.delprop(ent, "$KEY")
       local out = vs.clone(ent)
@@ -199,7 +232,7 @@ function TestFeature:init(ctx, options)
           math.random(0, 0xFFFF), math.random(0, 0xFFFF))
       end
 
-      local ent = vs.clone(fctx.reqdata)
+      local ent = vs.clone(record(fctx.reqdata))
       if type(ent) == "table" then
         ent["id"] = id
         if type(id) == "string" then

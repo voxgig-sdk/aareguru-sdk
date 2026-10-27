@@ -9,7 +9,7 @@ import { createLiveTransport } from '../../live-runner'
 import { runLiveEntity } from '../../live-entity'
 
 
-import { AareguruSDK, BaseFeature, stdutil } from '../../..'
+import { AareguruSDK, BaseFeature, config, stdutil } from '../../..'
 
 import {
   envOverride,
@@ -41,6 +41,18 @@ describe('StuffEntity', async () => {
   })
 
 
+  test('validate', async (t) => {
+    if (null == (config as any).feature?.validate) {
+      t.skip('feature not present in this SDK: validate')
+      return
+    }
+    const client = AareguruSDK.test(undefined, { feature: { validate: { active: true } } })
+    await assert.rejects(client.Stuff().load({"app":1,"service":"x"} as any),
+      (err: any) => 'validate_failed' === err.code)
+  })
+
+
+
   test('basic', async (t) => {
 
     const live = 'TRUE' === process.env.AAREGURU_TEST_LIVE
@@ -51,7 +63,7 @@ describe('StuffEntity', async () => {
     
     const setup = basicSetup()
     if (setup.live) {
-      return runLiveEntity(setup, {"active":true,"alias":{"field":{}},"fields":{},"name":"stuff","op":{"load":{"input":"data","name":"load","points":[{"a":true,"co":{"id":"GET /logs","source":"openapi3","version":2},"g":{"query":[{"a":true,"ex":"my.app.ch","k":"query","n":"app","or":"app","r":false,"t":"`$STRING`","index$":0},{"a":true,"ex":12,"k":"query","n":"line","or":"lines","r":false,"t":"`$INTEGER`","index$":1},{"a":true,"ex":"v2018_bueber","k":"query","n":"service","or":"service","r":true,"t":"`$STRING`","index$":2},{"a":true,"ex":"1.0.42","k":"query","n":"version","or":"version","r":false,"t":"`$STRING`","index$":3}]},"k":"http","m":"GET","o":"/logs","q":{"exist":["app","line","service","version"]},"r":{},"s":[{"lit":"logs"}],"t":{"req":"`reqdata`","res":"`body`"},"index$":0},{"a":true,"co":{"id":"GET /rawdata","source":"openapi3","version":2},"g":{"query":[{"a":true,"ex":"my.app.ch","k":"query","n":"app","or":"app","r":false,"t":"`$STRING`","index$":0},{"a":true,"ex":"v2018_bueber","k":"query","n":"service","or":"service","r":true,"t":"`$STRING`","index$":1},{"a":true,"ex":"1.0.42","k":"query","n":"version","or":"version","r":false,"t":"`$STRING`","index$":2}]},"k":"http","m":"GET","o":"/rawdata","q":{"exist":["app","service","version"]},"r":{},"s":[{"lit":"rawdata"}],"t":{"req":"`reqdata`","res":"`body`"},"index$":1},{"a":true,"co":{"id":"GET /slack","source":"openapi3","version":2},"g":{},"k":"http","m":"GET","o":"/slack","q":{},"r":{},"s":[{"lit":"slack"}],"t":{"req":"`reqdata`","res":"`body`"},"index$":2}],"key$":"load"}},"relations":{"ancestors":[]},"key$":"stuff","name__orig":"stuff","Name":"Stuff","name_":"stuff","name-":"stuff","NAME":"STUFF","index$":1}, {"active":true,"entity":"stuff","key$":"BasicStuffFlow","kind":"basic","name":"BasicStuffFlow","param":{},"step":[{"a":true,"d":{},"i":{"ref":"stuff_ref01","srcdatavar":"stuff_ref01_data","suffix":"_dt0"},"m":{},"o":"load","s":[],"v":[{"apply":"TextFieldMark","def":{"mark":"Mark01-stuff_ref01"}}],"index$":0}]}, 'Stuff', {"GET /logs":{"protocol":"http","parameters":[{"name":"service","in":"query","description":"Interner Servicename","required":true,"schema":{"type":"string"},"example":"v2018_bueber","x-ref":"#/components/parameters/service","index$":0},{"name":"lines","in":"query","description":"Anzahl Zeilen","required":false,"schema":{"type":"integer","default":12},"x-ref":"#/components/parameters/lines","index$":1},{"name":"app","in":"query","description":"Optionaler App-Name.","schema":{"type":"string"},"example":"my.app.ch","x-ref":"#/components/parameters/app","index$":2},{"name":"version","in":"query","description":"Optionale Versionsnummer für diese App.","schema":{"type":"string"},"example":"1.0.42","x-ref":"#/components/parameters/version","index$":3}]},"GET /rawdata":{"protocol":"http","parameters":[{"name":"service","in":"query","description":"Interner Servicename","required":true,"schema":{"type":"string"},"example":"v2018_bueber","x-ref":"#/components/parameters/service","index$":0},{"name":"app","in":"query","description":"Optionaler App-Name.","schema":{"type":"string"},"example":"my.app.ch","x-ref":"#/components/parameters/app","index$":1},{"name":"version","in":"query","description":"Optionale Versionsnummer für diese App.","schema":{"type":"string"},"example":"1.0.42","x-ref":"#/components/parameters/version","index$":2}]},"GET /slack":{"protocol":"http","parameters":[]}})
+      return runLiveEntity(setup, {"active":true,"alias":{"field":{}},"fields":{},"name":"stuff","op":{"load":{"input":"data","name":"load","points":[{"a":true,"co":{"id":"GET /logs","source":"openapi3","version":2},"g":{"query":[{"a":true,"ex":"my.app.ch","k":"query","n":"app","or":"app","r":false,"t":"`$STRING`","index$":0},{"a":true,"ex":12,"k":"query","n":"line","or":"lines","r":false,"t":"`$INTEGER`","index$":1},{"a":true,"ex":"v2018_bueber","k":"query","n":"service","or":"service","r":true,"t":"`$STRING`","index$":2},{"a":true,"ex":"1.0.42","k":"query","n":"version","or":"version","r":false,"t":"`$STRING`","index$":3}]},"k":"http","m":"GET","o":"/logs","q":{"exist":["service"]},"r":{},"s":[{"lit":"logs"}],"t":{"req":"`reqdata`","res":"`body`"},"index$":0},{"a":true,"co":{"id":"GET /rawdata","source":"openapi3","version":2},"g":{"query":[{"a":true,"ex":"my.app.ch","k":"query","n":"app","or":"app","r":false,"t":"`$STRING`","index$":0},{"a":true,"ex":"v2018_bueber","k":"query","n":"service","or":"service","r":true,"t":"`$STRING`","index$":1},{"a":true,"ex":"1.0.42","k":"query","n":"version","or":"version","r":false,"t":"`$STRING`","index$":2}]},"k":"http","m":"GET","o":"/rawdata","q":{"exist":["service"]},"r":{},"s":[{"lit":"rawdata"}],"t":{"req":"`reqdata`","res":"`body`"},"index$":1},{"a":true,"co":{"id":"GET /slack","source":"openapi3","version":2},"g":{},"k":"http","m":"GET","o":"/slack","q":{},"r":{},"s":[{"lit":"slack"}],"t":{"req":"`reqdata`","res":"`body`"},"index$":2}],"key$":"load"}},"relations":{"ancestors":[]},"key$":"stuff","name__orig":"stuff","Name":"Stuff","name_":"stuff","name-":"stuff","NAME":"STUFF","index$":1}, {"active":true,"entity":"stuff","key$":"BasicStuffFlow","kind":"basic","name":"BasicStuffFlow","param":{},"step":[{"a":true,"d":{},"i":{"ref":"stuff_ref01","srcdatavar":"stuff_ref01_data","suffix":"_dt0"},"m":{},"o":"load","s":[],"v":[{"apply":"TextFieldMark","def":{"mark":"Mark01-stuff_ref01"}}],"index$":0}]}, 'Stuff', {"GET /logs":{"protocol":"http","parameters":[{"name":"service","in":"query","description":"Interner Servicename","required":true,"schema":{"type":"string"},"example":"v2018_bueber","x-ref":"#/components/parameters/service","index$":0},{"name":"lines","in":"query","description":"Anzahl Zeilen","required":false,"schema":{"type":"integer","default":12},"x-ref":"#/components/parameters/lines","index$":1},{"name":"app","in":"query","description":"Optionaler App-Name.","schema":{"type":"string"},"example":"my.app.ch","x-ref":"#/components/parameters/app","index$":2},{"name":"version","in":"query","description":"Optionale Versionsnummer für diese App.","schema":{"type":"string"},"example":"1.0.42","x-ref":"#/components/parameters/version","index$":3}]},"GET /rawdata":{"protocol":"http","parameters":[{"name":"service","in":"query","description":"Interner Servicename","required":true,"schema":{"type":"string"},"example":"v2018_bueber","x-ref":"#/components/parameters/service","index$":0},{"name":"app","in":"query","description":"Optionaler App-Name.","schema":{"type":"string"},"example":"my.app.ch","x-ref":"#/components/parameters/app","index$":1},{"name":"version","in":"query","description":"Optionale Versionsnummer für diese App.","schema":{"type":"string"},"example":"1.0.42","x-ref":"#/components/parameters/version","index$":2}]},"GET /slack":{"protocol":"http","parameters":[]}}, { strict: LIVE_STRICT, t })
     }
     const client = setup.client
     const struct = setup.struct
@@ -72,6 +84,12 @@ describe('StuffEntity', async () => {
 })
 
 
+
+// main.kit.test.live.strict is true (the default is true): a live
+// request that fails, or a live test missing an input it needs,
+// fails the test.
+// An account with no record for a test to read skips it either way.
+const LIVE_STRICT = true
 
 function basicSetup(extra?: any) {
   // TODO: fix test def options

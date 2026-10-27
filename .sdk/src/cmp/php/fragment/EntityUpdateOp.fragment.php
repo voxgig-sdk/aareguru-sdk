@@ -9,8 +9,8 @@ require_once __DIR__ . '/../core/Helpers.php';
      * @param EntityNameUpdateData|array|null $reqdata Body data as an assoc-array;
      *   a typed EntityNameUpdateData names the shape.
      * @param mixed $ctrl Optional per-call control overrides.
-     * @return EntityName|array The updated EntityName as an assoc-array at the
-     *   SDK boundary; throws ProjectNameError on failure (item-5 convention).
+     * @return EntyClass The updated EntityName entity, whose data_get() reads
+     *   its record; throws ProjectNameError on failure (item-5 convention).
      */
     public function update(?array $reqdata = null, $ctrl = null): mixed
     {

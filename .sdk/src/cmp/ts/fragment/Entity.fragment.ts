@@ -40,6 +40,8 @@ class EntyClass extends ProjectNameEntityBase<EntityDataType> {
 
   // #UpdateOp
 
+  // #PatchOp
+
   // #RemoveOp
 
 }

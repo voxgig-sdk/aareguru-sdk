@@ -13,10 +13,9 @@ declare(strict_types=1);
 // with no live server and no API-specific fixtures. Mirrors
 // tm/ts/test/feature.test.ts + tm/ts/test/feature/harness.ts.
 //
-// Note: the generated PHP pipeline dispatches PrePoint..PreDone; the
-// PreUnexpected hook is dispatched here by the harness failure path (the
-// real pipeline raises via make_error before a PreUnexpected dispatch
-// point), which keeps the features' emit-once semantics covered.
+// Note: the harness failure path dispatches PreUnexpected, as make_error
+// and an operation's catch path do in the real pipeline, which keeps the
+// features' emit-once semantics covered.
 
 require_once __DIR__ . '/../projectname_sdk.php';
 
@@ -232,7 +231,7 @@ class FtHarness
         if ($op === 'create') {
             return 'POST';
         }
-        if ($op === 'update') {
+        if ($op === 'update' || $op === 'patch') {
             return 'PATCH';
         }
         if ($op === 'remove') {

@@ -21,6 +21,7 @@ declare class AareguruEntityBase<D = any> {
     data(this: any, data?: Partial<D>): D;
     match(this: any, match?: Partial<D>): Partial<D>;
     stream(this: any, action: string, args?: any, callopts?: any): AsyncGenerator<any>;
+    _streamSteps(this: any, ctx: Context): Promise<Error | undefined>;
     toJSON(): any;
     toString(): string;
     [inspect.custom](): string;

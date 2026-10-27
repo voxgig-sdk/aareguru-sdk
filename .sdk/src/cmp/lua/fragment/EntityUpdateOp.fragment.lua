@@ -7,7 +7,7 @@ local entityUpdateOp = {}
 
 ---@param reqdata EntityNameUpdateData
 ---@param ctrl? table
----@return EntityName
+---@return EntyClass
 ---@return string? err
 function EntyClass:update(reqdata, ctrl)
   local utility = self._utility

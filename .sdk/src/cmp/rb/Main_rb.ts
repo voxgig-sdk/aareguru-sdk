@@ -4,6 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, each, names, cmap,
   List, File, Content, Copy, Folder, Fragment, Line, FeatureHook,
+  inactiveFeatureExcludes,
   pluginExcludes,
   targetFeatures,
   TEST_CONTROL_EXCLUDE
@@ -48,12 +49,10 @@ const Main = cmp(async function Main(props: any) {
   // Copy tm/rb files with replacements
   Copy({
     from: 'tm/' + target.name,
-    // pluginExcludes: the generate-time plugin trim (an INACTIVE plugin
-    // group's declared files stay out of the tree - the model's `path`
-    // entries are target-root-relative, which is this Copy's root). The
-    // FEATURE-level trim for rb stays an add-time concern (vendor-tag
-    // rollout, Decision 5).
-    exclude: [/src\//, TEST_CONTROL_EXCLUDE, ...pluginExcludes(model)],
+    // The generate-time trim: a declared feature that is off, and an inactive
+    // plugin group, whose `path` entries are relative to this Copy's root.
+    exclude: [/src\//, TEST_CONTROL_EXCLUDE,
+      ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model)],
     replace: {
       ...props.ctx$.stdrep,
     }

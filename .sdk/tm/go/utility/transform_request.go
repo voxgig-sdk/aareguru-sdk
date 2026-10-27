@@ -14,7 +14,7 @@ func transformRequestUtil(ctx *core.Context) any {
 		spec.Step = "reqform"
 	}
 
-	data := omitKeys(ctx.Reqdata, headerArgNames(point))
+	data := omitKeys(ctx.Reqdata, routedArgNames(ctx))
 
 	transform := core.ToMapAny(vs.GetProp(point, "transform"))
 	if transform == nil {
@@ -47,18 +47,29 @@ func stripAction(reqdata any) any {
 	return omitKeys(reqdata, []string{"$action"})
 }
 
-// A header argument travels as a header, which prepareHeadersUtil sends, so
-// the body is built from the request data without it.
-func headerArgNames(point any) []string {
+// A header, cookie or query argument travels where prepareHeadersUtil or
+// prepareQueryUtil sends it, so the body is built from the request data
+// without it, unless the point marks it as a field the body keeps.
+func routedArgNames(ctx *core.Context) []string {
 	names := []string{}
-	if hl, ok := vs.GetPath(point, []any{"args", "header"}).([]any); ok {
-		for _, hd := range hl {
-			if name, _ := vs.GetProp(hd, "name").(string); "" != name {
-				names = append(names, name)
-			}
+	for _, arg := range append(append(callArgs(ctx, "header"), callArgs(ctx, "cookie")...), callArgs(ctx, "query")...) {
+		if !fieldArg(ctx, arg.name) {
+			names = append(names, arg.name)
 		}
 	}
 	return names
+}
+
+func fieldArg(ctx *core.Context, name string) bool {
+	for _, kind := range []string{"header", "cookie", "query"} {
+		al, _ := vs.GetPath(ctx.Point, []any{"args", kind}).([]any)
+		for _, ad := range al {
+			if n, _ := vs.GetProp(ad, "name").(string); n == name && true == vs.GetProp(ad, "field") {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func omitKeys(reqdata any, names []string) any {

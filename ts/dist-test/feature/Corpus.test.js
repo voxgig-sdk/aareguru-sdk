@@ -131,6 +131,13 @@ function tokensUsed(kase) {
     const m = JSON.stringify(kase).match(/#OP(\d+)/g) || [];
     return m.reduce((max, t) => Math.max(max, Number(t.slice(3))), 0);
 }
+// The first feature a case composes that this SDK does not generate. Such a
+// case is skipped rather than failed, as a section naming one is.
+function missingFeature(probe, kase) {
+    const named = Array.isArray(kase.feature) ? kase.feature.map((f) => f?.name) :
+        Object.keys(kase.feature || {});
+    return named.find((n) => 'string' === typeof n && !probe._rootctx.config.hasFeature(n));
+}
 // Assert that `actual` contains `expect`, recursively. Cases assert only the
 // fields they are about, so a full deepStrictEqual would force every case to
 // restate the whole record.
@@ -162,11 +169,13 @@ function subset(actual, expect, path) {
                 'corpus (create-sdkgen .sdk/test/feature/) to run these cases');
         }
     });
-    // At least one operation, or every case below would skip and the whole
-    // suite would report green having run nothing.
-    (0, node_test_1.test)('this SDK has an operation the corpus can drive', () => {
-        (0, node_assert_1.ok)(0 < ops.length, 'no declared operation completed against a plain 200 — the corpus ' +
-            'cannot exercise a feature without one');
+    // With every operation needing an argument there is nothing to drive:
+    // skip and say so, as the clean test does, rather than fail.
+    (0, node_test_1.test)('this SDK has an operation the corpus can drive', (t) => {
+        if (0 === ops.length) {
+            return t.skip('no declared operation completes against a plain 200 with no arguments (each needs a path parameter or a body); nothing for the corpus to drive');
+        }
+        (0, node_assert_1.ok)(0 < ops.length);
     });
     for (const name of FEATURES) {
         (0, node_test_1.test)(name, async (t) => {
@@ -183,10 +192,17 @@ function subset(actual, expect, path) {
             (0, node_assert_1.ok)(0 < cases.length, `corpus section feature.${name} ran ZERO cases — a renamed section ` +
                 `or an emptied fixture must fail loudly, not pass silently`);
             let ran = 0;
+            const failed = [];
             for (const raw of cases) {
                 const need = tokensUsed(raw);
                 if (ops.length < need) {
                     t.diagnostic(`skip "${raw.name}": needs ${need} operations, this SDK offers ${ops.length}`);
+                    continue;
+                }
+                const missing = missingFeature(probe, raw);
+                if (null != missing) {
+                    t.diagnostic(`skip "${raw.name}": needs the ${missing} feature, ` +
+                        'which this SDK does not generate');
                     continue;
                 }
                 const tokens = {};
@@ -194,27 +210,36 @@ function subset(actual, expect, path) {
                     tokens['#OP' + (i + 1)] = ops[i].key;
                 }
                 const kase = resolve(raw, tokens);
-                const client = makeClient(kase);
-                for (const step of (kase.op || [])) {
-                    const ref = byKey[step.op];
-                    (0, node_assert_1.ok)(null != ref, `${kase.name}: no operation ${step.op}`);
-                    try {
-                        await client[ref.accessor]()[ref.op]({}, step.ctrl || {});
-                        (0, node_assert_1.ok)(null == step.err, `${kase.name}: ${step.op} was expected to fail, and did not`);
-                    }
-                    catch (err) {
-                        if (null == step.err) {
-                            throw err;
+                ran++;
+                // Every failing case is reported, not only the first.
+                try {
+                    const client = makeClient(kase);
+                    for (const step of (kase.op || [])) {
+                        const ref = byKey[step.op];
+                        (0, node_assert_1.ok)(null != ref, `${kase.name}: no operation ${step.op}`);
+                        let err = undefined;
+                        try {
+                            await client[ref.accessor]()[ref.op]({}, step.ctrl || {});
                         }
+                        catch (e) {
+                            err = e;
+                        }
+                        if (null == step.err) {
+                            (0, node_assert_1.ok)(undefined === err, `${kase.name}: ${step.op} failed unexpectedly: ${err?.message}`);
+                            continue;
+                        }
+                        (0, node_assert_1.ok)(undefined !== err, `${kase.name}: ${step.op} was expected to fail, and did not`);
                         if ('string' === typeof step.err) {
                             (0, node_assert_1.deepStrictEqual)(err.code, step.err, `${kase.name}: wrong error code`);
                         }
                     }
+                    subset(client[`_${name}`], kase.out, `${kase.name}: _${name}`);
                 }
-                subset(client[`_${name}`], kase.out, `${kase.name}: _${name}`);
-                ran++;
+                catch (err) {
+                    const msg = String(err?.message ?? err);
+                    failed.push(msg.startsWith(kase.name) ? msg : kase.name + ': ' + msg);
+                }
             }
-            (0, node_assert_1.ok)(0 < ran, `every feature.${name} case was skipped`);
             // Say how many ran. A partial run is legitimate (an SDK with one
             // operation skips the cases needing two) but it should be visible
             // rather than inferred from a green tick - and it is the one line
@@ -222,6 +247,8 @@ function subset(actual, expect, path) {
             // language's runner.
             t.diagnostic(`feature.${name}: ran ${ran} of ${cases.length} ` +
                 `case(s) against ${ops.length} operation(s)`);
+            (0, node_assert_1.ok)(0 < ran, `every feature.${name} case was skipped`);
+            (0, node_assert_1.deepStrictEqual)(failed, [], `feature.${name}: ${failed.length} case(s) failed`);
         });
     }
 });

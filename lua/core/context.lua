@@ -19,6 +19,9 @@ function Context.new(ctxmap, basectx)
 
   self.id = "C" .. tostring(math.random(10000000, 99999999))
   self.out = {}
+  -- Set by make_error as it fires PreUnexpected, which fires once per
+  -- operation.
+  self.unexpected_fired = false
 
   ctxmap = ctxmap or {}
 
@@ -189,7 +192,7 @@ function Context:resolve_op(opname)
   local opcfg = vs.getpath(self.config, "entity." .. entname .. ".op." .. opname)
 
   local input = "match"
-  if opname == "update" or opname == "create" then
+  if opname == "update" or opname == "create" or opname == "patch" then
     input = "data"
   end
 

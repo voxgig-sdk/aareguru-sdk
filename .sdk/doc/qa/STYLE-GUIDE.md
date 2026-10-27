@@ -85,6 +85,13 @@ including custom component output and authored website pages. The local
 gate and Vale use this same manifest and extract the same prose. Code,
 scripts, and styles are excluded from prose checks.
 
+The manifest also records the specification descriptions each page quotes.
+The banned phrase list and the neutral-voice rule skip them, and table
+cells, because those words are the specification's and an SDK author cannot
+edit them. Every other rule, Vale included, reads them. Identifiers inside a
+description are rendered as code, and a description written in several
+blocks keeps them as a quotation.
+
 The local gate checks banned phrases across line wraps, first person,
 punctuation, emoji, and repeated words within a line. Vale checks spelling,
 word choice, and the pinned Google rules. Errors fail CI; warnings and

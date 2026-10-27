@@ -9,7 +9,7 @@ import { createLiveTransport } from '../../live-runner'
 import { runLiveEntity } from '../../live-entity'
 
 
-import { AareguruSDK, BaseFeature, stdutil } from '../../..'
+import { AareguruSDK, BaseFeature, config, stdutil } from '../../..'
 
 import {
   envOverride,
@@ -41,6 +41,18 @@ describe('LegacyEntity', async () => {
   })
 
 
+  test('validate', async (t) => {
+    if (null == (config as any).feature?.validate) {
+      t.skip('feature not present in this SDK: validate')
+      return
+    }
+    const client = AareguruSDK.test(undefined, { feature: { validate: { active: true } } })
+    await assert.rejects(client.Legacy().load({"app":1} as any),
+      (err: any) => 'validate_failed' === err.code)
+  })
+
+
+
   test('basic', async (t) => {
 
     const live = 'TRUE' === process.env.AAREGURU_TEST_LIVE
@@ -51,7 +63,7 @@ describe('LegacyEntity', async () => {
     
     const setup = basicSetup()
     if (setup.live) {
-      return runLiveEntity(setup, {"active":true,"alias":{"field":{}},"fields":{},"name":"legacy","op":{"load":{"input":"data","name":"load","points":[{"a":true,"co":{"id":"GET /current","source":"openapi3","version":2},"g":{"query":[{"a":true,"ex":"my.app.ch","k":"query","n":"app","or":"app","r":false,"t":"`$STRING`","index$":0},{"a":true,"ex":"1.0.42","k":"query","n":"version","or":"version","r":false,"t":"`$STRING`","index$":1}]},"k":"http","m":"GET","o":"/current","q":{"exist":["app","version"]},"r":{},"s":[{"lit":"current"}],"t":{"req":"`reqdata`","res":"`body`"},"index$":0},{"a":true,"co":{"id":"GET /currentV2","source":"openapi3","version":2},"g":{"query":[{"a":true,"ex":"my.app.ch","k":"query","n":"app","or":"app","r":false,"t":"`$STRING`","index$":0},{"a":true,"ex":"1.0.42","k":"query","n":"version","or":"version","r":false,"t":"`$STRING`","index$":1}]},"k":"http","m":"GET","o":"/currentV2","q":{"exist":["app","version"]},"r":{},"s":[{"lit":"currentV2"}],"t":{"req":"`reqdata`","res":"`body`"},"index$":1},{"a":true,"co":{"id":"GET /today","source":"openapi3","version":2},"g":{"query":[{"a":true,"ex":"my.app.ch","k":"query","n":"app","or":"app","r":false,"t":"`$STRING`","index$":0},{"a":true,"ex":"1.0.42","k":"query","n":"version","or":"version","r":false,"t":"`$STRING`","index$":1}]},"k":"http","m":"GET","o":"/today","q":{"exist":["app","version"]},"r":{},"s":[{"lit":"today"}],"t":{"req":"`reqdata`","res":"`body`"},"index$":2}],"key$":"load"}},"relations":{"ancestors":[]},"key$":"legacy","name__orig":"legacy","Name":"Legacy","name_":"legacy","name-":"legacy","NAME":"LEGACY","index$":0}, {"active":true,"entity":"legacy","key$":"BasicLegacyFlow","kind":"basic","name":"BasicLegacyFlow","param":{},"step":[{"a":true,"d":{},"i":{"ref":"legacy_ref01","srcdatavar":"legacy_ref01_data","suffix":"_dt0"},"m":{},"o":"load","s":[],"v":[{"apply":"TextFieldMark","def":{"mark":"Mark01-legacy_ref01"}}],"index$":0}]}, 'Legacy', {"GET /current":{"protocol":"http","parameters":[{"name":"app","in":"query","description":"Optionaler App-Name.","schema":{"type":"string"},"example":"my.app.ch","x-ref":"#/components/parameters/app","index$":0},{"name":"version","in":"query","description":"Optionale Versionsnummer für diese App.","schema":{"type":"string"},"example":"1.0.42","x-ref":"#/components/parameters/version","index$":1}]},"GET /currentV2":{"protocol":"http","parameters":[{"name":"app","in":"query","description":"Optionaler App-Name.","schema":{"type":"string"},"example":"my.app.ch","x-ref":"#/components/parameters/app","index$":0},{"name":"version","in":"query","description":"Optionale Versionsnummer für diese App.","schema":{"type":"string"},"example":"1.0.42","x-ref":"#/components/parameters/version","index$":1}]},"GET /today":{"protocol":"http","parameters":[{"name":"app","in":"query","description":"Optionaler App-Name.","schema":{"type":"string"},"example":"my.app.ch","x-ref":"#/components/parameters/app","index$":0},{"name":"version","in":"query","description":"Optionale Versionsnummer für diese App.","schema":{"type":"string"},"example":"1.0.42","x-ref":"#/components/parameters/version","index$":1}]}})
+      return runLiveEntity(setup, {"active":true,"alias":{"field":{}},"fields":{},"name":"legacy","op":{"load":{"input":"data","name":"load","points":[{"a":true,"co":{"id":"GET /current","source":"openapi3","version":2},"g":{"query":[{"a":true,"ex":"my.app.ch","k":"query","n":"app","or":"app","r":false,"t":"`$STRING`","index$":0},{"a":true,"ex":"1.0.42","k":"query","n":"version","or":"version","r":false,"t":"`$STRING`","index$":1}]},"k":"http","m":"GET","o":"/current","q":{},"r":{},"s":[{"lit":"current"}],"t":{"req":"`reqdata`","res":"`body`"},"index$":0},{"a":true,"co":{"id":"GET /currentV2","source":"openapi3","version":2},"g":{"query":[{"a":true,"ex":"my.app.ch","k":"query","n":"app","or":"app","r":false,"t":"`$STRING`","index$":0},{"a":true,"ex":"1.0.42","k":"query","n":"version","or":"version","r":false,"t":"`$STRING`","index$":1}]},"k":"http","m":"GET","o":"/currentV2","q":{},"r":{},"s":[{"lit":"currentV2"}],"t":{"req":"`reqdata`","res":"`body`"},"index$":1},{"a":true,"co":{"id":"GET /today","source":"openapi3","version":2},"g":{"query":[{"a":true,"ex":"my.app.ch","k":"query","n":"app","or":"app","r":false,"t":"`$STRING`","index$":0},{"a":true,"ex":"1.0.42","k":"query","n":"version","or":"version","r":false,"t":"`$STRING`","index$":1}]},"k":"http","m":"GET","o":"/today","q":{},"r":{},"s":[{"lit":"today"}],"t":{"req":"`reqdata`","res":"`body`"},"index$":2}],"key$":"load"}},"relations":{"ancestors":[]},"key$":"legacy","name__orig":"legacy","Name":"Legacy","name_":"legacy","name-":"legacy","NAME":"LEGACY","index$":0}, {"active":true,"entity":"legacy","key$":"BasicLegacyFlow","kind":"basic","name":"BasicLegacyFlow","param":{},"step":[{"a":true,"d":{},"i":{"ref":"legacy_ref01","srcdatavar":"legacy_ref01_data","suffix":"_dt0"},"m":{},"o":"load","s":[],"v":[{"apply":"TextFieldMark","def":{"mark":"Mark01-legacy_ref01"}}],"index$":0}]}, 'Legacy', {"GET /current":{"protocol":"http","parameters":[{"name":"app","in":"query","description":"Optionaler App-Name.","schema":{"type":"string"},"example":"my.app.ch","x-ref":"#/components/parameters/app","index$":0},{"name":"version","in":"query","description":"Optionale Versionsnummer für diese App.","schema":{"type":"string"},"example":"1.0.42","x-ref":"#/components/parameters/version","index$":1}]},"GET /currentV2":{"protocol":"http","parameters":[{"name":"app","in":"query","description":"Optionaler App-Name.","schema":{"type":"string"},"example":"my.app.ch","x-ref":"#/components/parameters/app","index$":0},{"name":"version","in":"query","description":"Optionale Versionsnummer für diese App.","schema":{"type":"string"},"example":"1.0.42","x-ref":"#/components/parameters/version","index$":1}]},"GET /today":{"protocol":"http","parameters":[{"name":"app","in":"query","description":"Optionaler App-Name.","schema":{"type":"string"},"example":"my.app.ch","x-ref":"#/components/parameters/app","index$":0},{"name":"version","in":"query","description":"Optionale Versionsnummer für diese App.","schema":{"type":"string"},"example":"1.0.42","x-ref":"#/components/parameters/version","index$":1}]}}, { strict: LIVE_STRICT, t })
     }
     const client = setup.client
     const struct = setup.struct
@@ -72,6 +84,12 @@ describe('LegacyEntity', async () => {
 })
 
 
+
+// main.kit.test.live.strict is true (the default is true): a live
+// request that fails, or a live test missing an input it needs,
+// fails the test.
+// An account with no record for a test to read skips it either way.
+const LIVE_STRICT = true
 
 function basicSetup(extra?: any) {
   // TODO: fix test def options

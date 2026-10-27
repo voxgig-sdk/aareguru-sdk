@@ -10,6 +10,7 @@ declare class Context {
     id: string;
     out: Record<string, any>;
     current: WeakMap<String, any>;
+    unexpectedFired: boolean;
     ctrl: Record<string, any>;
     meta: Record<string, any>;
     client: AareguruSDK;

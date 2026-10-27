@@ -18,6 +18,9 @@ class AareguruSpec
     public mixed $body;
     public string $url;
     public string $path;
+    // The query parameters prepare_auth placed: the credential, which the
+    // request sends and the entity's match leaves out.
+    public array $authquery;
 
     public function __construct(array $specmap = [])
     {
@@ -34,5 +37,6 @@ class AareguruSpec
         $this->body = $specmap['body'] ?? null;
         $this->url = $specmap['url'] ?? '';
         $this->path = $specmap['path'] ?? '';
+        $this->authquery = $specmap['authquery'] ?? [];
     }
 }

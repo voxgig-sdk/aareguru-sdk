@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName, matchArg, idLiteral, targetFeatures } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, safeVarName, exampleVarName, targetFeatures, opNeedsAction, bodyNote, listMatchArg, entityClassName, entityCollection, matchExampleItems, litString, requestExampleItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -13,45 +13,45 @@ import {
 // test. Strings render the quoted placeholder.
 function pyLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'None'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'True'
   if ('ARRAY' === k) return '[]'
   if ('OBJECT' === k) return '{}'
-  return `"${placeholder}"`
-}
-
-
-function listMatchArg(ent: any): string {
-  const idF = entityIdField(ent)
-  return matchArg('py', ent, 'list', idF, idLiteral(ent, 'list', idF))
+  return litString('py', placeholder)
 }
 
 
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
-    sig: 'load(reqmatch, ctrl=None) -> dict',
-    returns: 'the entity data',
-    desc: 'Load a single entity matching the given criteria. Returns the entity data and raises on error.',
+    sig: 'load(reqmatch, ctrl=None) -> EntyClass',
+    returns: 'the entity',
+    desc: 'Load a single entity matching the given criteria. Returns the entity, whose record `data_get()` reads, and raises on error.',
   },
   list: {
-    sig: 'list(reqmatch=None, ctrl=None) -> list',
-    returns: 'a list of entities',
-    desc: 'List entities matching the given criteria. The match is optional — call `list()` with no argument to list all records. Returns a list and raises on error.',
+    sig: 'list(reqmatch=None, ctrl=None) -> list[EntyClass]',
+    returns: 'a list of entities, one per record',
+    desc: 'List entities matching the given criteria. The match is optional — call `list()` with no argument to list all records. Returns a list of entities, one per record, and raises on error.',
   },
   create: {
-    sig: 'create(reqdata, ctrl=None) -> dict',
-    returns: 'the created entity data',
-    desc: 'Create a new entity with the given data. Returns the created entity data and raises on error.',
+    sig: 'create(reqdata, ctrl=None) -> EntyClass',
+    returns: 'the created entity',
+    desc: 'Create a new entity with the given data. Returns the created entity and raises on error.',
   },
   update: {
-    sig: 'update(reqdata, ctrl=None) -> dict',
-    returns: 'the updated entity data',
-    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity data and raises on error.',
+    sig: 'update(reqdata, ctrl=None) -> EntyClass',
+    returns: 'the updated entity',
+    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity and raises on error.',
+  },
+  patch: {
+    sig: 'patch(reqdata, ctrl=None) -> EntyClass',
+    returns: 'the patched entity',
+    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity and raises on error.',
   },
   remove: {
-    sig: 'remove(reqmatch, ctrl=None) -> dict',
-    returns: 'the removed entity data',
-    desc: 'Remove the entity matching the given criteria. Raises on error.',
+    sig: 'remove(reqmatch, ctrl=None) -> EntyClass',
+    returns: 'the removed entity',
+    desc: 'Remove the entity matching the given criteria. Returns the entity, marked as deleted, and raises on error.',
   },
 }
 
@@ -216,7 +216,7 @@ ${eVar} = client.${ent.Name}()
         if (hasFieldOps) {
           // Only emit columns for operations this entity actually exposes —
           // never advertise a create/update/remove column the entity lacks.
-          const opcols = ['load', 'list', 'create', 'update', 'remove']
+          const opcols = ['load', 'list', 'create', 'update', 'patch', 'remove']
             .filter((op: string) => opnames.includes(op) && ent.op[op]?.active !== false)
           Content(`### Field Usage by Operation
 
@@ -250,11 +250,15 @@ ${eVar} = client.${ent.Name}()
           const info = OP_SIGNATURES[opname]
           if (!info) return
 
-          Content(`#### \`${info.sig}\`
+          Content(`#### \`${info.sig.replace('EntyClass', entityClassName(ent, entityCollection(model)))}\`
 
 ${info.desc}
 
 `)
+
+          if (opNeedsAction(ent.op[opname])) {
+            return
+          }
 
           // Show example. Entity ops return the ENTITY and raise on
           // error; direct() is the only method that returns a result dict.
@@ -262,13 +266,12 @@ ${info.desc}
             // The id key plus every REQUIRED match key (parent path params
             // like page_id) — the same shape the runtime resolves path
             // params from, so the example always works.
-            const matchItems = opRequestShape(ent, opname).items
-              .filter((it: any) => !it.optional || it.name === idF)
+            const matchItems = matchExampleItems(ent, opname, idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const arg = 0 < matchItems.length
               ? `{${matchItems.map((it: any) =>
-                `"${it.name}": ${pyLit(it.type,
+                `${litString('py', it.name)}: ${pyLit(it.type,
                   it.name === idF ? ent.name + '_id' : it.name)}`).join(', ')}}`
               : ''
             Content(`\`\`\`python
@@ -279,9 +282,9 @@ result = client.${ent.Name}().${opname}(${arg})
           }
           else if ('list' === opname) {
             Content(`\`\`\`python
-results = client.${ent.Name}().list(${listMatchArg(ent)})
+results = client.${ent.Name}().list(${listMatchArg('py', ent)})
 for ${eVar} in results:
-    print(${eVar})
+    print(${eVar}.data_get())
 \`\`\`
 
 `)
@@ -292,13 +295,13 @@ for ${eVar} in results:
             // a required id and parent keys like page_id — with a real,
             // executable literal (the doc test RUNS this block, so a comment
             // placeholder would break it).
-            const createItems = opRequestShape(ent, 'create').items
+            const createItems = requestExampleItems(ent, 'create')
               .filter((it: any) => !it.optional)
             Content(`\`\`\`python
 result = client.${ent.Name}().create({
 `)
             createItems.map((it: any) => {
-              Content(`    "${it.name}": ${pyLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, target.name)}
+              Content(`    ${litString('py', it.name)}: ${pyLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, target.name)}
 `)
             })
             Content(`})
@@ -306,23 +309,31 @@ result = client.${ent.Name}().create({
 
 `)
           }
-          else if ('update' === opname) {
+          else if ('update' === opname || 'patch' === opname) {
             // The id key plus every REQUIRED data member — the same shape the
             // runtime validates — then the patch-fields note.
-            const updateItems = opRequestShape(ent, 'update').items
+            const updateItems = requestExampleItems(ent, opname)
               .filter((it: any) => !it.optional || it.name === idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const updateLines = updateItems.map((it: any) =>
-              `    "${it.name}": ${pyLit(it.type,
+              `    ${litString('py', it.name)}: ${pyLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
             Content(`\`\`\`python
-result = client.${ent.Name}().update({
-${updateLines}    # Fields to update
+result = client.${ent.Name}().${opname}({
+${updateLines}    # ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}
 })
 \`\`\`
 
 `)
+          }
+
+          if ('create' === opname || 'update' === opname || 'patch' === opname) {
+            const note = bodyNote(ent.op[opname], {
+              values: '`bytes`, `bytearray`, `memoryview`, a `str` or a file object',
+              once: 'a file object',
+            })
+            if ('' !== note) Content(note)
           }
         })
       }
@@ -398,8 +409,6 @@ client = ${model.const.Name}SDK({
 
   })
 })
-
-
 
 
 export {

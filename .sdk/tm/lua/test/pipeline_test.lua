@@ -407,6 +407,33 @@ describe("pipeline", function()
   end)
 
 
+  describe("makeUrl", function()
+
+    -- luasocket takes everything up to the first / as the host. The mock
+    -- fetcher never parses the URL, so the built string is what is checked.
+    local function url_for(base, path, query)
+      local ctx = base_ctx({})
+      ctx.spec = Spec.new({ base = base, path = path, query = query })
+      ctx.result = Result.new({})
+      local url, err = ctx.utility.make_url(ctx)
+      assert.is_nil(err)
+      return url
+    end
+
+    it("gives a route at the server root the path /", function()
+      assert.are.equal("https://api.test/?name=michael", url_for("https://api.test", "", { name = "michael" }))
+      assert.are.equal("https://api.test/", url_for("https://api.test", ""))
+      assert.are.equal("https://api.test/", url_for("https://api.test/", "/"))
+    end)
+
+    it("leaves a URL with a path, or with no authority, as it is", function()
+      assert.are.equal("https://api.test/v1?name=michael", url_for("https://api.test/v1", "", { name = "michael" }))
+      assert.are.equal("https://api.test/pets", url_for("https://api.test", "pets"))
+      assert.are.equal("base-/p", url_for("base-", "p"))
+    end)
+  end)
+
+
   describe("makeError + done", function()
 
     it("done returns resdata on success", function()

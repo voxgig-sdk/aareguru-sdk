@@ -26,6 +26,7 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert'
 import * as Fs from 'node:fs'
+import * as Os from 'node:os'
 import * as Path from 'node:path'
 import { createRequire } from 'node:module'
 import { spawnSync } from 'node:child_process'
@@ -35,11 +36,19 @@ import { AareguruSDK } from '..'
 
 const SDK_NAME = 'AareguruSDK'
 
+// The package root, by absolute path: the snippets compile outside the SDK.
+const SDK_ROOT = Path.join(__dirname, '..').split(Path.sep).join('/')
+
 // A fixture for every entity, so list()/load() resolve offline with no
 // network. Snippet client construction is rewritten to seed this.
 const TEST_SEED = {"entity":{"legacy":{"test01":{"id":"test01"}},"stuff":{"test01":{"id":"test01"}},"v2018":{"test01":{"id":"test01"}}}}
 const SEED_ARG = JSON.stringify(TEST_SEED)
 const SEEDED_CTOR = SDK_NAME + '.test(' + SEED_ARG + ')'
+
+// The client VARIABLE, not the word: a package name carries the word between
+// hyphens (@voxgig-sdk/multifon-client-sdk).
+const CLIENT = /(?<![\w$.\-\/'"`])client(?![\w$\-\/'"`])/
+const CLIENT_CALL = new RegExp(CLIENT.source + '\\s*\\.')
 
 
 // The three docs this gate covers, resolved relative to dist-test/.
@@ -106,30 +115,44 @@ function isRunnable(code: string): boolean {
   return (
     /new\s+AareguruSDK\b/.test(code) ||
     /\bAareguruSDK\.test\b/.test(code) ||
-    /\bclient\s*\./.test(code)
+    CLIENT_CALL.test(code)
   )
 }
 
 
 // Wrap ONE block as a self-contained temp module: the block goes in its own
 // scope inside an async function with a shared seeded `client`.
+const SNIPPET_HEAD = [
+  'import { ' + SDK_NAME + ' } from ' + JSON.stringify(SDK_ROOT),
+  '',
+  'async function __ex() {',
+  // Shared client for snippets that reference `client` without constructing
+  // one (e.g. the direct() example).
+  '  const client = ' + SDK_NAME + '.test()',
+  '  void client',
+  '  {',
+]
+const SNIPPET_INDENT = '    '
+
 function buildSnippetModule(block: string): string {
-  const inner = stripImports(block).split('\n').map((l) => '    ' + l).join('\n')
+  const inner = stripImports(block).split('\n').map((l) => SNIPPET_INDENT + l).join('\n')
   return [
-    "import { " + SDK_NAME + " } from '..'",
-    '',
-    'async function __ex() {',
-    // Shared client for snippets that reference `client` without constructing
-    // one (e.g. the direct() example).
-    '  const client = ' + SDK_NAME + '.test()',
-    '  void client',
-    '  {',
+    ...SNIPPET_HEAD,
     inner,
     '  }',
     '}',
     'void __ex',
     '',
   ].join('\n')
+}
+
+
+// A tsc position in a wrapped module, as a line and column of the block itself.
+function blockPosition(line: number, col: number): string {
+  const at = line - SNIPPET_HEAD.length
+  return 0 < at
+    ? 'line ' + at + ', col ' + Math.max(1, col - SNIPPET_INDENT.length)
+    : 'wrapper line ' + line + ', col ' + col
 }
 
 
@@ -140,23 +163,26 @@ function buildSnippetModule(block: string): string {
 // `typeCheckBlocks` drives this in a fixpoint that removes erroring blocks
 // and recompiles the rest until a pass is clean.
 function compileBatch(indices: number[], blocks: string[], key: string): {
-  errored: Set<number>; raw: string; unattributed: boolean
+  errored: Set<number>; diagnostics: Map<number, string[]>; raw: string; unattributed: boolean
 } {
   const tsDir = Path.join(__dirname, '..')
-  const testDir = Path.join(tsDir, 'test')
-  // Leading dot: TypeScript wildcard includes skip dot-files, so these temp
-  // files are never swept into the normal build.
+  // Outside the SDK's tree, so a run leaves nothing there even when it is
+  // interrupted. `.cts` keeps them CommonJS whatever package.json is above.
+  const dir = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'readme-examples-'))
   const files: string[] = []
 
   try {
     for (const i of indices) {
-      const f = Path.join(testDir, '.examples_' + key + '_snippet' + i + '.gen.ts')
+      const f = Path.join(dir, 'examples_' + key + '_snippet' + i + '.gen.cts')
       Fs.writeFileSync(f, buildSnippetModule(blocks[i]), 'utf8')
       files.push(f)
     }
 
     const requireFrom = createRequire(__filename)
-    const tsc = requireFrom.resolve('typescript/bin/tsc')
+    // Every TypeScript exports its package.json; TypeScript 7 exports no
+    // ./bin/tsc, so the binary is found through the manifest's bin.
+    const tsPackage = requireFrom.resolve('typescript/package.json')
+    const tsc = Path.join(Path.dirname(tsPackage), requireFrom(tsPackage).bin.tsc)
 
     const res = spawnSync(process.execPath, [
       tsc,
@@ -175,28 +201,38 @@ function compileBatch(indices: number[], blocks: string[], key: string): {
 
     const raw = ((res.stdout || '') + (res.stderr || '')).trim()
     const errored = new Set<number>()
+    // Each snippet's own diagnostics, so a report quotes only those of the
+    // blocks it names; tsc's indented follow-on lines stay with theirs.
+    const diagnostics = new Map<number, string[]>()
+    let current: string[] | null = null
     let unattributed = false
 
     if (0 !== res.status) {
       for (const line of raw.split('\n')) {
-        const m = /_snippet(\d+)\.gen\.ts\(\d+,\d+\):\s*error/.exec(line)
+        const m = /_snippet(\d+)\.gen\.cts\((\d+),(\d+)\):\s*(error[\s\S]*)$/.exec(line)
         if (null == m) {
           // A genuine error diagnostic not attributable to a snippet file
           // (e.g. inside the SDK itself) is an anomaly.
           if (/:\s*error\s+TS\d+/.test(line)) {
             unattributed = true
+            current = null
+          }
+          else if (null != current && /^\s/.test(line)) {
+            current.push(line)
           }
           continue
         }
-        errored.add(parseInt(m[1], 10))
+        const i = parseInt(m[1], 10)
+        errored.add(i)
+        current = diagnostics.get(i) || []
+        diagnostics.set(i, current)
+        current.push(blockPosition(parseInt(m[2], 10), parseInt(m[3], 10)) + ': ' + m[4])
       }
     }
 
-    return { errored, raw, unattributed }
+    return { errored, diagnostics, raw, unattributed }
   } finally {
-    for (const f of files) {
-      Fs.rmSync(f, { force: true })
-    }
+    Fs.rmSync(dir, { recursive: true, force: true })
   }
 }
 
@@ -209,17 +245,20 @@ function compileBatch(indices: number[], blocks: string[], key: string): {
 // terminates. `globalError` flags an unattributable tsc error, surfaced
 // verbatim by the caller.
 function typeCheckBlocks(blocks: string[], key: string): {
-  failing: Set<number>; raw: string; globalError: boolean
+  failing: Set<number>; diagnostics: Map<number, string[]>; raw: string; globalError: boolean
 } {
   const failing = new Set<number>()
+  const diagnostics = new Map<number, string[]>()
   const raws: string[] = []
   let globalError = false
   let remaining = blocks.map((_b, i) => i)
 
   // Guard: at most one pass per block plus a final clean pass.
   for (let pass = 0; pass <= blocks.length && 0 < remaining.length; pass++) {
-    const { errored, raw, unattributed } = compileBatch(remaining, blocks, key)
+    const batch = compileBatch(remaining, blocks, key)
+    const { errored, raw, unattributed } = batch
     raws.push(raw)
+    batch.diagnostics.forEach((lines, i) => diagnostics.set(i, lines))
     if (unattributed) {
       globalError = true
     }
@@ -232,7 +271,7 @@ function typeCheckBlocks(blocks: string[], key: string): {
     remaining = remaining.filter((i) => !errored.has(i))
   }
 
-  return { failing, raw: raws.filter(Boolean).join('\n'), globalError }
+  return { failing, diagnostics, raw: raws.filter(Boolean).join('\n'), globalError }
 }
 
 
@@ -244,7 +283,7 @@ function rewriteForRun(code: string): string {
   let out = stripImports(code)
   out = out.replace(/new\s+AareguruSDK\s*\([^)]*\)/g, () => SEEDED_CTOR)
   out = out.replace(/AareguruSDK\.test\s*\([^)]*\)/g, () => SEEDED_CTOR)
-  if (/\bclient\b/.test(out) && !/\b(?:const|let|var)\s+client\b/.test(out)) {
+  if (CLIENT.test(out) && !/\b(?:const|let|var)\s+client\b/.test(out)) {
     out = 'const client = ' + SEEDED_CTOR + '\n' + out
   }
   return out
@@ -255,7 +294,13 @@ function rewriteForRun(code: string): string {
 // test mode. Returns a list of failure descriptions (empty === all passed).
 async function executeBlocks(blocks: string[]): Promise<string[]> {
   const requireFrom = createRequire(__filename)
-  const ts = requireFrom('typescript')
+  // Node strips a snippet's types itself from 22.13; before that TypeScript 5
+  // does, through an API TypeScript 7 no longer ships.
+  const strip = requireFrom('node:module').stripTypeScriptTypes
+  const ts = 'function' === typeof strip ? null : requireFrom('typescript')
+  if (null == strip && 'function' !== typeof ts.transpileModule) {
+    throw new Error('running the examples needs node 22.13 or TypeScript 5 to strip their types')
+  }
 
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor
   const silentConsole = { log() {}, error() {}, warn() {}, info() {} }
@@ -273,14 +318,16 @@ async function executeBlocks(blocks: string[]): Promise<string[]> {
       continue
     }
 
-    // Compile the snippet to JS (strips type annotations) so it runs under
-    // node exactly as a real caller would.
-    const js = ts.transpileModule(src, {
-      compilerOptions: {
-        target: ts.ScriptTarget.ES2020,
-        module: ts.ModuleKind.ESNext,
-      },
-    }).outputText
+    // Strip the snippet's types so it runs under node exactly as a real
+    // caller would.
+    const js = null != strip
+      ? strip(src, { mode: 'transform' })
+      : ts.transpileModule(src, {
+        compilerOptions: {
+          target: ts.ScriptTarget.ES2020,
+          module: ts.ModuleKind.ESNext,
+        },
+      }).outputText
 
     let runner: any
     try {
@@ -326,7 +373,7 @@ describe('README examples', () => {
       const blocks = extractTsBlocks(md)
       assert(blocks.length > 0, 'No TypeScript code blocks found in ' + doc.label)
 
-      const { failing, raw, globalError } = typeCheckBlocks(blocks, doc.key)
+      const { failing, diagnostics, raw, globalError } = typeCheckBlocks(blocks, doc.key)
       assert(!globalError,
         'tsc reported an error outside any snippet in ' + doc.label +
         ' — the harness could not attribute it:\n\n' + raw + '\n')
@@ -344,7 +391,8 @@ describe('README examples', () => {
         if (!typechecks && shape) {
           illustration++
         } else if (!typechecks && !shape) {
-          unrecognized.push('  snippet ' + i + ':\n' + indentBlock(b))
+          unrecognized.push('  snippet ' + i + ':\n' + indentBlock(b) + '\n\n  tsc:\n' +
+            indentBlock((diagnostics.get(i) || []).join('\n')))
         } else if (typechecks && runnable) {
           executed++
         } else {
@@ -362,7 +410,7 @@ describe('README examples', () => {
         'These ' + doc.label + ' ```ts blocks neither type-check nor match the ' +
         'illustration allowlist. Fix the snippet (or the SDK), or — if it is ' +
         'genuinely illustrative — reshape it to the allowlist:\n\n' +
-        unrecognized.join('\n\n') + '\n\ntsc output:\n' + raw + '\n')
+        unrecognized.join('\n\n') + '\n')
 
       assert.strictEqual(blocks.length, executed + typecheckedOnly + illustration,
         'completeness partition mismatch for ' + doc.label + ': ' + blocks.length +

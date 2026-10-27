@@ -4,7 +4,7 @@ local entityListOp = {}
 
 ---@param reqmatch EntityNameListMatch
 ---@param ctrl? table
----@return EntityName[]
+---@return EntyClass[]
 ---@return string? err
 function EntyClass:list(reqmatch, ctrl)
   local utility = self._utility

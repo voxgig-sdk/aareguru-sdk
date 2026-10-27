@@ -1,5 +1,5 @@
 # VENDORED: @voxgig/struct 0.1.1 (python/voxgig_struct/voxgig_struct.py)
-# Source: https://github.com/voxgig/struct @ 3a42881b1d26c75ebbed9f1897f0ba94cf3cf780  [tag: sdk-20260925-1316-0]
+# Source: https://github.com/voxgig/struct @ 621057e24eb5f3e3da6fd3820ff24a36aaacb21b  [tag: sdk-20261016-0845-0]
 # License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 # Copyright (c) 2025 Voxgig Ltd. MIT LICENSE.
 #
@@ -711,10 +711,10 @@ def re_escape(s):
 
 
 def escurl(s: Any):
-    "Escape URLs."
+    "Escape URLs, keeping what encodeURIComponent keeps."
     if s == UNDEF:
         s = S_MT
-    return urllib.parse.quote(s, safe='')
+    return urllib.parse.quote(s, safe="!~*'()")
 
 
 def replace(s, from_pat, to_str):
@@ -1388,17 +1388,17 @@ def merge(objs: list[Any] = UNDEF, maxdepth: Any = None) -> Any:
                     dst[pI] = getprop(dst[pI - 1], key) if pI > 0 else dst[pI]
                     tval = dst[pI]
 
-                    if tval == UNDEF:
-                        cur[pI] = [] if islist(val) else {}
-                    elif (islist(val) and islist(tval)) or (ismap(val) and ismap(tval)):
+                    if (islist(val) and islist(tval)) or (ismap(val) and ismap(tval)):
                         cur[pI] = tval
                     else:
-                        cur[pI] = val
-                        val = UNDEF
+                        # Otherwise the override wins: it is copied, taking nothing
+                        # from the destination, so no later merge writes into it.
+                        cur[pI] = [] if islist(val) else {}
+                        dst[pI] = UNDEF
 
                 return val
 
-            def after(key, _val, _parent, path, cur=cur):
+            def after(key, _val, parent, path, cur=cur):
                 cI = size(path)
                 if cI < 1:
                     return cur[0] if len(cur) > 0 else _val
@@ -1407,7 +1407,10 @@ def merge(objs: list[Any] = UNDEF, maxdepth: Any = None) -> Any:
                 value = cur[cI] if cI < len(cur) else UNDEF
 
                 setprop(target, key, value)
-                return value
+
+                # walk writes this back into the override, so it is the
+                # override's own child, read raw so a None stays None.
+                return _lookup(parent, key)
 
             out = walk(obj, before=before, after=after)
 
@@ -1543,7 +1546,7 @@ def setpath(store, path, val, injdef=UNDEF):
 
     base = getprop(injdef, S_base) if injdef else UNDEF
     numparts = size(parts)
-    parent = getprop(store, base, store) if base else store
+    parent = getprop(store, base, store)
 
     for pI in range(numparts - 1):
         partKey = getelem(parts, pI)

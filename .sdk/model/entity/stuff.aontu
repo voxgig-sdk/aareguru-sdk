@@ -55,10 +55,7 @@ main: kit: entity: stuff: {
           o: "/logs"
           q: {
             exist: [
-              "app"
-              "line"
               "service"
-              "version"
             ]
           }
           s: [
@@ -109,9 +106,7 @@ main: kit: entity: stuff: {
           o: "/rawdata"
           q: {
             exist: [
-              "app"
               "service"
-              "version"
             ]
           }
           s: [

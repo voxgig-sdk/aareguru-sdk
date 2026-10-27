@@ -12,7 +12,7 @@ The SDK exposes the API as capitalised, semantic **Entities** — for example `c
 
 ## Install
 This package is not yet published to RubyGems. Install it from the
-GitHub release tag (`rb/vX.Y.Z`, see [Releases](https://github.com/voxgig-sdk/aareguru-sdk/releases)), or
+GitHub release tag (`rb/vX.Y.Z`, see [Tags](https://github.com/voxgig-sdk/aareguru-sdk/tags)), or
 from a clone:
 
 ```bash
@@ -45,7 +45,7 @@ client = AareguruSDK.new
 begin
   # load returns the ENTITY — call data_get for the Legacy record (raises on error).
   legacy = client.Legacy.load()
-  puts legacy
+  puts legacy.data_get
 rescue => err
   warn "load failed: #{err}"
 end
@@ -58,7 +58,7 @@ Entity operations raise on failure, so rescue them:
 
 ```ruby
 begin
-  stuff = client.Stuff.load({ "service" => "example" })
+  legacy = client.Legacy.load()
 rescue => err
   warn "load failed: #{err}"
 end
@@ -127,9 +127,9 @@ Create a mock client for unit testing — no server required:
 client = AareguruSDK.test
 
 # Entity ops return the ENTITY (raises on error);
-# call data_get for the mock record.
-stuff = client.Stuff.load({ "service" => "example" })
-puts stuff
+# data_get reads its mock record.
+legacy = client.Legacy.load()
+puts legacy.data_get
 ```
 
 ### Use a custom fetch function
@@ -215,7 +215,7 @@ All entities share the same interface.
 
 | Method | Signature | Description |
 | --- | --- | --- |
-| `load` | `(reqmatch, ctrl) -> any` | Load a single entity by match criteria. Raises on error. |
+| `load` | `(reqmatch, ctrl) -> any` | Load a single entity by match criteria, and return it. Raises on error. |
 | `data_get` | `() -> Hash` | Get entity data. |
 | `data_set` | `(data)` | Set entity data. |
 | `match_get` | `() -> Hash` | Get entity match criteria. |
@@ -225,9 +225,10 @@ All entities share the same interface.
 
 ### Result shape
 
-Entity operations return the result data directly. On failure they
-raise a `AareguruError` (a `StandardError` subclass), so wrap
-calls in `begin`/`rescue` where you need to handle errors.
+Entity operations return the entity, and `list` an `Array` of entities, one
+per record; an entity's `data_get` reads its record. On failure they raise a
+`AareguruError` (a `StandardError` subclass), so wrap calls in
+`begin`/`rescue` where you need to handle errors.
 
 The `direct` escape hatch is the exception: it never raises and instead
 returns a result `Hash` with these keys:
@@ -319,13 +320,6 @@ Create an instance: `v2018 = client.V2018`
 | Method | Description |
 | --- | --- |
 | `load(match)` | Load a single entity by match criteria. |
-
-#### Example: Load
-
-```ruby
-# load returns the ENTITY — call data_get for the V2018 record (raises on error).
-v2018 = client.V2018.load({ "city" => "city", "end" => "end", "start" => "start" })
-```
 
 ## Features
 
@@ -489,11 +483,11 @@ Entity instances are stateful. After a successful `load`, the entity
 stores the returned data and match criteria internally.
 
 ```ruby
-stuff = client.Stuff
-stuff.load({ "service" => "example" })
+legacy = client.Legacy
+legacy.load()
 
-# stuff.data_get now returns the stuff data from the last load
-# stuff.match_get returns the last match criteria
+# legacy.data_get now returns the legacy data from the last load
+# legacy.match_get returns the last match criteria
 ```
 
 Call `make` to create a fresh instance with the same configuration

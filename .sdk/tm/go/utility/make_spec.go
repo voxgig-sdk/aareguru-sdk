@@ -1,7 +1,7 @@
 package utility
 
 import (
-	"strings"
+	"reflect"
 
 	vs "github.com/voxgig/struct"
 
@@ -10,6 +10,11 @@ import (
 
 func makeSpecUtil(ctx *core.Context) (*core.Spec, error) {
 	if ctx.Out["spec"] != nil {
+		// A PreSpec hook (validate) rejects the operation by placing its error
+		// here; the pipeline raises it, and ctx.Spec stays a request spec.
+		if err, ok := ctx.Out["spec"].(error); ok {
+			return nil, err
+		}
 		if sp, ok := ctx.Out["spec"].(*core.Spec); ok {
 			ctx.Spec = sp
 			return sp, nil
@@ -41,8 +46,9 @@ func makeSpecUtil(ctx *core.Context) (*core.Spec, error) {
 
 	ctx.Spec.Method = utility.PrepareMethod(ctx)
 
-	allowMethod, _ := vs.GetPath(options, []any{"allow", "method"}).(string)
-	if !strings.Contains(allowMethod, ctx.Spec.Method) {
+	allowMethodVal := vs.GetPath(options, []any{"allow", "method"})
+	allowMethod, _ := allowMethodVal.(string)
+	if !core.Allowed(allowMethodVal, ctx.Spec.Method) {
 		return nil, ctx.MakeError("spec_method_allow",
 			"Method \""+ctx.Spec.Method+
 				"\" not allowed by SDK option allow.method value: \""+allowMethod+"\"")
@@ -76,9 +82,23 @@ func makeSpecUtil(ctx *core.Context) (*core.Spec, error) {
 		ctx.Ctrl.Explain["spec"] = ctx.Spec
 	}
 
+	// Whatever PrepareAuth sets in the query, under whichever name, is the
+	// credential; a key it leaves as it was is the caller's.
+	query := map[string]any{}
+	for k, v := range ctx.Spec.Query {
+		query[k] = v
+	}
+
 	spec, err := utility.PrepareAuth(ctx)
 	if err != nil {
 		return nil, err
+	}
+
+	spec.AuthQuery = []string{}
+	for k, v := range spec.Query {
+		if prev, had := query[k]; !had || !reflect.DeepEqual(prev, v) {
+			spec.AuthQuery = append(spec.AuthQuery, k)
+		}
 	}
 
 	ctx.Spec = spec

@@ -42,7 +42,7 @@ const Entity = cmp(function Entity(props: any) {
       const opnames = Object.keys(entity.op || {})
 
       const opfrags =
-        (['load', 'list', 'create', 'update', 'remove']
+        (['load', 'list', 'create', 'update', 'patch', 'remove']
           .reduce((a: any, opname: string) =>
           (a['-- #' + camelify(opname) + 'Op'] =
             !opnames.includes(opname) ? '' : ({ indent }: any) => {

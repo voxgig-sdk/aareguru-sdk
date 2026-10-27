@@ -21,3 +21,6 @@ class AareguruSpec:
         self.body = specmap.get("body")
         self.url = specmap.get("url", "")
         self.path = specmap.get("path", "")
+        # The query parameters prepare_auth placed: the credential, which the
+        # request sends and the entity's match leaves out.
+        self.authquery = specmap.get("authquery", [])

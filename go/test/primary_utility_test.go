@@ -331,6 +331,34 @@ func TestPrimaryUtility(t *testing.T) {
 		}
 	})
 
+	// Nothing listens on port 9: a request the guard let through fails there.
+	t.Run("fetcher-getonly-guard", func(t *testing.T) {
+		liveClient := sdk.NewAareguruSDK(map[string]any{"base": "http://127.0.0.1:9"})
+		liveUtility := liveClient.GetUtility()
+		ctx := liveUtility.MakeContext(map[string]any{
+			"opname":  "create",
+			"client":  liveClient,
+			"utility": liveUtility,
+		}, nil)
+		url := "http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01"
+		t.Setenv("VOXGIG_GETONLY_GUARD", "TRUE")
+
+		_, err := liveUtility.Fetcher(ctx, url, map[string]any{"method": "POST", "headers": map[string]any{}})
+		var sdkerr *sdk.AareguruError
+		if !errors.As(err, &sdkerr) || sdkerr.Code != "fetch_getonly_block" {
+			t.Fatalf("expected fetch_getonly_block, got: %v", err)
+		}
+		if !strings.Contains(sdkerr.Msg, "[GET-ONLY GUARD] blocked POST /planet/p1") ||
+			strings.Contains(sdkerr.Msg, "GUARDKEY01") {
+			t.Errorf("unexpected guard message: %s", sdkerr.Msg)
+		}
+
+		_, err = liveUtility.Fetcher(ctx, url, map[string]any{"method": "GET", "headers": map[string]any{}})
+		if err == nil || errors.As(err, &sdkerr) {
+			t.Errorf("expected a GET to reach the closed port, got: %v", err)
+		}
+	})
+
 	t.Run("makeContext-basic", func(t *testing.T) {
 		runsection(t, "makeContext", func(args ...any) (any, error) {
 			if inMap, ok := args[0].(map[string]any); ok {
@@ -806,6 +834,43 @@ func (f *testInitFeature) Init(ctx *sdk.Context, options map[string]any) {
 	}
 }
 
+// A typed slice in the call's match is a list to the struct port, so a cookie
+// argument repeats its name for each item rather than sending the slice's
+// text.
+func TestPrepareHeadersCookieTypedSlice(t *testing.T) {
+	client := sdk.TestSDK(nil, nil)
+	utility := client.GetUtility()
+	ctx := makeTestCtx(client, utility, nil)
+	ctx.Point = map[string]any{
+		"args": map[string]any{"cookie": []any{
+			map[string]any{"name": "theme", "orig": "theme", "kind": "cookie"},
+		}},
+	}
+	ctx.Reqmatch = map[string]any{"theme": []string{"dark", "x y"}}
+	headers := utility.PrepareHeaders(ctx)
+	if "theme=dark; theme=x%20y" != headers["cookie"] {
+		t.Errorf("expected the slice as repeated pairs, got %v", headers["cookie"])
+	}
+}
+
+// A typed map is a map to a cookie argument as a typed slice is a list: its
+// keys go out as pairs, and replace the caller's cookies of those names.
+func TestPrepareHeadersCookieTypedMap(t *testing.T) {
+	client := sdk.TestSDK(nil, map[string]any{"headers": map[string]any{"Cookie": "lang=old; theme=dark"}})
+	utility := client.GetUtility()
+	ctx := makeTestCtx(client, utility, nil)
+	ctx.Point = map[string]any{
+		"args": map[string]any{"cookie": []any{
+			map[string]any{"name": "prefs", "orig": "prefs", "kind": "cookie"},
+		}},
+	}
+	ctx.Reqmatch = map[string]any{"prefs": map[string]string{"size": "2", "lang": "en gb"}}
+	headers := utility.PrepareHeaders(ctx)
+	if "theme=dark; lang=en%20gb; size=2" != headers["cookie"] {
+		t.Errorf("expected the map as its pairs, got %v", headers["cookie"])
+	}
+}
+
 // Helper: create basic test context
 func makeTestCtx(client *sdk.AareguruSDK, utility *sdk.Utility, overrides map[string]any) *sdk.Context {
 	ctxmap := map[string]any{
@@ -840,7 +905,6 @@ func makeTestFullCtx(client *sdk.AareguruSDK, utility *sdk.Utility) *sdk.Context
 
 // useVS prevents unused import error
 var _ = vs.Clone
-
 
 // retargetAuth rewrites the corpus's `headers` bag to the container this
 // SDK's PrepareAuth writes to, and the `authorization` key inside it to the

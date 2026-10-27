@@ -144,16 +144,41 @@ function maybeSkipControl(
 }
 
 
-// Skips the current live test when required idmap keys aren't supplied.
-// Generated tests call this when they would otherwise pass `undefined`
-// values into a path/query param and 4xx the request.
-function skipIfMissingIds(t: any, setup: any, requiredKeys: string[]): boolean {
+// A live test without the ids its request needs is blocked rather than sent
+// with `undefined` in a path or query parameter. Returns true when skipped.
+function skipIfMissingIds(t: any, setup: any, requiredKeys: string[], strict = true): boolean {
   if (!setup.live) return false
   const missing = requiredKeys.filter(k => null == setup.idmap?.[k])
-  if (missing.length > 0) {
-    throw new Error(`Live test blocked: needs ${missing.join(', ')} via *_ENTID env var`)
+  return 0 < missing.length &&
+    liveMiss(t, strict, `Live test blocked: needs ${missing.join(', ')} via *_ENTID env var`)
+}
+
+
+// A live check that did not pass: strict fails the test, lenient skips it.
+function liveMiss(t: any, strict: boolean, reason: string): boolean {
+  if (strict) throw new Error(reason)
+  t.skip(reason)
+  return true
+}
+
+
+// An empty list is a valid answer, so a test needing a record skips.
+function liveEmpty(t: any, reason: string): boolean {
+  t.skip(reason)
+  return true
+}
+
+
+// The SDK's error, already bounded and cleaned, or else status and content type.
+function describeLive(result: any): string {
+  const err = result?.err
+  if (null != err) {
+    return String(err.message || err.code || err)
   }
-  return false
+  const headers = result?.headers
+  const type = 'function' === typeof headers?.get ? headers.get('content-type') :
+    Object.entries(headers || {}).find(([k]) => 'content-type' === k.toLowerCase())?.[1]
+  return 'HTTP ' + result?.status + (type ? ' ' + String(type).split(';')[0] : '')
 }
 
 
@@ -264,6 +289,9 @@ export {
   isControlSkipped,
   maybeSkipControl,
   skipIfMissingIds,
+  liveMiss,
+  liveEmpty,
+  describeLive,
   liveClientOptions,
   liveDelayMs,
   liveDelay,

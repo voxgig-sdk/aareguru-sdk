@@ -6,8 +6,8 @@
      * @param EntityNameListMatch|array|null $reqmatch Match filter (any subset
      *   of EntityName fields) as an assoc-array; EntityNameListMatch names the shape.
      * @param mixed $ctrl Optional per-call control overrides.
-     * @return EntityName[]|array A list of EntityName items as assoc-arrays at
-     *   the SDK boundary; throws ProjectNameError on failure (item-5 convention).
+     * @return EntyClass[] The EntityName entities, one per record, each read
+     *   with data_get(); throws ProjectNameError on failure (item-5 convention).
      */
     public function list(?array $reqmatch = null, $ctrl = null): mixed
     {

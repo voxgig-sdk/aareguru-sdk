@@ -8,7 +8,7 @@
 #   1. SYNTAX — 'ruby -c' on every block. Every documented ruby example must
 #      parse.
 #   2. RUN — every RUNNABLE block (one that constructs the SDK, drives client.,
-#      or performs an entity op load/list/create/update/remove) is EXECUTED
+#      or performs an entity op load/list/create/update/patch/remove) is EXECUTED
 #      offline in seeded test mode (AareguruSDK.test) against the real
 #      SDK. The captured output is scanned for a real Ruby-level error (undefined
 #      method, wrong number of arguments, NameError, ...) REGARDLESS of exit
@@ -52,9 +52,14 @@ class ReadmeExamplesTest < Minitest::Test
   # signature/method-table "illustration" class.
   METHODS = %w[options_map get_utility prepare direct data_get data_set match_get match_set make get_name]
 
+  # The client VARIABLE, not the word: a gem or package name carries the word
+  # between hyphens (voxgig-sdk-multifon-client-sdk).
+  CLIENT = /(?<![\w\-.\/"'])client(?![\w\-\/"'])/
+
   # Ruby-level errors that indicate a real bug in a documented example (as
-  # opposed to an expected not-found / domain error, which is tolerated).
-  FATAL = /NoMethodError|NameError|ArgumentError|undefined method|undefined local variable|uninitialized constant|wrong number of arguments/
+  # opposed to an expected not-found / domain error, which is tolerated), and
+  # the ScriptError classes an SDK that does not load raises.
+  FATAL = /NoMethodError|NameError|ArgumentError|SyntaxError|LoadError|NotImplementedError|undefined method|undefined local variable|uninitialized constant|wrong number of arguments/
 
   # Extract every fenced ruby block from all three docs, each tagged with its
   # source doc label and its index within that doc.
@@ -79,8 +84,8 @@ class ReadmeExamplesTest < Minitest::Test
   # an entity operation. Every runnable block MUST be executed.
   def runnable?(b)
     b =~ /#{Regexp.escape(SDK_CLASS)}\.(?:new|test)\b/ ||
-      b =~ /\bclient\./ ||
-      b =~ /\.(?:load|list|create|update|remove)\b/ ? true : false
+      b =~ /#{CLIENT}\./ ||
+      b =~ /\.(?:load|list|create|update|patch|remove)\b/ ? true : false
   end
 
   # A block "mentions the SDK" when it references the client variable, the SDK
@@ -88,9 +93,9 @@ class ReadmeExamplesTest < Minitest::Test
   # mentions the SDK but is not a signature illustration is an uncovered
   # runnable-looking block and must fail the completeness gate.
   def looks_sdk?(b)
-    return true if b =~ /\bclient\b/
+    return true if b =~ CLIENT
     return true if b =~ /\b#{Regexp.escape(SDK_CLASS)}\b/
-    return true if b =~ /\.(?:load|list|create|update|remove)\b/
+    return true if b =~ /\.(?:load|list|create|update|patch|remove)\b/
     ENTITIES.each_key { |name| return true if b =~ /\.#{Regexp.escape(name)}\b/ }
     false
   end
@@ -101,7 +106,7 @@ class ReadmeExamplesTest < Minitest::Test
   # catch-all — so an unexecuted block that uses a client variable cannot hide here.
   def illustration?(b)
     return false if runnable?(b)
-    return false if b =~ /\bclient\b/
+    return false if b =~ CLIENT
     return true if b =~ /\b#{Regexp.escape(SDK_CLASS)}\b/
     METHODS.each { |m| return true if b =~ /\b#{Regexp.escape(m)}\s*\(/ }
     false
@@ -129,6 +134,7 @@ class ReadmeExamplesTest < Minitest::Test
         f.write(blk[:code])
         f.flush
         out, status = Open3.capture2e("ruby", "-c", f.path)
+        out.force_encoding(Encoding::UTF_8)
         failures << "#{blk[:doc]} ##{blk[:n]}:\n#{out}\n#{blk[:code]}" unless status.success?
       end
     end
@@ -138,7 +144,7 @@ class ReadmeExamplesTest < Minitest::Test
   # Build the SDK 'entity' fixture option (as Ruby source) for the entities a
   # block references, falling back to seeding all entities when none are named.
   def fixtures_literal(block)
-    refs = ENTITIES.select { |name, _| block =~ /\bclient\.#{Regexp.escape(name)}\b/ }
+    refs = ENTITIES.select { |name, _| block =~ /#{CLIENT}\.#{Regexp.escape(name)}\b/ }
     refs = ENTITIES if refs.empty?
     entity = {}
     refs.each_value { |storage| entity[storage] = { "test01" => { "id" => "test01" } } }
@@ -201,12 +207,15 @@ class ReadmeExamplesTest < Minitest::Test
         driver = File.join(dir, "_driver.rb")
         File.write(driver, batch_driver(paths))
         out, status = Open3.capture2e("ruby", driver)
+        # A pipe is tagged with the locale's encoding; the snippets wrote UTF-8.
+        out.force_encoding(Encoding::UTF_8)
 
         runnable.each_with_index do |blk, i|
           seg = batch_segment(out, i)
           code = status.exitstatus
           if seg.nil?
             solo, sstatus = Open3.capture2e("ruby", paths[i])
+            solo.force_encoding(Encoding::UTF_8)
             seg = solo
             code = sstatus.exitstatus
           end
@@ -241,7 +250,7 @@ class ReadmeExamplesTest < Minitest::Test
         puts
         puts "@@VOXBEGIN \#{i}"
         begin
-          Module.new.module_eval(File.read(path), path)
+          Module.new.module_eval(File.read(path, encoding: "UTF-8"), path)
         rescue Exception => e
           puts "FATAL: \#{e.class}: \#{e.message}"
         end

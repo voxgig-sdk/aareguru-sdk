@@ -16,6 +16,9 @@ class Spec {
   body: any
   url?: string
   path?: string
+  // The query parameters prepareAuth placed: the credential, which the
+  // request sends and the entity's match leaves out.
+  authquery: string[]
 
   constructor(specmap: Record<string, any>) {
     this.parts = getprop(specmap, 'parts', [])
@@ -31,6 +34,7 @@ class Spec {
     this.body = getprop(specmap, 'body')
     this.url = getprop(specmap, 'url')
     this.path = getprop(specmap, 'path')
+    this.authquery = getprop(specmap, 'authquery', [])
   }
 }
 

@@ -18,11 +18,21 @@ local function make_url_util(ctx)
   local url = vs.join({ spec.base, spec.prefix, spec.path, spec.suffix }, "/", true)
   local resmatch = {}
 
-  -- A route the definition ends with a slash keeps it: a server such as a
-  -- Django REST one redirects or refuses the route without it.
+  -- Sent with the request, never recorded as the entity's match.
+  local authquery = {}
+  for _, name in ipairs(spec.authquery or {}) do
+    authquery[name] = true
+  end
+
+  -- A route the definition ends with a slash keeps it, for a Django REST server,
+  -- and a host with no path takes /, or luasocket reads a query as the host.
   local orig = ctx.point ~= nil and vs.getprop(ctx.point, "orig") or nil
   if type(orig) == "string" and orig:sub(-1) == "/" and (spec.suffix == nil or spec.suffix == "")
       and url:sub(-1) ~= "/" then
+    url = url .. "/"
+  end
+  local authority = url:find("://", 1, true)
+  if authority ~= nil and 1 < authority and not url:find("[/?#]", authority + 3) then
     url = url .. "/"
   end
 
@@ -34,6 +44,11 @@ local function make_url_util(ctx)
       if val ~= nil and type(key) == "string" then
         local placeholder = "{" .. key .. "}"
         local val_str = type(val) == "string" and val or tostring(val)
+        -- A whole . or .. is a dot segment, which moves the request to another route.
+        if val_str == "." or val_str == ".." then
+          return "", ctx:make_error("url_param_invalid",
+            "URL path parameter " .. key .. " cannot be \"" .. val_str .. "\".")
+        end
         local encoded = vs.escurl(val_str)
         -- Plain string replacement (not pattern-based)
         local i, j = url:find(placeholder, 1, true)
@@ -44,6 +59,19 @@ local function make_url_util(ctx)
         resmatch[key] = val
       end
     end
+  end
+
+  -- A placeholder left in the route would send the request to the wrong route.
+  -- The base's own placeholders are server variables, resolved with the options.
+  local base = type(spec.base) == "string" and (spec.base:gsub("/+$", "")) or ""
+  local route = url:sub(1, #base) == base and url:sub(#base + 1) or url
+  local unfilled = {}
+  for found in route:gmatch("{[^{}/]+}") do
+    unfilled[#unfilled + 1] = found
+  end
+  if #unfilled > 0 then
+    return "", ctx:make_error("url_param_missing",
+      "URL path has no value for " .. table.concat(unfilled, ", ") .. ".")
   end
 
   -- Append query string from spec.query.
@@ -57,7 +85,9 @@ local function make_url_util(ctx)
         local val_str = type(val) == "string" and val or tostring(val)
         url = url .. qsep .. vs.escurl(key) .. "=" .. vs.escurl(val_str)
         qsep = "&"
-        resmatch[key] = val
+        if not authquery[key] then
+          resmatch[key] = val
+        end
       end
     end
   end

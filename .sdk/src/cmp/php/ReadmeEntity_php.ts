@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, opRequestShape, phpEntityAccessor } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, phpEntityAccessor, opNeedsAction, listMatchArg, matchExampleItems, litString, requestExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -13,10 +13,11 @@ import {
 // parse).
 function phpLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'null'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k || 'OBJECT' === k) return '[]'
-  return `"${placeholder}"`
+  return litString('php', placeholder)
 }
 
 
@@ -28,6 +29,7 @@ const OP_DESC: Record<string, { method: string, desc: string }> = {
   list:   { method: 'list(match)',   desc: 'List entities matching the criteria.' },
   create: { method: 'create(data)',  desc: 'Create a new entity with the given data.' },
   update: { method: 'update(data)',  desc: 'Update an existing entity.' },
+  patch:  { method: 'patch(data)',   desc: 'Change part of an existing entity.' },
   remove: { method: 'remove(match)', desc: 'Remove the matching entity.' },
 }
 
@@ -53,6 +55,8 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
   publishedEntities.map((entity: any) => {
     const opnames = Object.keys(entity.op || {})
+    // An op that needs an action has no plain call to show.
+    const callable = opnames.filter((o: string) => !opNeedsAction(entity.op[o]))
     const fields = Object.values(entity.fields || {})
     const idF = entityIdField(entity)
 
@@ -106,14 +110,13 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 `)
     }
 
-    if (opnames.includes('load')) {
-      const loadItems = opRequestShape(entity, 'load').items
-        .filter((it: any) => !it.optional || it.name === idF)
+    if (callable.includes('load')) {
+      const loadItems = matchExampleItems(entity, 'load', idF)
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? `[${loadItems.map((it: any) =>
-          `"${it.name}" => ${phpLit(it.type,
+          `${litString('php', it.name)} => ${phpLit(it.type,
             it.name === idF ? entity.name + '_id' : it.name)}`).join(', ')}]`
         : ''
       Content(`#### Example: Load
@@ -126,22 +129,22 @@ $${entity.name} = $client->${phpEntityAccessor(entity.Name)}()->load(${loadArg})
 `)
     }
 
-    if (opnames.includes('list')) {
+    if (callable.includes('list')) {
       Content(`#### Example: List
 
 \`\`\`php
-// list() returns an array of ${entity.Name} records (throws on error).
-$${entity.name}s = $client->${phpEntityAccessor(entity.Name)}()->list();
+// list() returns an array of ${entity.Name} entities, one per record (throws on error).
+$${entity.name}s = $client->${phpEntityAccessor(entity.Name)}()->list(${listMatchArg('php', entity)});
 \`\`\`
 
 `)
     }
 
-    if (opnames.includes('create')) {
+    if (callable.includes('create')) {
       // Members come from the SAME shape the runtime validates
       // (opRequestShape): every required member must appear — including a
       // required id and parent keys like page_id.
-      const createItems = opRequestShape(entity, 'create').items
+      const createItems = requestExampleItems(entity, 'create')
         .filter((it: any) => !it.optional)
       Content(`#### Example: Create
 
@@ -149,7 +152,7 @@ $${entity.name}s = $client->${phpEntityAccessor(entity.Name)}()->list();
 $${entity.name} = $client->${phpEntityAccessor(entity.Name)}()->create([
 `)
       createItems.map((it: any) => {
-        Content(`    "${it.name}" => null, // ${canonToType(it.type, target.name)}
+        Content(`    ${litString('php', it.name)} => null, // ${canonToType(it.type, target.name)}
 `)
       })
       Content(`]);

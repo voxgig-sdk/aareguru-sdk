@@ -3,7 +3,7 @@
 import { test, describe } from 'node:test'
 import { strictEqual, ok, deepStrictEqual } from 'node:assert'
 
-import { stdutil } from '..'
+import { AareguruSDK, stdutil } from '..'
 
 
 const struct: any = (stdutil as any).struct
@@ -73,9 +73,40 @@ describe('pipeline:makePoint + makeSpec', () => {
     strictEqual((stdutil as any).makePoint(base({ out: { point: preset } })), preset)
   })
 
+  test('an allow list names whole operations, in any case', () => {
+    const point = { method: 'GET', parts: ['a'] }
+    const op = { name: 'load', points: [point] }
+    strictEqual((stdutil as any).makePoint(base({ op, options: { allow: { op: 'reload,unload' } } })).code,
+      'point_op_allow')
+    strictEqual((stdutil as any).makePoint(base({ op, options: { allow: { op: 'list, LOAD' } } })), point)
+  })
+
+  test('an allow list names whole methods', () => {
+    const ctx = base({
+      op: { name: 'update', points: [] },
+      point: { method: 'pu', parts: ['a'] },
+      options: { allow: { method: 'GET,PUT' }, base: 'http://x' },
+    })
+    strictEqual((stdutil as any).makeSpec(ctx).code, 'spec_method_allow')
+  })
+
   test('makeSpec short-circuits a feature-supplied spec', () => {
     const preset = { method: 'GET' }
     strictEqual((stdutil as any).makeSpec(base({ out: { spec: preset } })), preset)
+  })
+})
+
+
+describe('pipeline:direct', () => {
+
+  test('direct and graphql answer a method allow.method refuses with a result map', async () => {
+    const sdk = AareguruSDK.test({}, { allow: { method: 'GET' } })
+    const direct: any = await sdk.direct({ path: '/a', method: 'POST' })
+    strictEqual(direct.ok, false)
+    strictEqual(direct.err.code, 'spec_method_allow')
+    const graphql: any = await sdk.graphql('{ a }')
+    strictEqual(graphql.ok, false)
+    strictEqual(graphql.err.code, 'spec_method_allow')
   })
 })
 
@@ -317,6 +348,34 @@ describe('pipeline:feature order', () => {
 })
 
 
+describe('pipeline:makeOptions', () => {
+
+  test('clients built from one options object keep its maps and see its edits', () => {
+    const probe = { x: 1 }
+    const testopts = { active: true }
+    const options: any = { entity: { probe }, feature: { test: testopts } }
+
+    const first = new AareguruSDK(options)
+    strictEqual(options.entity.probe, probe)
+    strictEqual(options.feature.test, testopts)
+
+    probe.x = 2
+    const second = new AareguruSDK(options)
+    strictEqual(second.options().entity.probe.x, 2)
+    strictEqual(first.options().entity.probe.x, 1)
+  })
+
+  test('a config option does not reach the caller\'s maps', () => {
+    const options: any = { entity: { probe: { x: 1 } } }
+    const ctx = { utility: stdutil, options, config: { options: { entity: { probe: { y: 5 } } } } } as any
+    const o = (stdutil as any).makeOptions(ctx)
+    strictEqual(o.entity.probe.x, 1)
+    strictEqual(o.entity.probe.y, 5)
+    deepStrictEqual(options, { entity: { probe: { x: 1 } } })
+  })
+})
+
+
 // A cookie credential as prepareAuth writes it: `<scheme>=K` for the probe
 // key, with no scheme prefix and nothing else in the bag.
 const COOKIE_PAIR = /^[^=;]+=K$/
@@ -478,5 +537,25 @@ describe('pipeline:result helpers', () => {
     const ctx = base({ response: { json: async () => ({ a: 1 }), body: null }, result: {} })
     await (stdutil as any).resultBody(ctx)
     strictEqual(ctx.result.body, undefined)
+  })
+
+  // The agent and the body preview may carry a registered value; the body is
+  // cleaned before the bound so a split value cannot leave its prefix.
+  test('resultBody masks a registered value in the agent and across the preview bound', async () => {
+    const secret = 'PIPELINE-SECRET-a1b2c3d4e5f6'
+    const text = 'x'.repeat(150) + secret + 'y'.repeat(100)
+    const ctx = base({
+      options: { __derived__: { clean: { active: true, keys: [], values: [], mask: '[redacted]', hint: 0, min: 4 } } },
+      spec: { headers: { 'user-agent': 'Probe ' + secret } },
+      response: { body: 'body', json: async () => { throw Object.assign(new SyntaxError('bad json'), { text }) } },
+      result: { status: 200, headers: { 'content-type': 'text/html' } },
+    })
+    ;(stdutil as any).cleanAdd(ctx, secret)
+    await (stdutil as any).resultBody(ctx)
+    const message = String(ctx.result.err.message)
+    strictEqual(ctx.result.err.code, 'response_content_type')
+    ok(message.includes('user-agent Probe [redacted]'), message)
+    ok(message.includes('body: ' + 'x'.repeat(150) + '[redacted]'), message)
+    ok(!message.includes(secret.slice(0, 8)), message)
   })
 })

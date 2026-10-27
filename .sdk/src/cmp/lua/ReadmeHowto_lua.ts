@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, luaKey } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, luaKey, requiredItems, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -11,6 +11,7 @@ import {
 // A type-correct Lua literal for a field's canonical type.
 function luaLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'nil'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k || 'OBJECT' === k) return '{}'
@@ -31,15 +32,14 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const idF = exampleEntity ? entityIdField(exampleEntity) : null
   const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
   let testCallArg = ''
-  if (exampleEntity && isMatchOp) {
-    const items = opRequestShape(exampleEntity, primaryOp).items
-      .filter((it: any) => !it.optional || it.name === idF)
+  if (exampleEntity && (isMatchOp || ('list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length))) {
+    const items = (isMatchOp ? matchExampleItems(exampleEntity, primaryOp, idF) : requiredItems(exampleEntity, 'list'))
       .sort((a: any, b: any) => (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
     testCallArg = 0 < items.length
-      ? `{ ${items.map((it: any) => `${luaKey(it.name)} = ${it.name === idF ? '"test01"' : luaLit(it.type)}`).join(', ')} }`
+      ? `{ ${items.map((it: any) => `${luaKey(it.name)} = ${isMatchOp && it.name === idF ? '"test01"' : luaLit(it.type)}`).join(', ')} }`
       : ''
-  } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp)) {
-    const items = opRequestShape(exampleEntity, primaryOp).items
+  } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp)) {
+    const items = requestExampleItems(exampleEntity, primaryOp)
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)
     const chosen = required.length ? required : items.slice(0, 3)
@@ -50,9 +50,10 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   // A direct()-only SDK (no ops anywhere) shows a direct() call instead.
   const testModeExample = primaryOp
     ? `local result, err = client:${eName}():${primaryOp}(${testCallArg})
--- result is the returned data; err is set on failure`
+-- ${'list' === primaryOp ? 'result is an array of entities, one per mock record'
+    : 'result is the entity; data_get() reads its mock record'}; err is set on failure`
     : `local result, err = client:direct({ path = "/api/resource", method = "GET" })
--- result is the returned data; err is set on failure`
+-- result holds ok, status, headers and data; err is set on failure`
 
   const apikeyEnvLine = isAuthActive(model)
     ? `\n${envName(model)}_APIKEY=<your-key>`

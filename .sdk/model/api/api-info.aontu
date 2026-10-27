@@ -21,7 +21,7 @@ main: {
           url: "https://aareguru-test.existenz.ch"
         }
       ]
-      summary: "Dienschte hinger aare.guru<p>Bei Requests auf die API bitte frei wählbare <code>app</code> und <code>version</code> mitgeben."
+      summary: "Dienschte hinger aare.guru"
       title: "Aare.guru API"
       version: "2018"
       website: "https://aareguru.existenz.ch"

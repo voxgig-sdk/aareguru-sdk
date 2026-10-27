@@ -31,6 +31,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -52,6 +53,10 @@ const testSeed = \`${goSeed}\`
 
 // seedRef is how a snippet names the shared fixture; seedFile declares it.
 const seedRef = "readmeTestSeed"
+
+// The client variable, not the word: an import path carries the word between
+// hyphens (github.com/voxgig-sdk/multifon-client-sdk/go).
+var clientVar = regexp.MustCompile(\`(^|[^\\w.\\-/"])client([^\\w\\-/"]|$)\`)
 
 func seedFile(pkg string) []byte {
 	return []byte("package " + pkg + "\\n\\nvar " + seedRef + " = " + testSeed + "\\n")
@@ -524,7 +529,7 @@ func wrapFragment(name, block, modulePath string) string {
 	}
 
 	declaresClient := strings.Contains(block, "client :=")
-	injectClient := !declaresClient && strings.Contains(block, "client")
+	injectClient := !declaresClient && clientVar.MatchString(block)
 
 	needSdk := injectClient || strings.Contains(block, "sdk.")
 	usesFmt := strings.Contains(block, "fmt.")

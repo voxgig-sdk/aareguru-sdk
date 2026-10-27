@@ -1,6 +1,7 @@
 -- Aareguru SDK utility: prepare_query
 
 local vs = require("utility.struct.struct")
+local helpers = require("core.helpers")
 
 local function contains_param(params, s)
   for _, v in ipairs(params) do
@@ -34,13 +35,27 @@ local function prepare_query_util(ctx)
         end
       end
     end
-    -- A header parameter travels in the headers, which prepare_headers fills.
+    -- A header or cookie parameter travels in the headers, which prepare_headers
+    -- fills, unless a query parameter shares its name: then both are sent.
+    local declared = {}
+    local ql = vs.getpath(point, "args.query")
+    if type(ql) == "table" then
+      for _, qd in ipairs(ql) do
+        local qname = vs.getprop(qd, "name")
+        if type(qname) == "string" then
+          declared[qname] = true
+        end
+      end
+    end
     local hl = vs.getpath(point, "args.header")
-    if type(hl) == "table" then
-      for _, hd in ipairs(hl) do
-        local name = vs.getprop(hd, "name")
-        if type(name) == "string" then
-          table.insert(params, name)
+    local cl = vs.getpath(point, "args.cookie")
+    for _, located in ipairs({ hl or {}, cl or {} }) do
+      if type(located) == "table" then
+        for _, hd in ipairs(located) do
+          local name = vs.getprop(hd, "name")
+          if type(name) == "string" and not declared[name] then
+            table.insert(params, name)
+          end
         end
       end
     end
@@ -72,6 +87,13 @@ local function prepare_query_util(ctx)
           and not contains_param(params, key) then
         out[wire[key] or key] = val
       end
+    end
+  end
+
+  -- A create or update passes its query arguments in its data.
+  for _, arg in ipairs(helpers.call_args(ctx, "query")) do
+    if arg.val ~= nil and not contains_param(params, arg.name) then
+      out[arg.wire] = arg.val
     end
   end
 

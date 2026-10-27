@@ -26,9 +26,9 @@ func (e *EntyClass) Update(reqdata map[string]any, ctrl map[string]any) (any, er
 				e.match = ctx.Result.Resmatch
 			}
 			if ctx.Result.Resdata != nil {
-				e.data = core.ToMapAny(vs.Clone(ctx.Result.Resdata))
-				if e.data == nil {
-					e.data = map[string]any{}
+				e.data = map[string]any{}
+				if data := core.ToMapAny(vs.Clone(ctx.Result.Resdata)); data != nil {
+					e.data = data
 				}
 			}
 		}

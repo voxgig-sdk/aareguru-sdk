@@ -3,5 +3,13 @@
     "SUMMARY.md"
   ],
   "config": ".sdk/doc/qa/vale.ini",
-  "routes": {}
+  "routes": {},
+  "quoted": {
+    "SUMMARY.md": [
+      "> Dienschte hinger aare.guru\n>\n> Bei Requests auf die API bitte frei wählbare &lt;code&gt;app&lt;/code&gt; und &lt;code&gt;version&lt;/code&gt; mitgeben. Z.B.: &lt;code&gt;...v2018/current?app=`app.identifier.meine.app`&amp;version=1.42&lt;/code&gt;.\n>\n> Diese API ist öffentlich und darf für nicht-kommerzielle Zwecke frei benutzt werden. Sag uns bitte auf &lt;a href=&#39;mailto:aaregurus@existenz.ch&#39;&gt;aaregurus@existenz.ch&lt;/a&gt; Bescheid wenn du das machst. Und setz einen Link zurück auf https://aare.guru.\n>\n> Danke.\n>\n> Die Erläuterung der Parameter innerhalb des Services findest du auf der &lt;a href=&#39;https://aareguru.existenz.ch#parameter&#39;&gt;Aare.guru-API-Startseite.&lt;/a&gt;\n>\n> JSONP erlaubt via callback-Parameter. CORS-Header auf &lt;code&gt;*&lt;/code&gt; gesetzt.\n>\n> Mit viel Liebe, Christian Studer (&lt;a href=&#39;https://bureau.existenz.ch&#39;&gt;Bureau für digitale Existenz&lt;/a&gt;)",
+      "LIVE",
+      "OK",
+      "TEST"
+    ]
+  }
 }

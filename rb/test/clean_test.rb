@@ -185,7 +185,7 @@ class AareguruCleanTest < Minitest::Test
       [nil, RuntimeError.new("socket hang up (URL was: \"#{url}\")")]
     }],
     # The SDK's own error, its code quoting a registered value.
-    ["coded", ->(_url, _fd) { [nil, AareguruError.new("denied_#{CANARY['apikey']}", "coded failure")] }],
+    ["coded", ->(_url, _fd) { [nil, AareguruError.new("coded failure", code: "denied_#{CANARY['apikey']}")] }],
     ["notjson", ->(_url, _fd) {
       [{
         "status" => 200, "statusText" => "OK", "headers" => {},
@@ -207,7 +207,20 @@ class AareguruCleanTest < Minitest::Test
     f.is_a?(Hash) && !f[name].nil?
   end
 
-  def make_sdk(scenario, sinks, cleanopts = nil, extra = [])
+  # Offline, as every generated suite is: the test OPTION resolves a required
+  # server variable to test-<name>, and installs no transport.
+  def offline(opts)
+    opts.merge("test" => { "active" => true })
+  end
+
+  # A client the sweep cannot build leaves nothing swept: a harness error, not a leak.
+  def construct(opts)
+    AareguruSDK.new(offline(opts))
+  rescue StandardError => e
+    raise "clean harness: the client could not be constructed, so nothing was swept: #{e.message}"
+  end
+
+  def make_sdk(scenario, sinks, cleanopts = nil, extra = [], auth = nil)
     capture = ->(name) { ->(rec) { sinks.concat(Sweep.forms(name, rec)) } }
     feature = {}
     feature["log"] = { "active" => true, "logger" => CaptureLogger.new(sinks) } if has_feature?("log")
@@ -219,7 +232,7 @@ class AareguruCleanTest < Minitest::Test
     feature["clienttrack"] = { "active" => true } if has_feature?("clienttrack")
 
     respond = scenario[1]
-    AareguruSDK.new({
+    opts = {
       "apikey" => CANARY["apikey"],
       "secret" => CANARY["secret"],
       "headers" => { "X-Custom-Token" => CANARY["header"] },
@@ -227,7 +240,9 @@ class AareguruCleanTest < Minitest::Test
       "feature" => feature,
       "extend" => [CaptureFeature.new(sinks)] + extra,
       "utility" => { "fetcher" => ->(_ctx, url, fetchdef) { respond.call(url, fetchdef) } },
-    })
+    }
+    opts["auth"] = auth unless auth.nil?
+    construct(opts)
   end
 
   # The first operation that completes against a plain 200: with no
@@ -235,7 +250,7 @@ class AareguruCleanTest < Minitest::Test
   # An entity accessor is a capitalised client method whose result answers
   # get_name, as the feature corpus runner finds them.
   def usable_op
-    plain = AareguruSDK.new({
+    plain = construct({
       "apikey" => CANARY["apikey"],
       "utility" => { "fetcher" => ->(_ctx, _url, _fd) { [Sweep.response(200, { "id" => "i1" }), nil] } },
     })
@@ -256,7 +271,7 @@ class AareguruCleanTest < Minitest::Test
     entities = AareguruConfig.shared_config["entity"] || {}
     found.keys.sort.each do |entname|
       accessor = found[entname]
-      %w[list load create update remove].each do |op|
+      %w[list load create update patch remove].each do |op|
         next unless plain.public_send(accessor).respond_to?(op)
         filled = {}
         points = entities.dig(entname, "op", op, "points")
@@ -280,15 +295,18 @@ class AareguruCleanTest < Minitest::Test
   def drive(sdk, target, ctrl, sinks)
     # A caller may keep the record it passed rather than read ctrl["explain"].
     held = ctrl["explain"]
+    entity = sdk.public_send(target["accessor"])
     out = nil
     err = nil
     begin
-      out = sdk.public_send(target["accessor"]).public_send(target["op"], target["match"].dup, ctrl)
+      out = entity.public_send(target["op"], target["match"].dup, ctrl)
     rescue StandardError => e
       err = e
     end
     sinks.concat(Sweep.forms("error", err)) unless err.nil?
     sinks.concat(Sweep.forms("result", out)) unless out.nil?
+    # Raw, as a caller copying the match into another query reads it.
+    sinks.concat(Sweep.forms("match", entity.match_get))
     sinks.concat(Sweep.forms("explain", ctrl["explain"])) unless ctrl["explain"].nil?
     sinks.concat(Sweep.forms("explain:held", held)) unless held.nil? || held.equal?(ctrl["explain"])
     err
@@ -314,11 +332,15 @@ class AareguruCleanTest < Minitest::Test
       end
     end
 
+    # A name given at run time replaces the declared one: the match leaves
+    # out whichever name prepare_auth placed.
+    drive(make_sdk(SCENARIOS[0], sinks, nil, [], { "name" => "zzcred" }), target, {}, sinks)
+
     # A credential mistyped as a map is rejected by validation, whose
     # message quotes the value it rejected.
     rejected = nil
     begin
-      AareguruSDK.new({ "apikey" => { "value" => CANARY["apikey"] }, "clean" => { "values" => CANARY["value"] } })
+      AareguruSDK.new(offline({ "apikey" => { "value" => CANARY["apikey"] }, "clean" => { "values" => CANARY["value"] } }))
     rescue StandardError => e
       rejected = e
     end
@@ -390,7 +412,7 @@ class AareguruCleanTest < Minitest::Test
     assert_equal({ "keys" => "zzsens", "values" => CANARY["config"] }, cfgclean)
 
     # With no clean option at all, the schema defaults still apply.
-    bare = AareguruSDK.new({
+    bare = construct({
       "apikey" => CANARY["apikey"],
       "secret" => CANARY["secret"],
       "headers" => { "X-Custom-Token" => CANARY["header"] },
@@ -400,12 +422,14 @@ class AareguruCleanTest < Minitest::Test
 
     # A feature's name is not a field name: only the sensitive names inside
     # its settings register. An entity block, of per-entity settings or
-    # seeded records keyed by entity name and id, is not read at all.
-    featured = AareguruSDK.new({
+    # seeded records keyed by entity name and id, is not read at all, and nor
+    # are rbac's rules, keyed by entity and operation names.
+    featured = construct({
       "apikey" => CANARY["apikey"],
       "feature" => {
         "zzsecrets" => { "active" => false, "kind" => "PLAINSETTING-q8w2e4r6" },
         "zzfeat" => { "active" => false, "apitoken" => "FEATTOKEN-z9y8x7w6" },
+        "rbac" => { "active" => false, "rules" => { "zztoken.load" => "PLAINRULE-k7j5h3g1" } },
         "test" => { "active" => false, "entity" => {
           "zztoken" => { "ZZTOKEN01" => { "note" => "PLAINRECORD-t5r3e1w9" } } } },
       },
@@ -416,6 +440,7 @@ class AareguruCleanTest < Minitest::Test
     ftoken = fclean.call(featured.get_root_ctx, "token FEATTOKEN-z9y8x7w6")
     frecord = fclean.call(featured.get_root_ctx, "record PLAINRECORD-t5r3e1w9")
     falias = fclean.call(featured.get_root_ctx, "alias PLAINALIAS-m2n4b6v8")
+    frule = fclean.call(featured.get_root_ctx, "rule PLAINRULE-k7j5h3g1")
 
     leaked = sinks
       .map { |s| [s["name"], Sweep.leaks(s["text"])] }
@@ -452,6 +477,7 @@ class AareguruCleanTest < Minitest::Test
     assert_equal "token #{MASK}", ftoken
     assert_equal "record PLAINRECORD-t5r3e1w9", frecord
     assert_equal "alias PLAINALIAS-m2n4b6v8", falias
+    assert_equal "rule PLAINRULE-k7j5h3g1", frule
 
     explained = explains["ok/explain"] || {}
     refute_nil explained["result"], "the explain record should carry the result"

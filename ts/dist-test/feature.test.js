@@ -6,6 +6,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const node_test_1 = require("node:test");
 const node_assert_1 = require("node:assert");
+const node_events_1 = require("node:events");
+const __1 = require("..");
 const harness_1 = require("./feature/harness");
 function recordingServer(reply) {
     const calls = [];
@@ -17,6 +19,23 @@ function recordingServer(reply) {
         return (0, harness_1.makeResponse)(200, { ok: true, n: calls.length });
     };
     return { server, calls };
+}
+// Answers after `ms` unless the request's signal aborts first, when it rejects
+// with the signal's reason, as fetch does.
+function slowServer(ms) {
+    return (_ctx, _url, fetchdef) => new Promise((resolve, reject) => {
+        const timer = setTimeout(() => resolve((0, harness_1.makeResponse)(200, { ok: true })), ms);
+        const signal = fetchdef.signal;
+        if (null == signal)
+            return;
+        const abort = () => {
+            clearTimeout(timer);
+            reject(signal.reason);
+        };
+        if (signal.aborted)
+            return abort();
+        signal.addEventListener('abort', abort, { once: true });
+    });
 }
 // A subtest that drives a second feature (netsim as the simulated network)
 // can only run when this SDK was generated with it: the harness skips
@@ -723,5 +742,110 @@ function skipWithout(name) {
             (0, node_assert_1.strictEqual)(h.client._netsim.calls, 1);
         });
     }
+    // --- abort ----------------------------------------------------------------
+    // A caller's signal ends a request wherever it waits. Each wait is far longer
+    // than the abort, so a request that ignored the signal would take seconds.
+    (0, node_test_1.describe)('abort', () => {
+        (0, node_test_1.test)('a caller abort cancels a request the timeout feature wraps', { skip: skipWithout('timeout') }, async () => {
+            const h = (0, harness_1.makeClient)({ features: [{ name: 'timeout', options: { ms: 5000 } }], server: slowServer(2000) });
+            const ac = new AbortController();
+            const reason = new Error('stop');
+            setTimeout(() => ac.abort(reason), 20);
+            const start = Date.now();
+            const res = await h.op({ op: 'load', ctrl: { signal: ac.signal } });
+            (0, node_assert_1.ok)(Date.now() - start < 1000, 'the request ended at the abort');
+            (0, node_assert_1.strictEqual)(res.error, reason);
+            (0, node_assert_1.strictEqual)(h.client._timeout, undefined, 'an abort is not a timeout');
+        });
+        (0, node_test_1.test)('the deadline still fires while the caller signal stays live', { skip: skipWithout('timeout') }, async () => {
+            const h = (0, harness_1.makeClient)({ features: [{ name: 'timeout', options: { ms: 20 } }], server: slowServer(2000) });
+            const ac = new AbortController();
+            const res = await h.op({ op: 'load', ctrl: { signal: ac.signal } });
+            (0, node_assert_1.strictEqual)(res.error.code, 'timeout');
+            (0, node_assert_1.strictEqual)((0, node_events_1.getEventListeners)(ac.signal, 'abort').length, 0, 'the timeout leaves no listener on the caller signal');
+        });
+        (0, node_test_1.test)('an aborted request is not retried', { skip: skipWithout('retry') }, async () => {
+            const ac = new AbortController();
+            const rec = recordingServer(() => {
+                ac.abort();
+                return (0, harness_1.makeResponse)(503);
+            });
+            const clock = (0, harness_1.makeClock)();
+            const h = (0, harness_1.makeClient)({
+                features: [{ name: 'retry', options: { retries: 3, minDelay: 10, jitter: false, sleep: clock.sleep } }],
+                server: rec.server,
+            });
+            const res = await h.op({ op: 'load', ctrl: { signal: ac.signal } });
+            (0, node_assert_1.strictEqual)(rec.calls.length, 1);
+            (0, node_assert_1.strictEqual)(res.error, ac.signal.reason);
+            (0, node_assert_1.strictEqual)(h.client._retry, undefined, 'no retry was scheduled');
+        });
+        (0, node_test_1.test)('an abort whose reason is not an Error is not retried either', { skip: skipWithout('retry') }, async () => {
+            // fetch rejects with the reason itself, so a string or a number reaches
+            // retry as a non-Error: it must still end the request, not become a response.
+            const server = slowServer(2000);
+            const h = (0, harness_1.makeClient)({
+                features: [{ name: 'retry', options: { retries: 3, minDelay: 10, jitter: false } }],
+                server,
+            });
+            const ac = new AbortController();
+            setTimeout(() => ac.abort('user cancelled'), 20);
+            const start = Date.now();
+            const res = await h.op({ op: 'load', ctrl: { signal: ac.signal } });
+            (0, node_assert_1.ok)(Date.now() - start < 1000, 'the request ended at the abort');
+            (0, node_assert_1.strictEqual)(res.ok, false);
+            (0, node_assert_1.strictEqual)(res.error, 'user cancelled');
+            (0, node_assert_1.strictEqual)(h.client._retry, undefined, 'no retry was scheduled');
+        });
+        (0, node_test_1.test)('an abort during the retry backoff ends it', { skip: skipWithout('retry') }, async () => {
+            const ac = new AbortController();
+            const rec = recordingServer(() => (0, harness_1.makeResponse)(503));
+            const h = (0, harness_1.makeClient)({
+                features: [{ name: 'retry', options: { retries: 3, minDelay: 2000, jitter: false } }],
+                server: rec.server,
+            });
+            setTimeout(() => ac.abort(), 20);
+            const start = Date.now();
+            const res = await h.op({ op: 'load', ctrl: { signal: ac.signal } });
+            (0, node_assert_1.ok)(Date.now() - start < 1000, 'the backoff ended at the abort');
+            (0, node_assert_1.strictEqual)(rec.calls.length, 1);
+            (0, node_assert_1.strictEqual)(res.error, ac.signal.reason);
+        });
+        (0, node_test_1.test)('an abort during simulated latency ends the request before the transport', { skip: skipWithout('netsim') }, async () => {
+            const ac = new AbortController();
+            const rec = recordingServer();
+            const h = (0, harness_1.makeClient)({ features: [{ name: 'netsim', options: { latency: 2000 } }], server: rec.server });
+            setTimeout(() => ac.abort(), 20);
+            const start = Date.now();
+            const res = await h.op({ op: 'load', ctrl: { signal: ac.signal } });
+            (0, node_assert_1.ok)(Date.now() - start < 1000, 'the latency ended at the abort');
+            (0, node_assert_1.strictEqual)(rec.calls.length, 0);
+            (0, node_assert_1.strictEqual)(res.error, ac.signal.reason);
+        });
+        (0, node_test_1.test)('an abort while waiting for a rate-limit token ends the wait', { skip: skipWithout('ratelimit') }, async () => {
+            const ac = new AbortController();
+            const rec = recordingServer();
+            const h = (0, harness_1.makeClient)({ features: [{ name: 'ratelimit', options: { rate: 0.5, burst: 1 } }], server: rec.server });
+            await h.op({ op: 'load' });
+            setTimeout(() => ac.abort(), 20);
+            const start = Date.now();
+            const res = await h.op({ op: 'load', ctrl: { signal: ac.signal } });
+            (0, node_assert_1.ok)(Date.now() - start < 1000, 'the wait ended at the abort');
+            (0, node_assert_1.strictEqual)(rec.calls.length, 1);
+            (0, node_assert_1.strictEqual)(res.error, ac.signal.reason);
+        });
+        (0, node_test_1.test)('the test transport aborts a request in flight', async () => {
+            const sdk = __1.AareguruSDK.test({ net: { latency: 2000 } });
+            const ac = new AbortController();
+            const reason = new Error('stop');
+            setTimeout(() => ac.abort(reason), 20);
+            const start = Date.now();
+            const res = await sdk.direct({ path: '/ping', ctrl: { signal: ac.signal } });
+            (0, node_assert_1.ok)(Date.now() - start < 1000, 'the request ended at the abort');
+            (0, node_assert_1.strictEqual)(res.ok, false);
+            (0, node_assert_1.strictEqual)(res.err.code, 'request_aborted');
+            (0, node_assert_1.strictEqual)(res.err.cause, reason);
+        });
+    });
 });
 //# sourceMappingURL=feature.test.js.map

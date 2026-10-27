@@ -29,6 +29,15 @@ function prepareMethod(ctx: Context) {
 }
 
 
+// Whether a comma-separated allow option names the item: whole names, any case.
+function allowed(list: any, item: any): boolean {
+  const want = 'string' === typeof item ? item.toUpperCase() : ''
+  return '' !== want && 'string' === typeof list &&
+    list.split(',').some((name: string) => name.trim().toUpperCase() === want)
+}
+
+
 export {
+  allowed,
   prepareMethod
 }

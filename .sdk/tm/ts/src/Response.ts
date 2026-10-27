@@ -27,7 +27,16 @@ function readJson(resmap: Record<string, any>): Function {
   if ('function' === typeof resmap.text) {
     return async () => {
       const text = await resmap.text()
-      return '' === text.trim() ? undefined : JSON.parse(text)
+      if ('' === text.trim()) {
+        return undefined
+      }
+      try {
+        return JSON.parse(text)
+      }
+      catch (err: any) {
+        err.text = text
+        throw err
+      }
     }
   }
   return resmap.json ? resmap.json.bind(resmap) : async () => undefined

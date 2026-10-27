@@ -4,6 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, each, names, cmap,
   List, File, Content, Copy, Folder, Fragment, Line, FeatureHook,
+  inactiveFeatureExcludes,
   pluginExcludes,
   targetFeatures,
   TEST_CONTROL_EXCLUDE
@@ -48,7 +49,8 @@ const Main = cmp(async function Main(props: any) {
   // Copy tm/php files with replacements
   Copy({
     from: 'tm/' + target.name,
-    exclude: [/^src(\/|$)/, TEST_CONTROL_EXCLUDE, ...pluginExcludes(model)],
+    exclude: [/^src(\/|$)/, TEST_CONTROL_EXCLUDE,
+      ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model)],
     replace: {
       ...props.ctx$.stdrep,
     }

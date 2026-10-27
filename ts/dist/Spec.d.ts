@@ -12,6 +12,7 @@ declare class Spec {
     body: any;
     url?: string;
     path?: string;
+    authquery: string[];
     constructor(specmap: Record<string, any>);
 }
 export { Spec, };

@@ -5,6 +5,7 @@ import {
   cmp, each, names, cmap,
   List, File, Content, Copy, Folder, Fragment, Line, FeatureHook,
   entityClassName, entityCollection,
+  inactiveFeatureExcludes,
   pluginExcludes,
   targetFeatures,
   TEST_CONTROL_EXCLUDE
@@ -52,7 +53,7 @@ const Main = cmp(async function Main(props: any) {
 
   Copy({
     from: 'tm/' + target.name,
-    exclude: [/src\//, /pkg\//, TEST_CONTROL_EXCLUDE],
+    exclude: [/src\//, /pkg\//, TEST_CONTROL_EXCLUDE, ...inactiveFeatureExcludes(props.ctx$, target)],
     replace: {
       ...props.ctx$.stdrep,
     }
@@ -62,7 +63,10 @@ const Main = cmp(async function Main(props: any) {
 
   Copy({
     from: 'tm/' + target.name + '/pkg',
-    exclude: [...pluginExcludes(model)],
+    exclude: [
+      ...inactiveFeatureExcludes(props.ctx$, target, 'tm/' + target.name + '/pkg'),
+      ...pluginExcludes(model),
+    ],
     replace: {
       ...props.ctx$.stdrep,
     }

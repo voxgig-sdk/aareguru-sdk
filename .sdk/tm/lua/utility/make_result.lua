@@ -32,9 +32,7 @@ local function make_result_util(ctx)
       local entities = {}
       for _, entry in ipairs(resdata) do
         local ent = entity:make()
-        if type(entry) == "table" then
-          ent:data_set(entry)
-        end
+        ent:data_set(entry)
         table.insert(entities, ent)
       end
       result.resdata = entities

@@ -2,7 +2,7 @@
 
 class AareguruSpec
   attr_accessor :parts, :headers, :alias_map, :base, :prefix, :suffix,
-                :params, :query, :step, :method, :body, :url, :path
+                :params, :query, :step, :method, :body, :url, :path, :authquery
 
   def initialize(specmap = {})
     specmap ||= {}
@@ -19,5 +19,8 @@ class AareguruSpec
     @body = specmap["body"] || specmap[:body]
     @url = specmap["url"] || specmap[:url] || ""
     @path = specmap["path"] || specmap[:path] || ""
+    # The query parameters prepare_auth placed: the credential, which the
+    # request sends and the entity's match leaves out.
+    @authquery = specmap["authquery"] || specmap[:authquery] || []
   end
 end

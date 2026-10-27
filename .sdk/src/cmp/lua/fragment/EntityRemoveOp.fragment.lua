@@ -7,7 +7,7 @@ local entityRemoveOp = {}
 
 ---@param reqmatch EntityNameRemoveMatch
 ---@param ctrl? table
----@return EntityName
+---@return EntyClass
 ---@return string? err
 function EntyClass:remove(reqmatch, ctrl)
   local utility = self._utility

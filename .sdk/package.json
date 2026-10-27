@@ -12,7 +12,7 @@
     "watch": "tsc --build src -w",
     "build": "tsc --build src",
     "test": "echo no-test",
-    "clean": "rm -rf dist dist-test node_modules yarn.lock package-lock.json",
+    "clean": "node -e \"for (const p of process.argv.slice(1)) require('fs').rmSync(p, { recursive: true, force: true })\" dist dist-test node_modules yarn.lock package-lock.json",
     "reset": "npm run clean && npm i && npm run build && npm test",
     "add-target": "voxgig-sdkgen target add",
     "dry-add-target": "voxgig-sdkgen -y target add",
@@ -21,7 +21,7 @@
     "add-edition": "voxgig-sdkgen edition add",
     "text-qa": "cd .. && voxgig-docgen qa",
     "postinstall": "node build/docgen.js",
-    "status": "bash admin/status.sh",
+    "status": "node -e \"require('fs').existsSync('node_modules/@voxgig/sdkgen/dist/admin/status.js') || (console.error('Install or update the .sdk dependencies to use the status report.'), process.exit(1))\" && node node_modules/@voxgig/sdkgen/dist/admin/status.js ..",
     "check-drift": "bash admin/check-drift.sh"
   },
   "author": "Aareguru",
@@ -29,13 +29,13 @@
   "devDependencies": {
     "@types/node": ">=25.6",
     "typescript": ">=6.0",
-    "@voxgig/apidef": "~8.22.1",
-    "@voxgig/model": "~12.0.0",
-    "@voxgig/sdkgen": "~4.33.0",
+    "@voxgig/apidef": "~8.25.3",
+    "@voxgig/model": "~12.0.1",
+    "@voxgig/sdkgen": "~4.35.0",
     "@voxgig/util": ">=0.5",
     "@voxgig/struct": ">=0.2",
     "jostraca": ">=0.39.0",
     "aontu": ">=0.75.0",
-    "@voxgig/docgen": "~0.30.0"
+    "@voxgig/docgen": "~0.30.2"
   }
 }

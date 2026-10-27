@@ -21,13 +21,14 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   entityList.forEach((e: any) => Object.keys(e.op || {})
     .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
   const opRowDefs: Record<string, string> = {
-    load: '| `load` | `(reqmatch, ctrl) -> any` | Load a single entity by match criteria. Raises on error. |',
-    list: '| `list` | `(reqmatch, ctrl) -> list` | List entities matching the criteria. Raises on error. |',
-    create: '| `create` | `(reqdata, ctrl) -> any` | Create a new entity. Raises on error. |',
-    update: '| `update` | `(reqdata, ctrl) -> any` | Update an existing entity. Raises on error. |',
-    remove: '| `remove` | `(reqmatch, ctrl) -> any` | Remove an entity. Raises on error. |',
+    load: '| `load` | `(reqmatch, ctrl) -> any` | Load a single entity by match criteria, and return it. Raises on error. |',
+    list: '| `list` | `(reqmatch, ctrl) -> list` | List entities matching the criteria, one per record. Raises on error. |',
+    create: '| `create` | `(reqdata, ctrl) -> any` | Create a new entity, and return it. Raises on error. |',
+    update: '| `update` | `(reqdata, ctrl) -> any` | Update an existing entity, and return it. Raises on error. |',
+    patch: '| `patch` | `(reqdata, ctrl) -> any` | Change part of an existing entity, and return it. Raises on error. |',
+    remove: '| `remove` | `(reqmatch, ctrl) -> any` | Remove an entity, and return it marked as deleted. Raises on error. |',
   }
-  const opRows = ['load', 'list', 'create', 'update', 'remove']
+  const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
 
   const apikeyOptionRow = isAuthActive(model)
@@ -94,9 +95,9 @@ ${opRows}
 
 ### Result shape
 
-Entity operations return the ENTITY (call data_get() for the record) (a \`dict\` for single-entity
-ops, a \`list\` for \`list\`) and raise on error. Wrap calls in
-\`try\`/\`except\` to handle failures.
+Entity operations return the entity, and \`list\` a \`list\` of entities, one
+per record; an entity's \`data_get()\` reads its record (a \`dict\`). They raise
+on error, so wrap calls in \`try\`/\`except\` to handle failures.
 
 The \`direct()\` escape hatch never raises — it returns a result \`dict\`
 you branch on via \`result["ok"]\`:

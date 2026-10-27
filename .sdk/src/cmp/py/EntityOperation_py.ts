@@ -1,7 +1,8 @@
 
 import {
   cmp, camelify,
-  Content, Fragment
+  Content, Fragment,
+  entityClassName, entityCollection,
 } from '@voxgig/sdkgen'
 
 
@@ -29,6 +30,7 @@ const EntityOperation = cmp(function Operation(props: any) {
       ProjectName: model.const.Name,
       EntityName: entity.Name,
       entityname: entity.name,
+      EntyClass: entityClassName(entity, entityCollection(model)),
       '#Feature-Hook': ({ name, indent }: any) =>
         Content({ indent }, `
 u.feature_hook(ctx, "${name}")

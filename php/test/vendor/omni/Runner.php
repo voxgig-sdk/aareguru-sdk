@@ -1,6 +1,6 @@
 <?php
-// VENDORED: @voxgig/omni sdk-20260925-1316-0 (php/src/Runner.php)
-// Source: https://github.com/voxgig/omni @ b909ff51fc644e4955c850e30cc65e74be076df2  [tag: sdk-20260925-1316-0]
+// VENDORED: @voxgig/omni sdk-20261016-0845-0 (php/src/Runner.php)
+// Source: https://github.com/voxgig/omni @ e9cb45a308a4da47ffdbc1b3149b9c59199190b2  [tag: sdk-20261016-0845-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 
 /**
@@ -48,10 +48,10 @@ final class Runner
      * Capability strings this runner supports beyond the version baseline.
      * A spec's OMNI.requires list is checked against this: an unknown
      * capability refuses the spec loudly at load time, instead of a
-     * lagging port silently mis-running it. (Empty today; future format
-     * features mint a string here.)
+     * lagging port silently mis-running it. A spec turns each on only by
+     * requiring it.
      */
-    public const CAPABILITIES = [];
+    public const CAPABILITIES = ['ctxargs', 'fn', 'wait'];
 
     /**
      * The complete set of fields an entry may carry. Under version 1
@@ -60,6 +60,9 @@ final class Runner
      * stopped testing.
      */
     private const ENTRYFIELDS = ['in', 'args', 'ctx', 'out', 'err', 'match', 'client', 'id', 'doc'];
+
+    /** Entry fields a capability adds, permitted only in a spec that requires it. */
+    private const CAPFIELDS = ['fn' => 'fn', 'wait' => 'wait'];
 
     /** Load a spec: a path to a JSON file, or an already-parsed value. */
     public static function loadspec($specref)
@@ -113,30 +116,56 @@ final class Runner
     }
 
     /**
+     * The capabilities a spec requires, which resolveversion has already
+     * checked against CAPABILITIES.
+     */
+    public static function resolverequires($alltests): array
+    {
+        $meta = Util::ismap($alltests) ? ($alltests['OMNI'] ?? null) : null;
+        return Util::ismap($meta) && Util::islist($meta['requires'] ?? null) ? $meta['requires'] : [];
+    }
+
+    /**
      * Strict entry validation, applied when the spec declares version 1 or
      * later. The lenient format converts each of these mistakes into a
      * silent pass or a dead field; here they fail with the entry named.
      */
-    public static function checkentry(array $flags, int $index, $entry): void
+    public static function checkentry(array $flags, int $index, $entry, array $requires): void
     {
         if (!Util::ismap($entry)) {
             throw self::fail($flags, $index, $entry, 'entry is not a map');
         }
 
         foreach (array_keys($entry) as $key) {
-            if (!in_array($key, self::ENTRYFIELDS, true)) {
+            if (!in_array($key, self::ENTRYFIELDS, true)
+                && !(isset(self::CAPFIELDS[$key]) && in_array(self::CAPFIELDS[$key], $requires, true))) {
                 throw self::fail($flags, $index, $entry, 'unknown entry field: ' . $key);
             }
         }
 
-        $argsources = 0;
-        foreach (['in', 'args', 'ctx'] as $key) {
-            if (array_key_exists($key, $entry)) {
-                $argsources++;
+        if (in_array('ctxargs', $requires, true)) {
+            if (array_key_exists('in', $entry)
+                && (array_key_exists('args', $entry) || array_key_exists('ctx', $entry))) {
+                throw self::fail($flags, $index, $entry, 'entry has in beside args or ctx');
+            }
+        } else {
+            $argsources = 0;
+            foreach (['in', 'args', 'ctx'] as $key) {
+                if (array_key_exists($key, $entry)) {
+                    $argsources++;
+                }
+            }
+            if (1 < $argsources) {
+                throw self::fail($flags, $index, $entry, 'entry has more than one of in, args, ctx');
             }
         }
-        if (1 < $argsources) {
-            throw self::fail($flags, $index, $entry, 'entry has more than one of in, args, ctx');
+
+        if (array_key_exists('fn', $entry) && (!is_string($entry['fn']) || '' === $entry['fn'])) {
+            throw self::fail($flags, $index, $entry, 'entry fn is not a name');
+        }
+
+        if (array_key_exists('wait', $entry) && !self::iswait($entry['wait'])) {
+            throw self::fail($flags, $index, $entry, 'entry wait has no cause');
         }
 
         if (null !== ($entry['err'] ?? null) && array_key_exists('out', $entry)) {
@@ -155,7 +184,7 @@ final class Runner
      * malformed spec is a spec error, not a test result, so it fails
      * before any subject runs.
      */
-    public static function checkset(array $flags, $testspec, array $normalset): void
+    public static function checkset(array $flags, $testspec, array $normalset, array $requires): void
     {
         $origset = Util::ismap($testspec) && Util::islist($testspec['set'] ?? null)
             ? $testspec['set'] : $normalset;
@@ -165,7 +194,7 @@ final class Runner
         }
 
         foreach ($origset as $index => $entry) {
-            self::checkentry($flags, $index, $entry);
+            self::checkentry($flags, $index, $entry, $requires);
         }
     }
 
@@ -246,8 +275,14 @@ final class Runner
         return $entry;
     }
 
-    public static function resolvetestpack(?string $name, array $entry, $subject, array $provider, array $clients): array
-    {
+    public static function resolvetestpack(
+        ?string $name,
+        array $entry,
+        $subject,
+        array $provider,
+        array $clients,
+        bool $fnon = false
+    ): array {
         $testpack = ['client' => $provider, 'subject' => $subject];
 
         if (null !== ($entry['client'] ?? null)) {
@@ -259,13 +294,28 @@ final class Runner
             $testpack['subject'] = self::resolvesubject($name, $client) ?: $subject;
         }
 
+        $fn = $entry['fn'] ?? null;
+        if ($fnon && null !== $fn) {
+            $fnsubject = is_string($fn) ? self::resolvesubject($fn, $testpack['client']) : null;
+            if (null === $fnsubject) {
+                throw new OmniError('omni: unknown fn: ' . Util::stringify($fn), $entry);
+            }
+            $testpack['subject'] = $fnsubject;
+        }
+
         return $testpack;
     }
 
-    /** Build the argument list: `ctx`, `args`, or `in`. */
-    public static function resolveargs(array &$entry, array $testpack, array $provider): array
+    /**
+     * Build the argument list: `ctx`, `args`, or `in`. Under `ctxargs` an
+     * entry with both passes the context first, then each argument.
+     */
+    public static function resolveargs(array &$entry, array $testpack, array $provider, bool $ctxargs = false): array
     {
-        if (array_key_exists('ctx', $entry)) {
+        if ($ctxargs && array_key_exists('ctx', $entry) && array_key_exists('args', $entry)) {
+            $rawargs = $entry['args'];
+            $args = array_merge([$entry['ctx']], Util::islist($rawargs) ? $rawargs : [$rawargs]);
+        } elseif (array_key_exists('ctx', $entry)) {
             $args = [$entry['ctx']];
         } elseif (array_key_exists('args', $entry)) {
             $args = $entry['args'];
@@ -570,6 +620,61 @@ final class Runner
         }
     }
 
+    public static function iswait($wait): bool
+    {
+        return Util::ismap($wait) && is_string($wait['cause'] ?? null) && '' !== $wait['cause'];
+    }
+
+    /**
+     * The runner-side waits: entry id to its declaration. Each must name an
+     * entry of the set, so a declaration cannot outlive the entry it held.
+     */
+    public static function resolvewaits(array $flags, array $origset): array
+    {
+        $waits = $flags['wait'] ?? null;
+        // An empty map and an empty list are the same PHP value.
+        if (null === $waits || [] === $waits) {
+            return [];
+        }
+        if (!Util::ismap($waits)) {
+            throw new OmniError('omni: ' . $flags['name'] . ': wait flag is not a map');
+        }
+        $ids = array_map(fn($entry) => Util::ismap($entry) ? ($entry['id'] ?? null) : null, $origset);
+        foreach ($waits as $id => $wait) {
+            // PHP turns a numeric-string key into an int; an entry id is a string.
+            $id = (string) $id;
+            if (!in_array($id, $ids, true)) {
+                throw new OmniError('omni: ' . $flags['name'] . ': wait names no entry: ' . $id);
+            }
+            if (!self::iswait($wait)) {
+                throw new OmniError('omni: ' . $flags['name'] . ': wait for ' . $id . ' has no cause');
+            }
+        }
+        return $waits;
+    }
+
+    public static function runentry(
+        array $flags,
+        int $index,
+        array &$entry,
+        array $testpack,
+        array $provider,
+        bool $ctxargs
+    ): void {
+        try {
+            $args = self::resolveargs($entry, $testpack, $provider, $ctxargs);
+            $res = ($testpack['subject'])(...$args);
+            $res = self::fixjson($res, $flags);
+            $entry['res'] = $res;
+
+            self::checkresult($flags, $index, $entry, $args, $res);
+        } catch (OmniError $omnierr) {
+            throw $omnierr;
+        } catch (\Throwable $err) {
+            self::handleerror($flags, $index, $entry, $err, $provider);
+        }
+    }
+
     /**
      * Make a runner for a spec file (or spec value) and a provider.
      *
@@ -580,19 +685,41 @@ final class Runner
     {
         $alltests = self::loadspec($specref);
         $specversion = self::resolveversion($alltests);
+        $requires = self::resolverequires($alltests);
+        $ctxargs = in_array('ctxargs', $requires, true);
+        $fnon = in_array('fn', $requires, true);
+        $waiton = in_array('wait', $requires, true);
         $useprovider = $provider ?? [];
 
-        return function (?string $name = null, $store = null) use ($alltests, $specversion, $useprovider): array {
+        return function (?string $name = null, $store = null) use (
+            $alltests,
+            $specversion,
+            $requires,
+            $ctxargs,
+            $fnon,
+            $waiton,
+            $useprovider
+        ): array {
             $spec = self::resolvespec($name, $alltests);
             $clients = self::resolveclients($useprovider, $spec, null === $store ? [] : $store);
             $defsubject = self::resolvesubject($name, $useprovider);
 
-            $runsetflags = function ($testspec, ?array $flags, $testsubject = null) use ($name, $specversion, $useprovider, $clients, $defsubject): void {
+            $runsetflags = function ($testspec, ?array $flags, $testsubject = null) use (
+                $name,
+                $specversion,
+                $requires,
+                $ctxargs,
+                $fnon,
+                $waiton,
+                $useprovider,
+                $clients,
+                $defsubject
+            ): void {
                 $useflags = self::resolveflags($flags);
                 $useflags['name'] = $useflags['name'] ?? ($name ?? 'set');
 
                 $subject = $testsubject ?: $defsubject;
-                if (null === $subject) {
+                if (null === $subject && !$fnon) {
                     throw new OmniError('omni: no test subject for: ' . $useflags['name']);
                 }
 
@@ -605,26 +732,76 @@ final class Runner
                 $testset = $testspecmap['set'];
 
                 if (1 <= $specversion) {
-                    self::checkset($useflags, $testspec, $testset);
+                    self::checkset($useflags, $testspec, $testset, $requires);
                 }
+
+                $origset = Util::ismap($testspec) && Util::islist($testspec['set'] ?? null)
+                    ? $testspec['set'] : $testset;
+                $waits = self::resolvewaits($useflags, $origset);
+                $failures = [];
 
                 foreach ($testset as $index => $entry) {
                     try {
-                        $entry = self::resolveentry($entry, $useflags);
+                        $testpack = null;
+                        $prestart = null;
 
-                        $testpack = self::resolvetestpack($name, $entry, $subject, $useprovider, $clients);
-                        $args = self::resolveargs($entry, $testpack, $useprovider);
+                        // A hook's raw error before the subject starts is still the entry's.
+                        try {
+                            $entry = self::resolveentry($entry, $useflags);
+                            $testpack = self::resolvetestpack($name, $entry, $subject, $useprovider, $clients, $fnon);
+                        } catch (OmniError $omnierr) {
+                            throw $omnierr;
+                        } catch (\Throwable $err) {
+                            $prestart = $err;
+                        }
 
-                        $res = ($testpack['subject'])(...$args);
-                        $res = self::fixjson($res, $useflags);
-                        $entry['res'] = $res;
+                        if (null === $prestart && null === ($testpack['subject'] ?? null)) {
+                            throw new OmniError('omni: no test subject for: ' . $useflags['name']);
+                        }
 
-                        self::checkresult($useflags, $index, $entry, $args, $res);
+                        $id = Util::ismap($entry) ? ($entry['id'] ?? null) : null;
+                        $wait = !Util::ismap($entry) ? null
+                            : ($waiton && array_key_exists('wait', $entry) ? $entry['wait']
+                                : (is_string($id) || is_int($id) ? ($waits[$id] ?? null) : null));
+
+                        $run = function () use ($useflags, $index, &$entry, $testpack, $useprovider, $ctxargs, $prestart): void {
+                            if (null === $prestart) {
+                                self::runentry($useflags, $index, $entry, $testpack, $useprovider, $ctxargs);
+                            } else {
+                                self::handleerror($useflags, $index, $entry, $prestart, $useprovider);
+                            }
+                        };
+
+                        if (null === $wait) {
+                            $run();
+                        } else {
+                            $held = false;
+                            try {
+                                $run();
+                            } catch (OmniError) {
+                                $held = true;
+                            }
+                            if (!$held) {
+                                throw self::fail(
+                                    $useflags,
+                                    $index,
+                                    $entry,
+                                    'stale wait: ' . Util::stringify($wait['cause'] ?? null)
+                                );
+                            }
+                        }
                     } catch (OmniError $omnierr) {
+                        if (true === ($useflags['all'] ?? null)) {
+                            $failures[] = $omnierr->getMessage();
+                            continue;
+                        }
                         throw $omnierr;
-                    } catch (\Throwable $err) {
-                        self::handleerror($useflags, $index, $entry, $err, $useprovider);
                     }
+                }
+
+                if (0 < count($failures)) {
+                    throw new OmniError('omni: ' . $useflags['name'] . ': ' . count($failures) . ' of '
+                        . count($testset) . " entries failed\n" . implode("\n", $failures));
                 }
             };
 

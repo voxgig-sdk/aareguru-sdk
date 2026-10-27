@@ -499,6 +499,31 @@ describe('PrimaryUtility', async () => {
   })
 
 
+  // Nothing listens on port 9: a request the guard let through fails there.
+  test('fetcher-getonly-guard', async () => {
+    const liveClient = new (SDK as any)({ base: 'http://127.0.0.1:9' })
+    const liveUtility = liveClient.utility()
+    const ctx = liveUtility.makeContext({ opname: 'create' }, liveClient._rootctx)
+    ctx.client = liveClient
+    const url = 'http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01'
+
+    const prior = process.env.VOXGIG_GETONLY_GUARD
+    process.env.VOXGIG_GETONLY_GUARD = 'TRUE'
+    try {
+      const refused = await liveUtility.fetcher(ctx, url, { method: 'POST', headers: {} })
+      equal(refused?.code, 'fetch_getonly_block')
+      ok(refused.message.includes('[GET-ONLY GUARD] blocked POST /planet/p1'), refused.message)
+      ok(!refused.message.includes('GUARDKEY01'))
+
+      await assert.rejects(liveUtility.fetcher(ctx, url, { method: 'GET', headers: {} }))
+    }
+    finally {
+      if (undefined === prior) delete process.env.VOXGIG_GETONLY_GUARD
+      else process.env.VOXGIG_GETONLY_GUARD = prior
+    }
+  })
+
+
   test('makeError-no-throw', () => {
     const ctx = makeFullCtx()
     ctx.ctrl.throw = false

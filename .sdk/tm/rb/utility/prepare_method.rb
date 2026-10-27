@@ -15,4 +15,10 @@ module AareguruUtilities
     # shared corpus (prepareMethod, opname "bad" -> null) pins it now.
     METHOD_MAP[ctx.op.name]
   }
+
+  # Whether a comma-separated allow option names the item: whole names, any case.
+  def self.allowed(names, item)
+    want = item.is_a?(String) ? item.upcase : ""
+    "" != want && names.is_a?(String) && names.split(",").any? { |name| name.strip.upcase == want }
+  end
 end

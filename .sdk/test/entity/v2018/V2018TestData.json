@@ -23,17 +23,17 @@
       "version": 2,
       "source": "openapi3"
     },
+    "GET /v2018/cities": {
+      "provenance": "operation-contract",
+      "version": 2,
+      "source": "openapi3"
+    },
     "GET /v2018/current": {
       "provenance": "operation-contract",
       "version": 2,
       "source": "openapi3"
     },
     "GET /v2018/today": {
-      "provenance": "operation-contract",
-      "version": 2,
-      "source": "openapi3"
-    },
-    "GET /v2018/cities": {
       "provenance": "operation-contract",
       "version": 2,
       "source": "openapi3"

@@ -16,6 +16,7 @@ import {
   rawStringLiteral,
   resolveAuthIn,
   resolveAuthName,
+  isHttpBasicAuth,
   resolveAuthPrefix,
   serverVariables,
   targetFeatures,
@@ -88,6 +89,7 @@ const Config = cmp(async function Config(props: any) {
   // what it generated before.
   const authIn = resolveAuthIn(model)
   const authName = resolveAuthName(model)
+  const authBasic = isHttpBasicAuth(model)
 
   let baseUrl = ''
   try { baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`) } catch (_e) { }
@@ -101,7 +103,8 @@ const Config = cmp(async function Config(props: any) {
 
   const authBlock = authActive
     ? `                "auth" => [
-                    "prefix" => "${authPrefix}",${'header' === authIn ? '' : `
+                    "prefix" => "${authPrefix}",${authBasic ? `
+                    "basic" => true,` : ''}${'header' === authIn ? '' : `
                     "in" => ${phps(authIn)},`}${'Authorization' === authName ? '' : `
                     "name" => ${phps(authName)},`}
                 ],\n`

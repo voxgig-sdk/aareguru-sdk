@@ -373,8 +373,28 @@ class CleanTest extends TestCase
         };
     }
 
+    // Offline, as every generated suite is: the test OPTION resolves a
+    // required server variable to test-<name>, and installs no transport.
+    private static function offline(array $opts): array
+    {
+        return array_merge($opts, ['test' => ['active' => true]]);
+    }
+
+    // A client the sweep cannot build leaves nothing swept: a harness error,
+    // not a leak.
+    private static function construct(array $opts): ${Name}SDK
+    {
+        try {
+            return new ${Name}SDK(self::offline($opts));
+        } catch (\\Throwable $e) {
+            throw new \\RuntimeException('clean harness: the client could not be constructed, ' .
+                'so nothing was swept: ' . $e->getMessage(), 0, $e);
+        }
+    }
+
     private static function make_sdk(
-        callable $respond, \\ArrayObject $sinks, ?array $cleanopts = null, array $extra = []
+        callable $respond, \\ArrayObject $sinks, ?array $cleanopts = null, array $extra = [],
+        ?array $auth = null
     ): array
     {
         $capture = function (string $name) use ($sinks): callable {
@@ -425,8 +445,11 @@ class CleanTest extends TestCase
         if (0 < count($feature)) {
             $opts['feature'] = $feature;
         }
+        if (null !== $auth) {
+            $opts['auth'] = $auth;
+        }
 
-        return [new ${Name}SDK($opts), $watcher];
+        return [self::construct($opts), $watcher];
     }
 
     // The first operation that completes against a plain 200: with no
@@ -435,7 +458,7 @@ class CleanTest extends TestCase
     // answers get_name(), as the feature corpus runner finds them.
     private static function usable_op(): ?array
     {
-        $plain = new ${Name}SDK([
+        $plain = self::construct([
             'apikey' => self::CANARY['apikey'],
             'utility' => [
                 'fetcher' => function (${Name}Context $_ctx, string $_url, array $_fetchdef): array {
@@ -465,7 +488,7 @@ class CleanTest extends TestCase
         $entities = ${Name}Config::shared_config()['entity'] ?? [];
         foreach ($found as $entname => $accessor) {
             $ent = $plain->$accessor();
-            $ops = array_values(array_filter(['list', 'load', 'create', 'update', 'remove'],
+            $ops = array_values(array_filter(['list', 'load', 'create', 'update', 'patch', 'remove'],
                 function (string $op) use ($ent): bool {
                     return method_exists($ent, $op);
                 }));
@@ -499,12 +522,13 @@ class CleanTest extends TestCase
         // What the caller passed and keeps; an array, so the call cannot
         // change it, but it is searched like the record the watcher reads.
         $held = $ctrl['explain'] ?? null;
+        $accessor = $target['accessor'];
+        $op = $target['op'];
+        $entity = $sdk->$accessor();
         $out = null;
         $err = null;
         try {
-            $accessor = $target['accessor'];
-            $op = $target['op'];
-            $out = $sdk->$accessor()->$op($target['match'], $ctrl);
+            $out = $entity->$op($target['match'], $ctrl);
         } catch (\\Throwable $e) {
             $err = $e;
         }
@@ -518,6 +542,10 @@ class CleanTest extends TestCase
             foreach (self::surfaces('result', $out) as $s) {
                 $sinks[] = $s;
             }
+        }
+        // Raw, as a caller copying the match into another query reads it.
+        foreach (self::surfaces('match', $entity->match_get()) as $s) {
+            $sinks[] = $s;
         }
 
         $explain = null;
@@ -539,6 +567,11 @@ class CleanTest extends TestCase
 
     public function test_no_credential_leaves_the_sdk_in_any_form(): void
     {
+        // PHP records a frame's arguments unless the ini says otherwise, and
+        // they hold every context the failing frames were handed: clean strips
+        // them, which the sweep sees only with them recorded. A production ini
+        // switches them off, so the sweep switches them on.
+        $args = ini_set('zend.exception_ignore_args', '0');
         // Frameworks turn every notice into an exception (PHPUnit 8 did too);
         // one thrown mid-pipeline must still leave clean.
         set_error_handler(static function (int $no, string $str, string $file, int $line): bool {
@@ -548,6 +581,9 @@ class CleanTest extends TestCase
             $this->sweep();
         } finally {
             restore_error_handler();
+            if (false !== $args) {
+                ini_set('zend.exception_ignore_args', $args);
+            }
         }
     }
 
@@ -585,14 +621,19 @@ class CleanTest extends TestCase
             }
         }
 
+        // A name given at run time replaces the declared one: the match leaves
+        // out whichever name prepare_auth placed.
+        [$sdk, $watcher] = self::make_sdk(self::scenarios()['ok'], $sinks, null, [], ['name' => 'zzcred']);
+        self::drive($sdk, $watcher, $target, [], $sinks);
+
         // A credential mistyped as a map is rejected by validation, whose
         // message quotes the value it rejected.
         $rejected = null;
         try {
-            new ${Name}SDK([
+            new ${Name}SDK(self::offline([
                 'apikey' => ['value' => self::CANARY['apikey']],
                 'clean' => ['values' => self::CANARY['value']],
-            ]);
+            ]));
         } catch (\\Throwable $e) {
             $rejected = $e;
         }
@@ -675,7 +716,7 @@ class CleanTest extends TestCase
         // With no clean option at all, the schema defaults still apply.
         $respond404 = self::scenarios()['notfound'];
         $bwatcher = self::capture_feature($sinks);
-        $bare = new ${Name}SDK([
+        $bare = self::construct([
             'apikey' => self::CANARY['apikey'],
             'secret' => self::CANARY['secret'],
             'headers' => ['X-Custom-Token' => self::CANARY['header']],
@@ -691,12 +732,14 @@ class CleanTest extends TestCase
 
         // A feature's name is not a field name: only the sensitive names
         // inside its settings register. An entity block, of per-entity
-        // settings or seeded records keyed by entity name and id, is not read.
-        $featured = new ${Name}SDK([
+        // settings or seeded records keyed by entity name and id, is not read,
+        // and nor are rbac's rules, keyed by entity and operation names.
+        $featured = self::construct([
             'apikey' => self::CANARY['apikey'],
             'feature' => [
                 'zzsecrets' => ['active' => false, 'kind' => 'PLAINSETTING-q8w2e4r6'],
                 'zzfeat' => ['active' => false, 'apitoken' => 'FEATTOKEN-z9y8x7w6'],
+                'rbac' => ['active' => false, 'rules' => ['zztoken.load' => 'PLAINRULE-k7j5h3g1']],
                 'test' => ['active' => false, 'entity' => [
                     'zztoken' => ['ZZTOKEN01' => ['note' => 'PLAINRECORD-t5r3e1w9']]]],
             ],
@@ -707,6 +750,7 @@ class CleanTest extends TestCase
         $ftoken = $fclean($featured->get_root_ctx(), 'token FEATTOKEN-z9y8x7w6');
         $frecord = $fclean($featured->get_root_ctx(), 'record PLAINRECORD-t5r3e1w9');
         $falias = $fclean($featured->get_root_ctx(), 'alias PLAINALIAS-m2n4b6v8');
+        $frule = $fclean($featured->get_root_ctx(), 'rule PLAINRULE-k7j5h3g1');
 
         $leaked = [];
         $excerpt = '';
@@ -758,6 +802,7 @@ class CleanTest extends TestCase
         $this->assertSame('token ' . self::MASK, $ftoken);
         $this->assertSame('record PLAINRECORD-t5r3e1w9', $frecord);
         $this->assertSame('alias PLAINALIAS-m2n4b6v8', $falias);
+        $this->assertSame('rule PLAINRULE-k7j5h3g1', $frule);
 
         $explained = $explains['ok/explain'] ?? [];
         $this->assertNotNull($explained['result'] ?? null, 'the explain record should carry the result');
@@ -766,6 +811,22 @@ class CleanTest extends TestCase
     }
 
     public function test_the_sweep_can_see_a_leak_clean_switched_off_shows_the_credential(): void
+    {
+        // With clean off nothing strips the trace arguments, and var_export
+        // renders the whole context through them: 43 MB of text on a
+        // 31-operation API (#292). The control proves the sweep sees a raw
+        // value, which the arguments are not needed for.
+        $args = ini_set('zend.exception_ignore_args', '1');
+        try {
+            $this->leak_control();
+        } finally {
+            if (false !== $args) {
+                ini_set('zend.exception_ignore_args', $args);
+            }
+        }
+    }
+
+    private function leak_control(): void
     {
         $target = self::usable_op();
         if (null === $target) {

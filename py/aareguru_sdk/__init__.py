@@ -4,6 +4,8 @@ from aareguru_sdk.utility.voxgig_struct import voxgig_struct as vs
 from aareguru_sdk.core.utility_type import AareguruUtility
 from aareguru_sdk.core.spec import AareguruSpec
 from aareguru_sdk.core import helpers
+from aareguru_sdk.utility.prepare_method import allowed
+from aareguru_sdk.utility.result_body import unreadable_body
 
 # Load utility registration (populates Utility._registrar)
 from aareguru_sdk.utility import register
@@ -138,6 +140,13 @@ class AareguruSDK:
         method = vs.getprop(fetchargs, "method") or "GET"
         if not isinstance(method, str):
             method = "GET"
+        method = method.upper()
+
+        allow_method = vs.getpath(options, "allow.method")
+        if not allowed(allow_method, method):
+            raise ctx.make_error("spec_method_allow",
+                'Method "' + method +
+                '" not allowed by SDK option allow.method value: "' + str(allow_method) + '"')
 
         params = helpers.to_map(vs.getprop(fetchargs, "params"))
         if params is None:
@@ -198,8 +207,7 @@ class AareguruSDK:
 
     # Is this raw-access op permitted by the SDK's allow.op option?
     def _op_allowed(self, op):
-        allow_op = vs.getpath(self.options, "allow.op")
-        return isinstance(allow_op, str) and op in allow_op
+        return allowed(vs.getpath(self.options, "allow.op"), op)
 
     def _op_denied(self, op):
         allow_op = vs.getpath(self.options, "allow.op")
@@ -260,6 +268,7 @@ class AareguruSDK:
             no_body = status in (204, 304) or str(content_length) == "0"
 
             json_data = None
+            body_err = None
             if not no_body:
                 jf = vs.getprop(fetched, "json")
                 if callable(jf):
@@ -269,13 +278,22 @@ class AareguruSDK:
                         # Non-JSON body (e.g. text/plain, text/html). Surface
                         # status + headers but leave data as None.
                         json_data = None
+                if vs.getprop(fetched, "unreadable") is True:
+                    failed = None if 200 <= status < 300 else ctx.make_error(
+                        "request_status",
+                        "request: " + str(status) + ": " + str(vs.getprop(fetched, "statusText")))
+                    body_err = unreadable_body(ctx, status, headers, vs.getprop(fetched, "body"),
+                                               fetchdef.get("headers"), failed)
 
-            return {
-                "ok": status >= 200 and status < 300,
+            out = {
+                "ok": body_err is None and status >= 200 and status < 300,
                 "status": status,
                 "headers": headers,
                 "data": json_data,
             }
+            if body_err is not None:
+                out["err"] = utility.clean(ctx, body_err)
+            return out
 
         return {
             "ok": False,

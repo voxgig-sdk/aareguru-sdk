@@ -148,10 +148,34 @@ const SCENARIOS: Scenario[] = [
   { name: 'coded', respond: (_url: string, _fetchdef: any, ctx: any) => {
     throw ctx.error('denied_' + CANARY.apikey, 'coded failure')
   } },
+  // fetch rejects a timed-out or aborted request with a DOMException, whose
+  // message is a getter with no setter.
+  { name: 'timeout', respond: (url: string) => {
+    throw new DOMException('timed out sending ' + CANARY.apikey + ' (URL was: "' + url + '")', 'TimeoutError')
+  } },
 ]
 
 
-function makeSdk(scenario: Scenario, sinks: Sink[], cleanopts?: any, extra?: any[]): any {
+// Offline, as every generated suite is: the test OPTION resolves a required
+// server variable to test-<name>, and installs no transport.
+function offline(opts: any): any {
+  return { ...opts, test: { active: true } }
+}
+
+
+// A client the sweep cannot build leaves nothing swept: a harness error, not a leak.
+function construct(opts: any): any {
+  try {
+    return new (SDK as any)(offline(opts))
+  }
+  catch (err: any) {
+    throw new Error('clean harness: the client could not be constructed, so nothing was swept: ' +
+      (err?.message ?? String(err)))
+  }
+}
+
+
+function makeSdk(scenario: Scenario, sinks: Sink[], cleanopts?: any, extra?: any[], auth?: any): any {
   const capture = (name: string) => (rec: any) => { sinks.push(...forms(name, rec)) }
   const feature: any = {}
   if (hasFeature('log')) {
@@ -180,7 +204,8 @@ function makeSdk(scenario: Scenario, sinks: Sink[], cleanopts?: any, extra?: any
   }
   // null builds the client with no clean block at all, as most callers do.
   if (null !== cleanopts) opts.clean = { values: CANARY.value, ...(cleanopts || {}) }
-  return new (SDK as any)(opts)
+  if (null != auth) opts.auth = auth
+  return construct(opts)
 }
 
 
@@ -189,7 +214,7 @@ function makeSdk(scenario: Scenario, sinks: Sink[], cleanopts?: any, extra?: any
 type Target = { accessor: string, op: string, match: any }
 
 async function usableOp(): Promise<Target | null> {
-  const plain = new (SDK as any)({
+  const plain = construct({
     apikey: CANARY.apikey,
     utility: { fetcher: async () => response(200, { id: 'i1' }) },
   })
@@ -268,16 +293,19 @@ class StreamOkFeature extends BaseFeature {
 async function drive(sdk: any, target: Target, ctrl: any, sinks: Sink[]) {
   // A caller may keep the record it passed rather than read ctrl.explain.
   const held = ctrl.explain
+  const entity = sdk[target.accessor]()
   let out: any = undefined
   let err: any = undefined
   try {
-    out = await sdk[target.accessor]()[target.op]({ ...target.match }, ctrl)
+    out = await entity[target.op]({ ...target.match }, ctrl)
   }
   catch (e: any) {
     err = e
   }
   if (undefined !== err) sinks.push(...forms('error', err))
   if (undefined !== out) sinks.push(...forms('result', out))
+  // Raw, as a caller copying the match into another query reads it.
+  sinks.push(...forms('match', entity.match()))
   if (null != ctrl.explain) sinks.push(...forms('explain', ctrl.explain))
   if (null != held && held !== ctrl.explain) sinks.push(...forms('explain:held', held))
   return err
@@ -312,12 +340,17 @@ describe('clean', () => {
       }
     }
 
+    // A name given at run time replaces the declared one: the match leaves
+    // out whichever name prepareAuth placed.
+    await drive(makeSdk(SCENARIOS[0], sinks, undefined, undefined, { name: 'zzcred' }),
+      target, {}, sinks)
+
     // A credential mistyped as an object is rejected by validation, whose
     // message quotes the value it rejected; with and without a clean block.
     for (const cleanblock of [{ clean: { values: CANARY.value } }, {}]) {
       let rejected: any = undefined
       try {
-        new (SDK as any)({ apikey: { value: CANARY.apikey }, ...cleanblock })
+        new (SDK as any)(offline({ apikey: { value: CANARY.apikey }, ...cleanblock }))
       }
       catch (e: any) {
         rejected = e
@@ -369,15 +402,22 @@ describe('clean', () => {
 
     // A feature's name is not a field name: only the sensitive names inside
     // its settings register. An entity block, of per-entity settings or seeded
-    // records keyed by entity name and id, is not read at all.
-    const featured: any = new (SDK as any)({ apikey: CANARY.apikey, feature: {
+    // records keyed by entity name and id, is not read at all, and nor are
+    // rbac's rules, keyed by entity and operation names.
+    const featured: any = construct({ apikey: CANARY.apikey, feature: {
       zzsecrets: { active: false, kind: 'PLAINSETTING-q8w2e4r6' },
       zzfeat: { active: false, apitoken: 'FEATTOKEN-z9y8x7w6' },
+      rbac: { active: false, rules: { 'zztoken.load': 'PLAINRULE-k7j5h3g1' } },
       test: { active: false, entity: { zztoken: { ZZTOKEN01: { note: 'PLAINRECORD-t5r3e1w9' } } } },
     }, entity: { zztoken: { alias: { zzkey: 'PLAINALIAS-m2n4b6v8' } } } })
     const fctx = { options: featured._options }
 
-    // The raw path returns its failure rather than throwing it.
+    // The raw path returns its failure rather than throwing it, a
+    // DOMException's included.
+    const timedout = await makeSdk(SCENARIOS[SCENARIOS.length - 1], sinks).direct({ path: 'raw' })
+    ok(false === timedout.ok && 'TimeoutError' === timedout.err?.name,
+      'a timed-out transport should fail direct() with its own error')
+    sinks.push(...forms('direct:timeout', timedout.err))
     const raw = await makeSdk(SCENARIOS[3], sinks).direct({ path: 'raw' })
     ok(false === raw.ok && null != raw.err, 'a transport failure should fail direct()')
     sinks.push(...forms('direct', raw.err))
@@ -390,6 +430,9 @@ describe('clean', () => {
 
     equal(leaked.length, 0, 'credential leaked through: ' +
       leaked.map((l) => l.name + ' [' + l.found.join(', ') + ']').join('; '))
+
+    // A DOMException is masked in place, and stays the error it was.
+    equal(errors['timeout/throw']?.name, 'TimeoutError', 'a timed-out operation should throw its own error')
 
     // The positive half: the slot the credential travelled in is masked,
     // and an unregistered token in a response header is masked by name.
@@ -419,6 +462,7 @@ describe('clean', () => {
     equal(featured.utility().clean(fctx, 'token FEATTOKEN-z9y8x7w6'), 'token ' + MASK)
     equal(featured.utility().clean(fctx, 'record PLAINRECORD-t5r3e1w9'), 'record PLAINRECORD-t5r3e1w9')
     equal(featured.utility().clean(fctx, 'alias PLAINALIAS-m2n4b6v8'), 'alias PLAINALIAS-m2n4b6v8')
+    equal(featured.utility().clean(fctx, 'rule PLAINRULE-k7j5h3g1'), 'rule PLAINRULE-k7j5h3g1')
 
     const coded = errors['coded/throw']
     ok(null != coded, 'the coded scenario must throw')

@@ -6,7 +6,9 @@
 
 import { test, describe } from 'node:test'
 import { strictEqual, ok, deepStrictEqual } from 'node:assert'
+import { getEventListeners } from 'node:events'
 
+import { AareguruSDK } from '..'
 import { hasFeature, makeClient, makeClock, makeResponse } from './feature/harness'
 
 
@@ -18,6 +20,23 @@ function recordingServer(reply?: (n: number, fetchdef: any) => any) {
     return makeResponse(200, { ok: true, n: calls.length })
   }
   return { server, calls }
+}
+
+
+// Answers after `ms` unless the request's signal aborts first, when it rejects
+// with the signal's reason, as fetch does.
+function slowServer(ms: number) {
+  return (_ctx: any, _url: string, fetchdef: any) => new Promise((resolve, reject) => {
+    const timer = setTimeout(() => resolve(makeResponse(200, { ok: true })), ms)
+    const signal = fetchdef.signal
+    if (null == signal) return
+    const abort = () => {
+      clearTimeout(timer)
+      reject(signal.reason)
+    }
+    if (signal.aborted) return abort()
+    signal.addEventListener('abort', abort, { once: true })
+  })
 }
 
 
@@ -786,4 +805,119 @@ describe('feature', () => {
       strictEqual(h.client._netsim.calls, 1)
     })
   }
+
+  // --- abort ----------------------------------------------------------------
+  // A caller's signal ends a request wherever it waits. Each wait is far longer
+  // than the abort, so a request that ignored the signal would take seconds.
+  describe('abort', () => {
+
+    test('a caller abort cancels a request the timeout feature wraps', { skip: skipWithout('timeout') }, async () => {
+      const h = makeClient({ features: [{ name: 'timeout', options: { ms: 5000 } }], server: slowServer(2000) })
+      const ac = new AbortController()
+      const reason = new Error('stop')
+      setTimeout(() => ac.abort(reason), 20)
+      const start = Date.now()
+      const res = await h.op({ op: 'load', ctrl: { signal: ac.signal } })
+      ok(Date.now() - start < 1000, 'the request ended at the abort')
+      strictEqual(res.error, reason)
+      strictEqual(h.client._timeout, undefined, 'an abort is not a timeout')
+    })
+
+    test('the deadline still fires while the caller signal stays live', { skip: skipWithout('timeout') }, async () => {
+      const h = makeClient({ features: [{ name: 'timeout', options: { ms: 20 } }], server: slowServer(2000) })
+      const ac = new AbortController()
+      const res = await h.op({ op: 'load', ctrl: { signal: ac.signal } })
+      strictEqual(res.error.code, 'timeout')
+      strictEqual(getEventListeners(ac.signal, 'abort').length, 0,
+        'the timeout leaves no listener on the caller signal')
+    })
+
+    test('an aborted request is not retried', { skip: skipWithout('retry') }, async () => {
+      const ac = new AbortController()
+      const rec = recordingServer(() => {
+        ac.abort()
+        return makeResponse(503)
+      })
+      const clock = makeClock()
+      const h = makeClient({
+        features: [{ name: 'retry', options: { retries: 3, minDelay: 10, jitter: false, sleep: clock.sleep } }],
+        server: rec.server,
+      })
+      const res = await h.op({ op: 'load', ctrl: { signal: ac.signal } })
+      strictEqual(rec.calls.length, 1)
+      strictEqual(res.error, ac.signal.reason)
+      strictEqual(h.client._retry, undefined, 'no retry was scheduled')
+    })
+
+    test('an abort whose reason is not an Error is not retried either', { skip: skipWithout('retry') }, async () => {
+      // fetch rejects with the reason itself, so a string or a number reaches
+      // retry as a non-Error: it must still end the request, not become a response.
+      const server = slowServer(2000)
+      const h = makeClient({
+        features: [{ name: 'retry', options: { retries: 3, minDelay: 10, jitter: false } }],
+        server,
+      })
+      const ac = new AbortController()
+      setTimeout(() => ac.abort('user cancelled'), 20)
+      const start = Date.now()
+      const res = await h.op({ op: 'load', ctrl: { signal: ac.signal } })
+      ok(Date.now() - start < 1000, 'the request ended at the abort')
+      strictEqual(res.ok, false)
+      strictEqual(res.error, 'user cancelled')
+      strictEqual(h.client._retry, undefined, 'no retry was scheduled')
+    })
+
+    test('an abort during the retry backoff ends it', { skip: skipWithout('retry') }, async () => {
+      const ac = new AbortController()
+      const rec = recordingServer(() => makeResponse(503))
+      const h = makeClient({
+        features: [{ name: 'retry', options: { retries: 3, minDelay: 2000, jitter: false } }],
+        server: rec.server,
+      })
+      setTimeout(() => ac.abort(), 20)
+      const start = Date.now()
+      const res = await h.op({ op: 'load', ctrl: { signal: ac.signal } })
+      ok(Date.now() - start < 1000, 'the backoff ended at the abort')
+      strictEqual(rec.calls.length, 1)
+      strictEqual(res.error, ac.signal.reason)
+    })
+
+    test('an abort during simulated latency ends the request before the transport', { skip: skipWithout('netsim') }, async () => {
+      const ac = new AbortController()
+      const rec = recordingServer()
+      const h = makeClient({ features: [{ name: 'netsim', options: { latency: 2000 } }], server: rec.server })
+      setTimeout(() => ac.abort(), 20)
+      const start = Date.now()
+      const res = await h.op({ op: 'load', ctrl: { signal: ac.signal } })
+      ok(Date.now() - start < 1000, 'the latency ended at the abort')
+      strictEqual(rec.calls.length, 0)
+      strictEqual(res.error, ac.signal.reason)
+    })
+
+    test('an abort while waiting for a rate-limit token ends the wait', { skip: skipWithout('ratelimit') }, async () => {
+      const ac = new AbortController()
+      const rec = recordingServer()
+      const h = makeClient({ features: [{ name: 'ratelimit', options: { rate: 0.5, burst: 1 } }], server: rec.server })
+      await h.op({ op: 'load' })
+      setTimeout(() => ac.abort(), 20)
+      const start = Date.now()
+      const res = await h.op({ op: 'load', ctrl: { signal: ac.signal } })
+      ok(Date.now() - start < 1000, 'the wait ended at the abort')
+      strictEqual(rec.calls.length, 1)
+      strictEqual(res.error, ac.signal.reason)
+    })
+
+    test('the test transport aborts a request in flight', async () => {
+      const sdk = AareguruSDK.test({ net: { latency: 2000 } })
+      const ac = new AbortController()
+      const reason = new Error('stop')
+      setTimeout(() => ac.abort(reason), 20)
+      const start = Date.now()
+      const res: any = await sdk.direct({ path: '/ping', ctrl: { signal: ac.signal } })
+      ok(Date.now() - start < 1000, 'the request ended at the abort')
+      strictEqual(res.ok, false)
+      strictEqual(res.err.code, 'request_aborted')
+      strictEqual(res.err.cause, reason)
+    })
+  })
 })

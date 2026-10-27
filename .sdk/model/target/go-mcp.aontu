@@ -26,6 +26,8 @@ main: kit: target: 'go-mcp': {
   # a relative replace to the sibling SDK at ../go and declares the
   # MCP Go SDK as a direct dep. See Main_go-mcp.ts.
   deps: {}
+
+  tool: write: *false | boolean
 }
 
 

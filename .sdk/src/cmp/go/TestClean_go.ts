@@ -242,8 +242,43 @@ var cleanScenarios = []cleanScenario{
 	}},
 }
 
+// Offline, as every generated suite is: the test OPTION resolves a required
+// server variable to test-<name>, and installs no transport.
+func cleanOffline(opts map[string]any) map[string]any {
+	opts["test"] = map[string]any{"active": true}
+	return opts
+}
+
+// A client the sweep cannot build leaves nothing swept: a harness error, not
+// a leak, which cleanHarness reports instead of letting the panic end the run.
+type cleanHarnessError struct{ cause any }
+
+func cleanNew(opts map[string]any) *sdk.${Name}SDK {
+	defer func() {
+		if r := recover(); r != nil {
+			panic(cleanHarnessError{r})
+		}
+	}()
+	return sdk.New${Name}SDK(cleanOffline(opts))
+}
+
+func cleanHarness(t *testing.T) {
+	if r := recover(); r != nil {
+		if h, ok := r.(cleanHarnessError); ok {
+			t.Fatalf("clean harness: the client could not be constructed, so nothing was swept: %v",
+				h.cause)
+		}
+		panic(r)
+	}
+}
+
 func cleanMakeSdk(scenario cleanScenario, sinks *[]cleanSink, cleanopts map[string]any,
 	extra ...any) *sdk.${Name}SDK {
+	return cleanNew(cleanOptions(scenario, sinks, cleanopts, extra...))
+}
+
+func cleanOptions(scenario cleanScenario, sinks *[]cleanSink, cleanopts map[string]any,
+	extra ...any) map[string]any {
 	capture := func(name string) func(map[string]any) {
 		return func(rec map[string]any) {
 			*sinks = append(*sinks, cleanSurfaces(name, rec)...)
@@ -281,7 +316,7 @@ func cleanMakeSdk(scenario cleanScenario, sinks *[]cleanSink, cleanopts map[stri
 		clean[k] = v
 	}
 
-	return sdk.New${Name}SDK(map[string]any{
+	return map[string]any{
 		"apikey":  cleanCanary["apikey"],
 		"secret":  cleanCanary["secret"],
 		"headers": map[string]any{"X-Custom-Token": cleanCanary["header"]},
@@ -293,7 +328,7 @@ func cleanMakeSdk(scenario cleanScenario, sinks *[]cleanSink, cleanopts map[stri
 				return scenario.respond(url, fetchdef)
 			}),
 		},
-	})
+	}
 }
 
 // One operation this SDK can perform: the client method returning the
@@ -309,12 +344,12 @@ func cleanEntity(client *sdk.${Name}SDK, accessor string) reflect.Value {
 		Call([]reflect.Value{reflect.ValueOf(map[string]any(nil))})[0]
 }
 
-func cleanInvoke(client *sdk.${Name}SDK, op cleanOp, ctrl map[string]any) (any, error) {
+func cleanInvoke(entity reflect.Value, op cleanOp, ctrl map[string]any) (any, error) {
 	match := map[string]any{}
 	for k, v := range op.match {
 		match[k] = v
 	}
-	rets := cleanEntity(client, op.accessor).MethodByName(op.method).Call([]reflect.Value{
+	rets := entity.MethodByName(op.method).Call([]reflect.Value{
 		reflect.ValueOf(match),
 		reflect.ValueOf(ctrl),
 	})
@@ -348,7 +383,7 @@ func cleanFilled(client *sdk.${Name}SDK, entity string, method string) map[strin
 // returning something that answers GetName().
 func cleanUsableOp() (cleanOp, bool) {
 	plain := func() *sdk.${Name}SDK {
-		return sdk.New${Name}SDK(map[string]any{
+		return cleanNew(map[string]any{
 			"apikey": cleanCanary["apikey"],
 			"utility": map[string]any{
 				"fetcher": sdk.FetcherFunc(func(*sdk.Context, string, map[string]any) (any, error) {
@@ -383,7 +418,7 @@ func cleanUsableOp() (cleanOp, bool) {
 	sort.Strings(accessors)
 
 	for _, accessor := range accessors {
-		for _, method := range []string{"List", "Load", "Create", "Update", "Remove"} {
+		for _, method := range []string{"List", "Load", "Create", "Update", "Patch", "Remove"} {
 			om := cleanEntity(probe, accessor).MethodByName(method)
 			if !om.IsValid() || om.Type().NumIn() != 2 || om.Type().NumOut() != 2 {
 				continue
@@ -392,7 +427,7 @@ func cleanUsableOp() (cleanOp, bool) {
 				Call(nil)[0].String()
 			for _, match := range []map[string]any{{}, cleanFilled(probe, name, method)} {
 				op := cleanOp{accessor: accessor, method: method, match: match}
-				if _, err := cleanInvoke(plain(), op, map[string]any{}); err == nil {
+				if _, err := cleanInvoke(cleanEntity(plain(), accessor), op, map[string]any{}); err == nil {
 					return op, true
 				}
 			}
@@ -404,13 +439,17 @@ func cleanUsableOp() (cleanOp, bool) {
 func cleanDrive(client *sdk.${Name}SDK, op cleanOp, ctrl map[string]any, sinks *[]cleanSink) error {
 	// A caller may keep the record it passed rather than read ctrl["explain"].
 	held, _ := ctrl["explain"].(map[string]any)
-	out, err := cleanInvoke(client, op, ctrl)
+	entity := cleanEntity(client, op.accessor)
+	out, err := cleanInvoke(entity, op, ctrl)
 	if err != nil {
 		*sinks = append(*sinks, cleanSurfaces("error", err)...)
 	}
 	if out != nil {
 		*sinks = append(*sinks, cleanSurfaces("result", out)...)
 	}
+	// Raw, as a caller copying the match into another query reads it.
+	*sinks = append(*sinks, cleanSurfaces("match",
+		entity.MethodByName("Match").Call(nil)[0].Interface())...)
 	explain, ok := ctrl["explain"].(map[string]any)
 	if ok {
 		*sinks = append(*sinks, cleanSurfaces("explain", explain)...)
@@ -491,6 +530,9 @@ func (f *cleanStreamPanic) PreDone(ctx *sdk.Context) {
 func cleanCatch(name string, sinks *[]cleanSink, fn func() error) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
+			if _, harness := r.(cleanHarnessError); harness {
+				panic(r)
+			}
 			*sinks = append(*sinks, cleanSurfaces(name+":panic", r)...)
 			err = fmt.Errorf("panic: %v", r)
 		}
@@ -501,6 +543,7 @@ func cleanCatch(name string, sinks *[]cleanSink, fn func() error) (err error) {
 const cleanNoOp = "no operation of this SDK completes against a plain 200; nothing to sweep"
 
 func TestCleanSweep(t *testing.T) {
+	defer cleanHarness(t)
 	op, found := cleanUsableOp()
 	if !found {
 		t.Skip(cleanNoOp)
@@ -538,15 +581,21 @@ func TestCleanSweep(t *testing.T) {
 		}
 	}
 
+	// A name given at run time replaces the declared one: the match leaves
+	// out whichever name PrepareAuth placed.
+	renamed := cleanOptions(cleanScenarios[0], &sinks, nil)
+	renamed["auth"] = map[string]any{"name": "zzcred"}
+	cleanDrive(cleanNew(renamed), op, map[string]any{}, &sinks)
+
 	// A credential mistyped as a map. The go validator substitutes the
 	// default rather than rejecting it, so there is no rejection to sweep:
 	// sweep what the constructor produced, and what clean makes of the value
 	// should anything later quote it.
 	cleanCatch("mistyped", &sinks, func() error {
-		client := sdk.New${Name}SDK(map[string]any{
+		client := sdk.New${Name}SDK(cleanOffline(map[string]any{
 			"apikey": map[string]any{"value": cleanCanary["apikey"]},
 			"clean":  map[string]any{"values": cleanCanary["value"]},
-		})
+		}))
 		sinks = append(sinks, cleanSurfaces("mistyped", client)...)
 		sinks = append(sinks, cleanSurfaces("mistyped:quoted",
 			client.GetUtility().Clean(client.GetRootCtx(), "found map: "+cleanCanary["apikey"]))...)
@@ -572,9 +621,9 @@ func TestCleanSweep(t *testing.T) {
 		}
 	}
 
-	// Stream has no error channel: a panic inside it must end the stream
-	// through MakeError, cleaned, and not crash the process. However it
-	// ends, the explain record the caller passed is left clean.
+	// A panic inside a stream must end it through MakeError, its cleaned
+	// error the last value sent, and not crash the process. However it ends,
+	// the explain record the caller passed is left clean.
 	for _, streamed := range []struct {
 		name  string
 		saw   string
@@ -597,8 +646,13 @@ func TestCleanSweep(t *testing.T) {
 			reflect.ValueOf(strings.ToLower(op.method)),
 			reflect.ValueOf(map[string]any{"reqmatch": reqmatch}),
 			reflect.ValueOf(map[string]any{"ctrl": map[string]any{"explain": explain}}),
-		})[0].Interface().(<-chan any)
-		for range items {
+		})[0].Interface().(<-chan core.StreamItem)
+		var streamerr error
+		for item := range items {
+			if item.Err != nil {
+				streamerr = item.Err
+				sinks = append(sinks, cleanSurfaces(streamed.name, item.Err)...)
+			}
 		}
 		sinks = append(sinks, cleanSurfaces(streamed.name+":explain", explain)...)
 		if 0 == len(explain) {
@@ -607,6 +661,9 @@ func TestCleanSweep(t *testing.T) {
 		msg, _ := core.ToMapAny(explain["err"])["message"].(string)
 		if ("" == streamed.saw) != (nil == explain["err"]) || !strings.Contains(msg, streamed.saw) {
 			t.Errorf("%s: only a failing stream ends as the SDK error, got %v", streamed.name, explain)
+		}
+		if ("" == streamed.saw) != (nil == streamerr) {
+			t.Errorf("%s: only a failing stream sends an error, got %v", streamed.name, streamerr)
 		}
 	}
 
@@ -644,7 +701,7 @@ func TestCleanSweep(t *testing.T) {
 	}
 
 	// With no clean option at all, the schema defaults still apply.
-	bare := sdk.New${Name}SDK(map[string]any{
+	bare := cleanNew(map[string]any{
 		"apikey":  cleanCanary["apikey"],
 		"secret":  cleanCanary["secret"],
 		"headers": map[string]any{"X-Custom-Token": cleanCanary["header"]},
@@ -660,12 +717,14 @@ func TestCleanSweep(t *testing.T) {
 
 	// A feature's name is not a field name: only the sensitive names inside
 	// its settings register. An entity block, of per-entity settings or seeded
-	// records keyed by entity name and id, is not read at all.
-	featured := sdk.New${Name}SDK(map[string]any{
+	// records keyed by entity name and id, is not read at all, and nor are
+	// rbac's rules, keyed by entity and operation names.
+	featured := cleanNew(map[string]any{
 		"apikey": cleanCanary["apikey"],
 		"feature": map[string]any{
 			"zzsecrets": map[string]any{"active": false, "kind": "PLAINSETTING-q8w2e4r6"},
 			"zzfeat":    map[string]any{"active": false, "apitoken": "FEATTOKEN-z9y8x7w6"},
+			"rbac":      map[string]any{"active": false, "rules": map[string]any{"zztoken.load": "PLAINRULE-k7j5h3g1"}},
 			"test": map[string]any{"active": false, "entity": map[string]any{
 				"zztoken": map[string]any{"ZZTOKEN01": map[string]any{"note": "PLAINRECORD-t5r3e1w9"}},
 			}},
@@ -683,6 +742,9 @@ func TestCleanSweep(t *testing.T) {
 		if got, _ := fclean(featured.GetRootCtx(), plain).(string); got != plain {
 			t.Errorf("an entity block was registered: %q", got)
 		}
+	}
+	if got, _ := fclean(featured.GetRootCtx(), "rule PLAINRULE-k7j5h3g1").(string); got != "rule PLAINRULE-k7j5h3g1" {
+		t.Errorf("an rbac rule keyed by entity and operation was registered: %q", got)
 	}
 
 	leaked := []string{}
@@ -747,6 +809,7 @@ func TestCleanSweep(t *testing.T) {
 }
 
 func TestCleanSensitivity(t *testing.T) {
+	defer cleanHarness(t)
 	op, found := cleanUsableOp()
 	if !found {
 		t.Skip(cleanNoOp)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 import base64
 import json
+import threading
 from urllib.parse import quote
 
 from projectname_sdk.schema import OPTSPEC
@@ -113,20 +114,23 @@ def _forms(value):
     return out
 
 
+# Requests on other threads clean while one registers, so a registration
+# publishes a new list and never changes a published one.
+_REGISTERING = threading.Lock()
+
+
 # Register a secret value. Idempotent; shorter than `min` is not a secret
 # the SDK can mask without blanking ordinary text.
 def clean_add_util(ctx, value):
     cfg = _clean_config(ctx)
     if not isinstance(value, str) or len(value) < cfg["min"]:
         return
-    values = cfg["values"]
-    changed = False
-    for form in _forms(value):
-        if len(form) >= cfg["min"] and form not in values:
-            values.append(form)
-            changed = True
-    if changed:
-        values.sort(key=len, reverse=True)
+    with _REGISTERING:
+        values = cfg["values"]
+        added = [form for form in _forms(value)
+                 if len(form) >= cfg["min"] and form not in values]
+        if added:
+            cfg["values"] = sorted(values + added, key=len, reverse=True)
 
 
 # Every scalar under a sensitive name, at any depth and of any shape: a

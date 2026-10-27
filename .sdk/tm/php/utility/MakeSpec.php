@@ -4,6 +4,7 @@ declare(strict_types=1);
 // Aareguru SDK utility: make_spec
 
 require_once __DIR__ . '/Graphql.php';
+require_once __DIR__ . '/PrepareMethod.php';
 
 require_once __DIR__ . '/../core/Spec.php';
 
@@ -12,6 +13,11 @@ class AareguruMakeSpec
     public static function call(AareguruContext $ctx): array
     {
         if (isset($ctx->out['spec'])) {
+            // A PreSpec hook (validate) rejects the operation by placing its
+            // error here; the pipeline raises it, and ctx->spec stays a spec.
+            if ($ctx->out['spec'] instanceof \Throwable) {
+                return [null, $ctx->out['spec']];
+            }
             $ctx->spec = $ctx->out['spec'];
             return [$ctx->spec, null];
         }
@@ -43,12 +49,12 @@ class AareguruMakeSpec
         // never a silently-allowed empty method.
         $method = ($utility->prepare_method)($ctx);
 
-        $allow_method = \Voxgig\Struct\Struct::getpath($options, 'allow.method') ?? '';
-        if (!is_string($method) || '' === $method
-            || strpos($allow_method, $method) === false) {
+        $allow_method = \Voxgig\Struct\Struct::getpath($options, 'allow.method');
+        if (!AareguruPrepareMethod::allowed($allow_method, $method)) {
             $shown = is_string($method) ? $method : '';
+            $list = is_string($allow_method) ? $allow_method : '';
             return [null, $ctx->make_error('spec_method_allow',
-                "Method \"{$shown}\" not allowed by SDK option allow.method value: \"{$allow_method}\"")];
+                "Method \"{$shown}\" not allowed by SDK option allow.method value: \"{$list}\"")];
         }
         $ctx->spec->method = $method;
 
@@ -78,9 +84,20 @@ class AareguruMakeSpec
             $ctx->ctrl->explain['spec'] = $ctx->spec;
         }
 
+        // Whatever prepare_auth sets in the query, under whichever name, is
+        // the credential; a key it leaves as it was is the caller's.
+        $query = $ctx->spec->query;
+
         [$spec, $err] = ($utility->prepare_auth)($ctx);
         if ($err) {
             return [null, $err];
+        }
+
+        $spec->authquery = [];
+        foreach ($spec->query as $key => $val) {
+            if (!array_key_exists($key, $query) || $query[$key] !== $val) {
+                $spec->authquery[] = $key;
+            }
         }
 
         $ctx->spec = $spec;

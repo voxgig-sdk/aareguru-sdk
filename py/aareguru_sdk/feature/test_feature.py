@@ -13,6 +13,27 @@ from aareguru_sdk.feature.base_feature import AareguruBaseFeature
 # payload in <key> so the transform can unwrap it again.
 ENVELOPE_RES_RE = re.compile(r"^`body\.(.+)`$")
 
+# The key a list's response transform
+# ["`$EACH`", "body", {"`$MERGE`": "`.<key>`"}] reads each item's record under.
+ITEM_ENVELOPE_RE = re.compile(r"^`\.([^.`$]+)`$")
+
+
+def item_envelope_key(restf):
+    if not isinstance(restf, list) or 3 != len(restf) or \
+            "`$EACH`" != restf[0] or "body" != restf[1]:
+        return None
+    merge = restf[2].get("`$MERGE`") if isinstance(restf[2], dict) else None
+    m = ITEM_ENVELOPE_RE.match(merge) if isinstance(merge, str) else None
+    return None if m is None else m.group(1)
+
+
+# The record the mock keeps: the request data without `$body`, which only the
+# wire carries.
+def _record(reqdata):
+    if not isinstance(reqdata, dict):
+        return reqdata
+    return {k: v for k, v in reqdata.items() if k != "$body"}
+
 
 class AareguruTestFeature(AareguruBaseFeature):
     def __init__(self):
@@ -57,6 +78,9 @@ class AareguruTestFeature(AareguruBaseFeature):
                 if not isinstance(transform, dict):
                     return data
                 restf = transform.get("res")
+                key = item_envelope_key(restf)
+                if key is not None and isinstance(data, list):
+                    return [{key: item} for item in data]
                 if not isinstance(restf, str):
                     return data
                 m = ENVELOPE_RES_RE.match(restf)
@@ -121,7 +145,7 @@ class AareguruTestFeature(AareguruBaseFeature):
                 out = vs.clone(found)
                 return respond(200, out)
 
-            elif op.name == "update":
+            elif op.name == "update" or op.name == "patch":
                 # Match the existing entity by id only (or its alias). reqdata
                 # also contains the new field values, which would otherwise
                 # cause select to filter out the entity we want to update.
@@ -147,7 +171,7 @@ class AareguruTestFeature(AareguruBaseFeature):
                     # update miss: 404, never another record
                     return respond(404, None, {"statusText": "Not found"})
                 if isinstance(ent, dict) and isinstance(fctx.reqdata, dict):
-                    vs.merge([ent, fctx.reqdata])
+                    vs.merge([ent, _record(fctx.reqdata)])
                 vs.delprop(ent, "$KEY")
                 out = vs.clone(ent)
                 return respond(200, out)
@@ -171,7 +195,7 @@ class AareguruTestFeature(AareguruBaseFeature):
                         random.randint(0, 0xFFFF), random.randint(0, 0xFFFF),
                         random.randint(0, 0xFFFF), random.randint(0, 0xFFFF))
 
-                ent = vs.clone(fctx.reqdata)
+                ent = vs.clone(_record(fctx.reqdata))
                 if isinstance(ent, dict):
                     ent["id"] = eid
                     if isinstance(eid, str):

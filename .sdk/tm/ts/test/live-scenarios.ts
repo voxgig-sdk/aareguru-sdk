@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
-import { LiveBlocked, runLiveSteps, assertLiveReport, createLiveTransport } from './live-runner'
+import { LiveBlocked, runLiveSteps, settleLiveReport, createLiveTransport } from './live-runner'
+import type { LiveSettle } from './live-runner'
 import { requestContract, synthesizeInput, validateContract } from './live-contract'
 import { liveClientOptions, liveDelayMs, isControlSkipped } from './utility'
 
@@ -31,7 +32,7 @@ export function recipeNeeds(value: any): string[] {
   return [...new Set([...(typeof value.from === 'string' ? [value.from] : []), ...Object.values(value).flatMap(recipeNeeds)])]
 }
 
-export async function runLiveScenarios(SDK: any, plan: any[], envPrefix: string, liveDefaults: any = {}) {
+export async function runLiveScenarios(SDK: any, plan: any[], envPrefix: string, liveDefaults: any = {}, settle: LiveSettle = {}) {
   const transport = createLiveTransport()
   const steps = plan.map(point => {
     const hint = point.facts.live || {}
@@ -44,7 +45,7 @@ export async function runLiveScenarios(SDK: any, plan: any[], envPrefix: string,
         // Every operation point is planned, not only the hinted ones; a hint
         // only decides whether this file is generated. Absent a recipe there
         // is no consent to call the operation, so block rather than
-        // synthesize input for it. Blocked fails assertLiveReport, so an
+        // synthesize input for it. A strict run fails a blocked step, so an
         // omission surfaces instead of passing quietly.
         if (!point.facts.live) throw new LiveBlocked('No live recipe: add a live hint for this operation in the guide, or give it an explicit excluded reason')
         if (point.contractVersion && point.contractVersion !== 1) throw new LiveBlocked('Unsupported operation contract version')
@@ -113,6 +114,6 @@ export async function runLiveScenarios(SDK: any, plan: any[], envPrefix: string,
   })
   const report = await runLiveSteps(steps, { delayMs: liveDelayMs(), report: result => console.log('LIVE STEP ' + JSON.stringify(result)) })
   console.log('LIVE SUMMARY ' + JSON.stringify(report))
-  assertLiveReport(report)
+  settleLiveReport(report, settle)
   return report
 }

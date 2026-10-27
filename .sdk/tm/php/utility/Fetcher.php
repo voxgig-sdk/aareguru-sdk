@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 // Aareguru SDK utility: fetcher
 
+require_once __DIR__ . '/../core/Error.php';
+
 class AareguruFetcher
 {
     // Default User-Agent — many CDNs (notably Cloudflare) reject requests
@@ -28,10 +30,33 @@ class AareguruFetcher
         return self::$curl;
     }
 
+    public const GETONLY_ENV = 'VOXGIG_GETONLY_GUARD';
+
+    // A GET-only live run refuses any other method before it is sent, on
+    // either transport below. The path alone: the query can carry a
+    // credential, and nothing has cleaned this line.
+    public static function getOnlyRefusal(string $fullurl, string $method): ?AareguruError
+    {
+        if (getenv(self::GETONLY_ENV) !== 'TRUE' || $method === 'GET') {
+            return null;
+        }
+        $path = parse_url($fullurl, PHP_URL_PATH);
+        $path = is_string($path) && $path !== '' ? $path : '/';
+        fwrite(STDERR, "[GET-ONLY GUARD] blocked {$method} {$path}\n");
+        return new AareguruError('fetch_getonly_block', "[GET-ONLY GUARD] blocked {$method} {$path}");
+    }
+
     public static function defaultHttpFetch(string $fullurl, array $fetchdef): array
     {
         $method_str = strtoupper($fetchdef['method'] ?? 'GET');
+        $refused = self::getOnlyRefusal($fullurl, $method_str);
+        if (null !== $refused) {
+            return [null, $refused];
+        }
         $body_str = $fetchdef['body'] ?? null;
+        if (is_resource($body_str)) {
+            $body_str = stream_get_contents($body_str);
+        }
         $headers = $fetchdef['headers'] ?? [];
 
         $header_lines = [];
@@ -83,7 +108,15 @@ class AareguruFetcher
         }
 
         $context = stream_context_create($opts);
+        error_clear_last();
         $response_body = @file_get_contents($fullurl, false, $context);
+
+        // A request that got no answer fails the operation. The stream
+        // wrapper's warning names the URL, which is left out.
+        if ($response_body === false) {
+            $warning = error_get_last()['message'] ?? 'request failed';
+            return [null, preg_replace('/^file_get_contents\(.*?\):\s*/', '', $warning)];
+        }
 
         $status = 0;
         $status_text = '';
@@ -108,10 +141,13 @@ class AareguruFetcher
         }
 
         $json_body = null;
-        if ($response_body !== false && $response_body !== '') {
+        $unreadable = false;
+        if (trim($response_body) !== '') {
             $decoded = json_decode($response_body, true);
             if (json_last_error() === JSON_ERROR_NONE) {
                 $json_body = $decoded;
+            } else {
+                $unreadable = true;
             }
         }
 
@@ -121,7 +157,8 @@ class AareguruFetcher
                 'statusText' => $status_text,
                 'headers' => $resp_headers,
                 'json' => function () use ($json_body) { return $json_body; },
-                'body' => $response_body !== false ? $response_body : '',
+                'body' => $response_body,
+                'unreadable' => $unreadable,
             ],
             null,
         ];
@@ -129,23 +166,6 @@ class AareguruFetcher
 
     private static function curlFetch(string $fullurl, string $method, $body_str, array $header_lines): array
     {
-        // GET-only guard for live tests — set by pub-live-test. We respect
-        // it here at the SDK level since cURL bypasses PHP stream wrappers
-        // (so the wrapper-based guard wouldn't see this call).
-        if (getenv('VOXGIG_GETONLY_GUARD') === 'TRUE' && $method !== 'GET') {
-            fwrite(STDERR, "[GET-ONLY GUARD] blocked {$method} {$fullurl}\n");
-            return [
-                [
-                    'status' => 0,
-                    'statusText' => 'Blocked',
-                    'headers' => [],
-                    'json' => function () { return null; },
-                    'body' => '',
-                ],
-                "GET-only guard blocked {$method} {$fullurl}",
-            ];
-        }
-
         $ch = self::curlHandle($fullurl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HEADER, false);
@@ -201,10 +221,13 @@ class AareguruFetcher
         }
 
         $json_body = null;
-        if ($response_body !== '' && $response_body !== false) {
+        $unreadable = false;
+        if ($response_body !== false && trim((string)$response_body) !== '') {
             $decoded = json_decode($response_body, true);
             if (json_last_error() === JSON_ERROR_NONE) {
                 $json_body = $decoded;
+            } else {
+                $unreadable = true;
             }
         }
 
@@ -215,6 +238,7 @@ class AareguruFetcher
                 'headers' => $resp_kv,
                 'json' => function () use ($json_body) { return $json_body; },
                 'body' => (string)$response_body,
+                'unreadable' => $unreadable,
             ],
             null,
         ];
@@ -233,15 +257,12 @@ class AareguruFetcher
                 "Request blocked as test feature is active (URL was: \"{$fullurl}\")")];
         }
 
-        $sys_fetch = \Voxgig\Struct\Struct::getpath($options, 'system.fetch');
+        $sys_fetch = self::systemFetch($options);
 
-        // Treat null OR an empty stdClass/array as "no fetcher provided" and
-        // fall through to the default HTTP fetcher. The options builder
-        // sometimes materializes `system.fetch` as an empty stdClass even
-        // when the user didn't set one — that's a placeholder, not a value.
-        $is_empty_obj = ($sys_fetch instanceof \stdClass) && empty(get_object_vars($sys_fetch));
-        $is_empty_arr = is_array($sys_fetch) && empty($sys_fetch);
-        if ($sys_fetch === null || $is_empty_obj || $is_empty_arr) {
+        if (self::usesDefault($ctx)) {
+            if (null !== $ctx->spec) {
+                $ctx->spec->headers = self::sentHeaders($ctx->spec->headers);
+            }
             return self::defaultHttpFetch($fullurl, $fetchdef);
         }
         if (is_callable($sys_fetch)) {
@@ -249,5 +270,37 @@ class AareguruFetcher
         }
 
         return [null, $ctx->make_error('fetch_invalid', 'system.fetch is not a valid function')];
+    }
+
+    // getpath answers a missing path with the struct port's UNDEF sentinel:
+    // one stdClass for the whole process, which setprop writes into when it
+    // is handed as a parent. It must never be read, or kept, as a fetcher.
+    public static function systemFetch(mixed $options): mixed
+    {
+        $fetch = \Voxgig\Struct\Struct::getpath($options, 'system.fetch');
+        return $fetch === \Voxgig\Struct\Struct::undef() ? null : $fetch;
+    }
+
+    // An empty map or list for `system.fetch` names no fetcher either.
+    public static function usesDefault(AareguruContext $ctx): bool
+    {
+        $sys_fetch = self::systemFetch($ctx->client->options_map());
+        $is_empty_obj = ($sys_fetch instanceof \stdClass) && empty(get_object_vars($sys_fetch));
+        $is_empty_arr = is_array($sys_fetch) && empty($sys_fetch);
+        return $sys_fetch === null || $is_empty_obj || $is_empty_arr;
+    }
+
+    // The headers the default transport sends: the request's own, with its
+    // agent when they name none. A request's headers travel by value, so the
+    // transport cannot record the agent where the response is read.
+    public static function sentHeaders(array $headers): array
+    {
+        foreach ($headers as $k => $v) {
+            if (is_string($v) && strcasecmp((string)$k, 'user-agent') === 0) {
+                return $headers;
+            }
+        }
+        $headers['user-agent'] = self::DEFAULT_USER_AGENT;
+        return $headers;
     }
 }

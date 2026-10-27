@@ -1,5 +1,5 @@
 
-import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, safeVarName, exampleVarName } from '@voxgig/sdkgen'
+import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, safeVarName, exampleVarName, requiredItems, litPair, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -11,6 +11,7 @@ import {
 // A type-correct Python literal for a field's canonical type.
 function pyLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'None'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'True'
   if ('ARRAY' === k) return '[]'
@@ -37,30 +38,29 @@ client = ${model.const.Name}SDK.test()
     const idF = entityIdField(exampleEntity)
     const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
     let arg = ''
-    if (isMatchOp) {
+    if (isMatchOp || ('list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length)) {
       // Every REQUIRED match key (id first) — the same shape that generates
       // the op's Match type, so the block also satisfies the mypy doc gate.
-      const items = opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => !it.optional || it.name === idF)
+      const items = (isMatchOp ? matchExampleItems(exampleEntity, primaryOp, idF) : requiredItems(exampleEntity, 'list'))
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length
         ? `{${items.map((it: any) =>
-          `"${it.name}": ${it.name === idF ? '"test01"' : pyLit(it.type)}`).join(', ')}}`
+          litPair('py', it.name, isMatchOp && it.name === idF ? '"test01"' : pyLit(it.type))).join(', ')}}`
         : ''
-    } else if ('create' === primaryOp || 'update' === primaryOp) {
-      const items = opRequestShape(exampleEntity, primaryOp).items
+    } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
+      const items = requestExampleItems(exampleEntity, primaryOp)
         .filter((it: any) => it.name !== idF && it.name !== 'id')
       const required = items.filter((it: any) => !it.optional)
       const chosen = required.length ? required : items.slice(0, 3)
-      arg = `{${chosen.map((it: any) => `"${it.name}": ${pyLit(it.type)}`).join(', ')}}`
+      arg = `{${chosen.map((it: any) => litPair('py', it.name, pyLit(it.type))).join(', ')}}`
     }
     // A list() result is a list — name the variable accordingly (the root
     // README doc gate concatenates blocks, so reusing the singular name for
     // a different type is a mypy assignment error).
     const eVar = exampleVarName(eName.toLowerCase(), 'py') + ('list' === primaryOp ? 's' : '')
     Content(`${eVar} = client.${eName}().${primaryOp}(${arg})
-print(${eVar})
+print(${'list' === primaryOp ? '[item.data_get() for item in ' + eVar + ']' : eVar + '.data_get()'})
 `)
   }
 

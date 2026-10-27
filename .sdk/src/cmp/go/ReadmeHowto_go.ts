@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, goModule } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, goModule, requiredItems, litPair, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -12,6 +12,7 @@ import { goVarName } from './utility_go'
 
 function goLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'nil'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k) return '[]any{}'
@@ -41,32 +42,42 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const idF = exampleEntity ? entityIdField(exampleEntity) : null
   const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
   let testArg = 'nil'
-  if (exampleEntity && isMatchOp) {
-    const items = opRequestShape(exampleEntity, primaryOp).items
-      .filter((it: any) => !it.optional || it.name === idF)
+  if (exampleEntity && (isMatchOp || ('list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length))) {
+    const items = (isMatchOp ? matchExampleItems(exampleEntity, primaryOp, idF) : requiredItems(exampleEntity, 'list'))
       .sort((a: any, b: any) => (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
     testArg = 0 < items.length
-      ? `map[string]any{${items.map((it: any) => `"${it.name}": ${it.name === idF ? '"test01"' : goLit(it.type)}`).join(', ')}}`
+      ? `map[string]any{${items.map((it: any) => litPair('go', it.name, isMatchOp && it.name === idF ? '"test01"' : goLit(it.type))).join(', ')}}`
       : 'nil'
-  } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp)) {
-    const items = opRequestShape(exampleEntity, primaryOp).items
+  } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp)) {
+    const items = requestExampleItems(exampleEntity, primaryOp)
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)
     const chosen = required.length ? required : items.slice(0, 3)
-    testArg = `map[string]any{${chosen.map((it: any) => `"${it.name}": ${goLit(it.type)}`).join(', ')}}`
+    testArg = `map[string]any{${chosen.map((it: any) => litPair('go', it.name, goLit(it.type))).join(', ')}}`
   }
 
   // The op-driven test-mode block, shown only when the SDK has an entity op.
   // A direct()-only SDK (no ops anywhere) shows a Direct() call instead — never
   // a fabricated method (`cap(primaryOp)` would also fail on a null op).
-  const testModeExample = primaryOp
+  const testModeExample = 'list' === primaryOp
+    ? `${eLower}s, err := client.${eName}(nil).List(
+    ${testArg}, nil,
+)
+if err != nil {
+    panic(err)
+}
+// A []any of entities, one per mock record.
+for _, item := range ${eLower}s.([]any) {
+    fmt.Println(item.(sdk.Entity).Data())
+}`
+    : primaryOp
     ? `${eLower}, err := client.${eName}(nil).${cap(primaryOp)}(
     ${testArg}, nil,
 )
 if err != nil {
     panic(err)
 }
-fmt.Println(${eLower}) // the returned mock data`
+fmt.Println(${eLower}.(sdk.Entity).Data()) // the entity's mock record`
     : `result, err := client.Direct(map[string]any{"path": "/api/resource", "method": "GET"})
 if err != nil {
     panic(err)

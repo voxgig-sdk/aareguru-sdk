@@ -25,6 +25,8 @@ main: kit: feature: timeout: {
 main: kit: feature: timeout: config: optspec: {
   # injected clearTimeout
   clearTimer: '`$FUNCTION`'
+  # injected clock, ms
+  now: '`$FUNCTION`'
   # injected setTimeout
   setTimer: '`$FUNCTION`'
 }

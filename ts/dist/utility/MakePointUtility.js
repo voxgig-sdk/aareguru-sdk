@@ -1,6 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.makePoint = makePoint;
+const ParamUtility_1 = require("./ParamUtility");
+const PrepareMethodUtility_1 = require("./PrepareMethodUtility");
 function terminalParam(point) {
     const parts = point.parts;
     const last = 0 < parts.length ? parts[parts.length - 1] : '';
@@ -18,6 +20,18 @@ function ownPoint(points) {
     }
     return best;
 }
+// The path parameters of a point that neither the call nor the entity gives a
+// value for, looked up as prepareParams looks them up.
+function unfilled(ctx, point) {
+    const missing = [];
+    for (const part of (point.parts || [])) {
+        const name = /^\{([^{}\/]+)\}$/.exec(String(part))?.[1];
+        if (null != name && null == (0, ParamUtility_1.paramValue)(ctx, point, name)) {
+            missing.push(name);
+        }
+    }
+    return missing;
+}
 function makePoint(ctx) {
     if (ctx.out.point) {
         return ctx.point = ctx.out.point;
@@ -25,7 +39,7 @@ function makePoint(ctx) {
     const getprop = ctx.utility.struct.getprop;
     const op = ctx.op;
     const options = ctx.options;
-    if (!options.allow.op.includes(op.name)) {
+    if (!(0, PrepareMethodUtility_1.allowed)(options.allow.op, op.name)) {
         return ctx.error('point_op_allow', 'Operation "' + op.name +
             '" not allowed by SDK option allow.op value: "' + options.allow.op + '"');
     }
@@ -71,7 +85,20 @@ function makePoint(ctx) {
                 return ctx.error('point_action_invalid', 'Operation "' + op.name +
                     '" action "' + reqselector.$action + '" is not valid.');
             }
-            point = ownPoint(op.points);
+            // A call without an action falls back to a point without one, as
+            // generation does, and only to a route the call can fill.
+            const plain = op.points.filter((cand) => null == cand.select?.$action);
+            if (0 === plain.length) {
+                return ctx.error('point_action_required', 'Operation "' + op.name +
+                    '" has only action endpoints; pass $action to choose one.');
+            }
+            const fillable = plain.filter((cand) => 0 === unfilled(ctx, cand).length);
+            if (0 === fillable.length) {
+                return ctx.error('point_no_match', 'Operation "' + op.name +
+                    '" has no endpoint whose path parameters are all given (missing: ' +
+                    unfilled(ctx, ownPoint(plain)).join(', ') + ').');
+            }
+            point = ownPoint(fillable);
         }
         if (null != reqselector.$action &&
             null != point &&

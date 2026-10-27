@@ -10,7 +10,7 @@ import { formatGoMap } from './utility_go'
 
 const EntityOperation = cmp(function Operation(props: any) {
   const { model } = props.ctx$
-  const { ff, opname, entity, entrep, gomodule, cls } = props
+  const { ff, opname, entity, entrep, gomodule, cls, ctor } = props
 
   let { indent } = props
 
@@ -39,7 +39,7 @@ const EntityOperation = cmp(function Operation(props: any) {
       // in the Entity<Op>Op.fragment.go files (receiver -> cls; the per-op
       // EntityName<Op>Match/Data data types stay derived from EntityName).
       EntyClass: cls,
-      NewEntyClass: 'New' + cls,
+      NewEntyClass: ctor,
 
       '#Feature-Hook': ({ name, indent }: any) =>
         Content({ indent }, `

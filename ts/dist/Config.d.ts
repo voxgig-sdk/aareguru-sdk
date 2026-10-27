@@ -57,6 +57,7 @@ declare class Config {
             };
             optspec: {
                 clearTimer: string;
+                now: string;
                 setTimer: string;
             };
             strict: boolean;
@@ -104,9 +105,7 @@ declare class Config {
                                 example: string;
                             }[];
                         };
-                        select: {
-                            exist: string[];
-                        };
+                        select: {};
                     }[];
                 };
             };
@@ -194,7 +193,7 @@ declare class Config {
                 load: {
                     input: string;
                     name: string;
-                    points: {
+                    points: ({
                         kind: string;
                         method: string;
                         orig: string;
@@ -235,7 +234,39 @@ declare class Config {
                             $action: string;
                             exist: string[];
                         };
-                    }[];
+                    } | {
+                        kind: string;
+                        method: string;
+                        orig: string;
+                        segments: {
+                            lit: string;
+                        }[];
+                        parts: string[];
+                        rename: {};
+                        transform: {
+                            req: string;
+                            res: string;
+                        };
+                        args: {
+                            query: ({
+                                name: string;
+                                orig: string;
+                                type: string;
+                                kind: string;
+                                example: string;
+                            } | {
+                                name: string;
+                                orig: string;
+                                type: string;
+                                kind: string;
+                                example: null;
+                            })[];
+                        };
+                        select: {
+                            $action: string;
+                            exist?: undefined;
+                        };
+                    })[];
                 };
             };
             relations: {

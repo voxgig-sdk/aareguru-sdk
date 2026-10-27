@@ -1,5 +1,5 @@
 
-import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, luaKey } from '@voxgig/sdkgen'
+import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, luaKey, requiredItems, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -11,6 +11,7 @@ import {
 // A type-correct Lua literal for a field's canonical type.
 function luaLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'nil'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k || 'OBJECT' === k) return '{}'
@@ -36,19 +37,18 @@ local client = sdk.test()
     const idF = entityIdField(exampleEntity)
     const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
     let arg = ''
-    if (isMatchOp) {
+    if (isMatchOp || ('list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length)) {
       // Every REQUIRED match key (id first, then parent path params like
       // page_id) — the same shape the runtime resolves path params from.
-      const items = opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => !it.optional || it.name === idF)
+      const items = (isMatchOp ? matchExampleItems(exampleEntity, primaryOp, idF) : requiredItems(exampleEntity, 'list'))
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length
         ? `{ ${items.map((it: any) =>
-          `${luaKey(it.name)} = ${it.name === idF ? '"test01"' : luaLit(it.type)}`).join(', ')} }`
+          `${luaKey(it.name)} = ${isMatchOp && it.name === idF ? '"test01"' : luaLit(it.type)}`).join(', ')} }`
         : ''
-    } else if ('create' === primaryOp || 'update' === primaryOp) {
-      const items = opRequestShape(exampleEntity, primaryOp).items
+    } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
+      const items = requestExampleItems(exampleEntity, primaryOp)
         .filter((it: any) => it.name !== idF && it.name !== 'id')
       const required = items.filter((it: any) => !it.optional)
       const chosen = required.length ? required : items.slice(0, 3)

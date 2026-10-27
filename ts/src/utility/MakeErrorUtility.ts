@@ -2,7 +2,7 @@
 import { Result, Context } from '../types'
 
 
-import { clean } from './CleanUtility'
+import { clean, setMessage } from './CleanUtility'
 
 import { clone, delprop } from './StructUtility'
 
@@ -31,7 +31,7 @@ function makeError(ctx: Context, err?: any) {
   }
 
   const errmsg = err.message || 'unknown error'
-  err.message = 'AareguruSDK: ' + op.name + ': ' + errmsg
+  setMessage(err, 'AareguruSDK: ' + op.name + ': ' + errmsg)
 
   // Reachable for a debugger, invisible to a serialiser.
   if (null != err.ctx) {
@@ -65,6 +65,7 @@ function makeError(ctx: Context, err?: any) {
   // Closes error paths that never reach PreDone (e.g. an rbac short-circuit).
   if (null != ctx.client && null != ctx.utility &&
     'function' === typeof ctx.utility.featureHook) {
+    ctx.unexpectedFired = true
     ctx.utility.featureHook(ctx, 'PreUnexpected')
   }
 

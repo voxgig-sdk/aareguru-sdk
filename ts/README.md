@@ -15,7 +15,7 @@ predictable and low-friction for both humans and AI agents.
 
 ## Install
 This package is not yet published to npm. Install it from the GitHub
-release tag (`ts/vX.Y.Z`, see [Releases](https://github.com/voxgig-sdk/aareguru-sdk/releases)), or from a
+release tag (`ts/vX.Y.Z`, see [Tags](https://github.com/voxgig-sdk/aareguru-sdk/tags)), or from a
 clone, which carries the compiled `dist/`:
 
 ```bash
@@ -39,12 +39,12 @@ const client = new AareguruSDK()
 
 ### 3. Load a legacy
 
-`load()` returns the entity directly and throws on failure:
+`load()` returns the entity and throws on failure; `.data()` reads its record:
 
 ```ts
 try {
   const legacy = await client.Legacy().load()
-  console.log(legacy)
+  console.log(legacy.data())
 } catch (err) {
   console.error('load failed:', err)
 }
@@ -57,15 +57,16 @@ Entity operations reject on failure, so wrap them in `try` / `catch`:
 
 ```ts
 try {
-  const stuff = await client.Stuff().load({ service: "example" })
-  console.log(stuff)
+  const legacy = await client.Legacy().load()
+  console.log(legacy.data())
 } catch (err) {
   console.error('load failed:', err)
 }
 ```
 
 The low-level `direct()` method does **not** throw — it returns the
-value or an `Error`, so check the result before using it:
+result envelope. Branch on `ok`; on failure `status` holds the HTTP status
+(for error responses) and `err` holds the error:
 
 ```ts
 const result = await client.direct({
@@ -74,8 +75,8 @@ const result = await client.direct({
   params: { id: 'example_id' },
 })
 
-if (result instanceof Error) {
-  throw result
+if (!result.ok) {
+  console.error('request failed:', result.status, result.err)
 }
 ```
 
@@ -93,9 +94,6 @@ const result = await client.direct({
   params: { id: 'example' },
 })
 
-if (result instanceof Error) {
-  throw result
-}
 if (result.ok) {
   console.log(result.status)  // 200
   console.log(result.data)    // response body
@@ -124,10 +122,9 @@ Create a mock client for unit testing — no server required:
 ```ts
 const client = AareguruSDK.test()
 
-const stuff = await client.Stuff().load({ service: 'example_service' })
-// stuff is the entity, populated with mock response data
-// — call stuff.data() for the record itself
-console.log(stuff)
+const legacy = await client.Legacy().load()
+// legacy is the Legacy entity; .data() reads its mock record
+console.log(legacy.data())
 ```
 
 You can also use the instance method:
@@ -142,10 +139,10 @@ const testClient = client.tester()
 Entity instances remember their last match and data:
 
 ```ts
-const entity = client.Stuff()
+const entity = client.Legacy()
 
 // First call runs the operation and stores its result
-await entity.load({ service: 'example_service' })
+await entity.load()
 
 // Subsequent calls reuse the stored state
 const data = entity.data()
@@ -244,7 +241,7 @@ All entities share the same interface.
 
 | Method | Signature | Description |
 | --- | --- | --- |
-| `load` | `load(reqmatch?, ctrl?): Promise<Entity>` | Load a single entity by match criteria. |
+| `load` | `load(reqmatch?, ctrl?): Promise<Entity>` | Load a single entity by match criteria, and return it. |
 | `data` | `data(data?: Partial<Entity>): Entity` | Get or set entity data. |
 | `match` | `match(match?: Partial<Entity>): Partial<Entity>` | Get or set entity match criteria. |
 | `make` | `make(): Entity` | Create a new instance with the same options. |
@@ -253,8 +250,8 @@ All entities share the same interface.
 
 #### Return values
 
-Entity operations resolve to the entity data directly — there is no
-result envelope:
+Entity operations resolve to the entity itself — there is no result
+envelope, and an entity's `data()` reads its record:
 
 - `load` resolves to a single entity object.
 
@@ -367,12 +364,6 @@ Create an instance: `const v2018 = client.V2018()`
 | Method | Description |
 | --- | --- |
 | `load(match)` | Load a single entity by match criteria. |
-
-#### Example: Load
-
-```ts
-const v2018 = await client.V2018().load({ city: 'city', end: 'end', start: 'start' })
-```
 
 ## Features
 
@@ -528,11 +519,11 @@ stores the returned data and match criteria internally. Subsequent
 calls on the same instance can rely on this state.
 
 ```ts
-const stuff = client.Stuff()
-await stuff.load({ service: "example" })
+const legacy = client.Legacy()
+await legacy.load()
 
-// stuff.data() now returns the stuff data from the last `load`
-// stuff.match() returns the last match criteria
+// legacy.data() now returns the legacy data from the last `load`
+// legacy.match() returns the last match criteria
 ```
 
 Call `make()` to create a fresh instance with the same configuration

@@ -1,0 +1,25 @@
+{
+  point: "warning"
+  note: "Points GET /current, GET /currentV2 and GET /today on entity=legacy op=load have the same selector (exist: none), so only GET /current is ever chosen. An action or another entity in guide.aontu tells them apart."
+  entity: "legacy"
+  op: "load"
+  points: [
+    "GET /current"
+    "GET /currentV2"
+    "GET /today"
+  ]
+
+}
+
+
+{
+  point: "warning"
+  note: "Points GET /logs and GET /rawdata on entity=stuff op=load have the same selector (exist: service), so only GET /logs is ever chosen. An action or another entity in guide.aontu tells them apart."
+  entity: "stuff"
+  op: "load"
+  points: [
+    "GET /logs"
+    "GET /rawdata"
+  ]
+
+}

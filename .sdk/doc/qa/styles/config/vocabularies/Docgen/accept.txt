@@ -289,14 +289,10 @@ initialiser
 [Ss][Tt][Uu][Ff][Ff]
 [Vv]2018
 [Vv]2018
-[Aa][Pp][Pp]
-[Vv][Ee][Rr][Ss][Ii][Oo][Nn]
-[Ll][Ii][Nn][Ee]
 [Ss][Ee][Rr][Vv][Ii][Cc][Ee]
 [Cc][Ii][Tt][Yy]
 [Ee][Nn][Dd]
 [Ss][Tt][Aa][Rr][Tt]
-[Vv][Aa][Ll][Uu][Ee]
 [Dd][Ii][Ee][Nn][Ss][Cc][Hh][Tt][Ee]
 [Hh][Ii][Nn][Gg][Ee][Rr]
 [Aa][Aa][Rr][Ee]
@@ -310,7 +306,9 @@ initialiser
 [Ff][Rr][Ee][Ii]
 [Hh][Ll][Bb][Aa][Rr][Ee]
 [Cc][Oo][Dd][Ee]
+[Aa][Pp][Pp]
 [Uu][Nn][Dd]
+[Vv][Ee][Rr][Ss][Ii][Oo][Nn]
 [Mm][Ii][Tt][Gg][Ee][Bb][Ee][Nn]
 [Vv]2018
 [Cc][Uu][Rr][Rr][Ee][Nn][Tt]

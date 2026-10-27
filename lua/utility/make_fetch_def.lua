@@ -1,6 +1,6 @@
 -- Aareguru SDK utility: make_fetch_def
 
-local vs = require("utility.struct.struct")
+local media = require("utility.media")
 
 local function make_fetch_def_util(ctx)
   local spec = ctx.spec
@@ -30,11 +30,7 @@ local function make_fetch_def_util(ctx)
   }
 
   if spec.body ~= nil then
-    if type(spec.body) == "table" then
-      fetchdef["body"] = vs.jsonify(spec.body)
-    else
-      fetchdef["body"] = spec.body
-    end
+    fetchdef["body"] = media.request_body(ctx.point, spec.body)
   end
 
   return fetchdef, nil

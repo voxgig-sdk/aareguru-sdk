@@ -12,11 +12,10 @@ name: ci
 # ---------------------------------------------------------------------------
 # COVERAGE TIERS
 #
-# sdkgen generates 22 language targets; this workflow used to have jobs for
-# eight of them (go, go-cli, go-mcp, ts, py, rb, php, lua). The other
-# fourteen were generated into every SDK repo and never compiled or tested
-# there, so a template regression in, say, rust or swift could only be found
-# by hand.
+# This workflow used to have jobs for eight targets (go, go-cli, go-mcp, ts,
+# py, rb, php, lua). The other targets sdkgen and its language packages
+# generate went into SDK repos and were never compiled or tested there, so a
+# template regression in, say, rust or swift could only be found by hand.
 #
 # BLOCKING — proven jobs. A failure here fails the build.
 #   go, go-cli, go-mcp, ts, py, rb, php, lua
@@ -26,8 +25,8 @@ name: ci
 # blocking a release; promote a job to blocking (drop continue-on-error) once
 # it has passed. Do not leave one advisory indefinitely — an advisory job that
 # is always red is the same blind spot in a different costume.
-#   js, csharp, java, kotlin, scala, swift, dart, rust, c, cpp, zig, perl,
-#   clojure, elixir, ocaml, haskell
+#   js, py-data, csharp, java, kotlin, scala, swift, dart, rust, c, cpp, zig,
+#   perl, clojure, elixir, ocaml, haskell, lean
 #
 # Every target exposes `make -C <lang> test`, so the jobs differ only in
 # toolchain setup.
@@ -178,6 +177,22 @@ jobs:
         run: cd js && npm install --no-audit --no-fund
       - if: hashFiles('js/Makefile') != ''
         run: make -C js test
+
+  py-data:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - if: hashFiles('py-data/Makefile') != ''
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.13'
+      # The suite reaches the py SDK through py-data/test/conftest.py, which
+      # puts ../py on sys.path; the SDK imports requests only for a live call.
+      - if: hashFiles('py-data/Makefile') != ''
+        run: pip install pytest pandas
+      - if: hashFiles('py-data/Makefile') != ''
+        run: make -C py-data test
 
   csharp:
     runs-on: ubuntu-latest
@@ -407,3 +422,25 @@ jobs:
           ghc-version: '9.6'
       - if: hashFiles('haskell/Makefile') != ''
         run: make -C haskell test
+
+  lean:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      # elan from its release tarball. lake then installs the toolchain the
+      # generated lean/lean-toolchain names. The secrets feature's C stubs
+      # need the curl and ssl headers, as in the c job.
+      - if: hashFiles('lean/Makefile') != ''
+        run: |
+          set -euo pipefail
+          version=v4.2.4
+          curl -fsSL --retry 5 --retry-all-errors -o /tmp/elan.tar.gz \
+            "https://github.com/leanprover/elan/releases/download/${version}/elan-x86_64-unknown-linux-gnu.tar.gz"
+          tar -xzf /tmp/elan.tar.gz -C /tmp
+          /tmp/elan-init -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - if: hashFiles('lean/Makefile') != ''
+        run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev libssl-dev
+      - if: hashFiles('lean/Makefile') != ''
+        run: make -C lean test

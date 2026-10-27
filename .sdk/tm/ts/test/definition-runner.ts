@@ -17,16 +17,25 @@ type DefinitionPoint = {
   args: { name: string, wire: string, value: any }[]
   select: Record<string, any>
   headers?: { name: string, wire: string, value: any }[]
+  cookies?: { name: string, wire: string, value: any }[]
+  responseMedia?: string[]
+  rawBody?: { media: string[], text: boolean }
   query: string[]
+  queryArgs?: { name: string, wire: string }[]
+  bodyArgs?: string[]
   auth: Credential[][] | null
   status: number
   sample: any
   idField: string
+  ownQuery?: string
 }
 
 
 const KEY = 'definition-test-key'
 const BASE = 'http://definition.test'
+
+const RAW_TEXT = 'definition-test-body'
+const RAW_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0xff])
 
 
 async function runDefinitionPoint(SDK: any, point: DefinitionPoint): Promise<void> {
@@ -51,7 +60,9 @@ async function runDefinitionPoint(SDK: any, point: DefinitionPoint): Promise<voi
   const input: any = { ...point.select }
   for (const arg of point.args) input[arg.name] = arg.value
   for (const h of point.headers || []) input[h.name] = h.value
+  for (const c of point.cookies || []) input[c.name] = c.value
   if (null != point.action) input.$action = point.action
+  if (null != point.rawBody) input.$body = rawSample(point)
 
   let result: any
   let error: any
@@ -79,9 +90,17 @@ async function runDefinitionPoint(SDK: any, point: DefinitionPoint): Promise<voi
   // Only what the definition declares, so never a path parameter again.
   const credentialQuery = (point.auth || []).flat()
     .filter((c) => 'query' === c.in).map((c) => c.name)
+  // prepareAuth sends the key whether or not this operation applies its scheme.
+  if (null != point.ownQuery) {
+    credentialQuery.push(point.ownQuery)
+  }
   for (const key of url.searchParams.keys()) {
     assert(point.query.includes(key) || credentialQuery.includes(key),
       'query parameter not in the definition: ' + key)
+  }
+
+  for (const q of point.queryArgs || []) {
+    assert(url.searchParams.has(q.wire), 'query parameter not sent: ' + q.wire)
   }
 
   // From the apikey alone, placed as the definition's security scheme says.
@@ -99,8 +118,63 @@ async function runDefinitionPoint(SDK: any, point: DefinitionPoint): Promise<voi
   for (const h of point.headers || []) {
     const wire = h.wire.toLowerCase()
     if (credentialHeaders.includes(wire) || 'content-type' === wire) continue
-    assert.equal(new Headers(init.headers).get(wire), String(h.value),
-      'header parameter not sent as a header: ' + h.wire)
+    const sentValue = new Headers(init.headers).get(wire)
+    // A Cookie header argument is cookie pieces, which the cookie arguments and
+    // the cookie credential join, each replacing the piece whose name it owns.
+    if ('cookie' === wire) {
+      const owned = (point.cookies || []).map((c) => c.wire).concat((point.auth || []).flat()
+        .filter((c) => 'cookie' === c.in).map((c) => c.name))
+      const pieces = String(sentValue ?? '').split(';').map((c) => c.trim())
+      for (const piece of String(h.value).split(';').map((c) => c.trim()).filter((c) => '' !== c)) {
+        if (owned.includes(piece.split('=')[0].trim())) continue
+        assert(pieces.includes(piece), 'header parameter not sent as a header: ' + h.wire)
+      }
+      continue
+    }
+    assert.equal(sentValue, String(h.value), 'header parameter not sent as a header: ' + h.wire)
+  }
+
+  // A cookie parameter goes out in the cookie header as name=value, percent-encoded.
+  const cookies = String(new Headers(init.headers).get('cookie') ?? '')
+    .split(';').map((c) => c.trim())
+  for (const c of point.cookies || []) {
+    assert(cookies.includes(c.wire + '=' + encodeURIComponent(String(c.value))),
+      'cookie parameter not sent in the cookie header: ' + c.wire)
+  }
+
+  // Accept asks only for what a success response declares: its JSON type
+  // alone, when it declares one.
+  if (null != point.responseMedia) {
+    const declared = point.responseMedia
+    const asked = String(new Headers(init.headers).get('accept') ?? '').split(',')
+      .map(baseMedia).filter((type) => '' !== type)
+    assert(0 < asked.length, 'no Accept for a declared response body: ' + declared.join(', '))
+    for (const type of asked) {
+      assert(declared.some((d) => covers(d, type)),
+        'Accept asks for a type no success response declares: ' + type)
+    }
+    if (declared.some(isJson)) {
+      assert(1 === asked.length && isJson(asked[0]),
+        'Accept is not the declared JSON type alone: ' + asked.join(', '))
+    }
+  }
+
+  // A raw body goes out as given, under a type the definition declares.
+  if (null != point.rawBody) {
+    const type = baseMedia(new Headers(init.headers).get('content-type') ?? '')
+    assert(point.rawBody.media.some((d) => covers(d, type)),
+      'raw body sent as a type the definition does not declare: ' + type)
+    assert.deepEqual(bytesOf(init.body), bytesOf(rawSample(point)), 'raw body not sent as given')
+  }
+
+  // An argument the request body declares too goes out in the body as well.
+  if (0 < (point.bodyArgs || []).length) {
+    let sentBody: any
+    try { sentBody = JSON.parse(String(init.body)) }
+    catch (_e) { sentBody = undefined }
+    for (const name of point.bodyArgs!) {
+      assert.deepEqual(sentBody?.[name], input[name], 'argument not sent in the body as well: ' + name)
+    }
   }
 
   if (null != error) {
@@ -120,13 +194,45 @@ async function runDefinitionPoint(SDK: any, point: DefinitionPoint): Promise<voi
         records.length)
     }
   }
-  else if ('load' === point.op || 'create' === point.op || 'update' === point.op) {
+  else if ('load' === point.op || 'create' === point.op || 'update' === point.op ||
+    'patch' === point.op) {
     const record = recordOf(point.sample, point.idField, point.entity)
     if (null != record) {
       assert.equal(result?.data?.()?.[point.idField], record[point.idField],
         'the entity does not hold the record the definition example returns')
     }
   }
+}
+
+
+function rawSample(point: DefinitionPoint): any {
+  return point.rawBody?.text ? RAW_TEXT : RAW_BYTES
+}
+
+
+function bytesOf(body: any): Buffer {
+  return 'string' === typeof body ? Buffer.from(body, 'utf8') :
+    body instanceof ArrayBuffer ? Buffer.from(new Uint8Array(body)) :
+      ArrayBuffer.isView(body) ? Buffer.from(body.buffer, body.byteOffset, body.byteLength) :
+        Buffer.from(String(body))
+}
+
+
+function baseMedia(type: string): string {
+  return type.split(';')[0].trim().toLowerCase()
+}
+
+
+function isJson(type: string): boolean {
+  const media = baseMedia(type)
+  return 'application/json' === media || 'text/json' === media || media.endsWith('+json')
+}
+
+
+function covers(declared: string, type: string): boolean {
+  const media = baseMedia(declared)
+  return media === type || '*/*' === media ||
+    (media.endsWith('/*') && type.startsWith(media.slice(0, -1)))
 }
 
 

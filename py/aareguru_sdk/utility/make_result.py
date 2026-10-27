@@ -34,8 +34,7 @@ def make_result_util(ctx):
             entities = []
             for entry in resdata:
                 ent = entity.make()
-                if isinstance(entry, dict):
-                    ent.data_set(entry)
+                ent.data_set(entry)
                 entities.append(ent)
             result.resdata = entities
 

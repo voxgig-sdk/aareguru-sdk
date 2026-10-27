@@ -28,6 +28,9 @@ class AareguruResponse:
 
         self.body = vs.getprop(resmap, "body")
 
+        # Set by a transport that could not read a non-blank body as JSON.
+        self.unreadable = vs.getprop(resmap, "unreadable") is True
+
         self.err = None
         e = vs.getprop(resmap, "err")
         if e is not None:

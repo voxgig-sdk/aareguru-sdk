@@ -5,6 +5,7 @@ import {
   cmp,
   collectDeps,
   pkgDescription,
+  tomlString,
   keywords,
   repoInfo, packageName,
   packageVersion
@@ -34,7 +35,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "${distName}"
 version = "${packageVersion(model, target.name)}"
-description = "${pkgDescription(model, target.name)}"
+description = ${tomlString(pkgDescription(model, target.name))}
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.8"
@@ -69,6 +70,13 @@ include = ["${model.const.Name.toLowerCase()}_sdk*"]
 # Ship the PEP 561 py.typed marker(s) so the inline type hints reach consumers.
 [tool.setuptools.package-data]
 "*" = ["py.typed"]
+`)
+  })
+
+  // setuptools puts the readme in the sdist but not the reference it links.
+  // A wheel holds only the package, so the sdist is where the docs travel.
+  File({ name: 'MANIFEST.in' }, () => {
+    Content(`include README.md REFERENCE.md
 `)
   })
 })

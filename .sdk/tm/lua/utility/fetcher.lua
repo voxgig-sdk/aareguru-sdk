@@ -2,8 +2,39 @@
 
 local vs = require("utility.struct.struct")
 local json = require("dkjson")
+local AareguruError = require("core.error")
+
+local GETONLY_ENV = "VOXGIG_GETONLY_GUARD"
+
+-- A GET-only live run refuses any other method before it is sent. The error
+-- names the path alone: the query can carry a credential.
+local function getonly_refusal(fullurl, method)
+  method = string.upper(tostring(method or ""))
+  if method == "" then
+    method = "GET"
+  end
+  if os.getenv(GETONLY_ENV) ~= "TRUE" or method == "GET" then
+    return nil
+  end
+  local rest = fullurl
+  local scheme = string.find(rest, "://", 1, true)
+  if scheme then
+    rest = string.gsub(string.sub(rest, scheme + 3), "^[^/?#]*", "")
+  end
+  local path = string.match(rest, "^[^?#]*")
+  if path == "" then
+    path = "/"
+  end
+  return AareguruError.new("fetch_getonly_block",
+    "[GET-ONLY GUARD] blocked " .. method .. " " .. path)
+end
 
 local function default_http_fetch(fullurl, fetchdef)
+  local refused = getonly_refusal(fullurl, fetchdef["method"])
+  if refused then
+    return nil, refused
+  end
+
   -- Use LuaSocket or similar for real HTTP requests.
   -- This is the default live implementation.
   local http_ok, http = pcall(require, "socket.http")
@@ -60,8 +91,14 @@ local function default_http_fetch(fullurl, fetchdef)
   end
 
   local json_body = nil
-  if #body > 0 then
-    json_body = json.decode(body)
+  local unreadable = false
+  if string.find(body, "%S") then
+    local decoded, pos, err = json.decode(body)
+    if err ~= nil or string.find(body, "%S", pos) then
+      unreadable = true
+    else
+      json_body = decoded
+    end
   end
 
   local status_text = "OK"
@@ -75,6 +112,7 @@ local function default_http_fetch(fullurl, fetchdef)
     headers = resp_headers,
     json = function() return json_body end,
     body = body,
+    unreadable = unreadable,
   }, nil
 end
 

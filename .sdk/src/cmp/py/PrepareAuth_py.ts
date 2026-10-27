@@ -90,7 +90,7 @@ OPTION_APIKEY = "apikey"
 ` + (spec.basic ? `OPTION_SECRET = "secret"
 ` : '') + `NOT_FOUND = "__NOTFOUND__"
 
-
+` + authName('HEADER_AUTH', true) + `
 def prepare_auth_util(ctx):
     spec = ctx.spec
     if spec is None:
@@ -105,6 +105,12 @@ def prepare_auth_util(ctx):
         headers.pop(HEADER_AUTH, None)
         return spec, None
 
+    name = _auth_name(options)
+
+    # A credential left under the declared name would travel beside the renamed one.
+    if name != HEADER_AUTH:
+        headers.pop(HEADER_AUTH, None)
+
     apikey = vs.getprop(options, OPTION_APIKEY, NOT_FOUND)
 ` + basicBlock(spec) + `
     if (
@@ -112,7 +118,7 @@ def prepare_auth_util(ctx):
         or apikey is None
         or apikey == ""
     ):
-        headers.pop(HEADER_AUTH, None)
+        headers.pop(name, None)
     else:
         auth_prefix = ""
         ap = vs.getpath(options, "auth.prefix")
@@ -122,7 +128,7 @@ def prepare_auth_util(ctx):
         if isinstance(apikey, str):
             apikey_val = apikey
         # Empty prefix (raw apiKey credential) must not add a leading space.
-        headers[HEADER_AUTH] = (
+        headers[name] = (
             auth_prefix + " " + apikey_val if auth_prefix else apikey_val
         )
 
@@ -159,7 +165,7 @@ function basicBlock(spec: AuthSpec): string {
         )
 
         if no_apikey:
-            headers.pop(HEADER_AUTH, None)
+            headers.pop(name, None)
         else:
             auth_prefix = ""
             ap = vs.getpath(options, "auth.prefix")
@@ -171,7 +177,7 @@ function basicBlock(spec: AuthSpec): string {
             # The joined, encoded pair is a wire form neither credential's
             # own registration covers.
             ctx.utility.clean_add(ctx, b64)
-            headers[HEADER_AUTH] = (
+            headers[name] = (
                 auth_prefix + " " + b64 if auth_prefix else b64
             )
 
@@ -187,7 +193,7 @@ QUERY_AUTH = ${pystr(spec.name)}
 OPTION_APIKEY = "apikey"
 NOT_FOUND = "__NOTFOUND__"
 
-
+` + authName('QUERY_AUTH', false) + `
 def prepare_auth_util(ctx):
     spec = ctx.spec
     if spec is None:
@@ -202,6 +208,12 @@ def prepare_auth_util(ctx):
         query.pop(QUERY_AUTH, None)
         return spec, None
 
+    name = _auth_name(options)
+
+    # A credential left under the declared name would travel beside the renamed one.
+    if name != QUERY_AUTH:
+        query.pop(QUERY_AUTH, None)
+
     apikey = vs.getprop(options, OPTION_APIKEY, NOT_FOUND)
 
     if (
@@ -209,7 +221,7 @@ def prepare_auth_util(ctx):
         or apikey is None
         or apikey == ""
     ):
-        query.pop(QUERY_AUTH, None)
+        query.pop(name, None)
     else:
         apikey_val = ""
         if isinstance(apikey, str):
@@ -217,7 +229,7 @@ def prepare_auth_util(ctx):
         # NO PREFIX IN A QUERY STRING. \`?${spec.name}=Bearer%20abc\` is not a
         # thing any API reads: the prefix is a header convention, so it is
         # dropped here deliberately rather than silently concatenated.
-        query[QUERY_AUTH] = apikey_val
+        query[name] = apikey_val
 
     return spec, None
 `
@@ -226,36 +238,30 @@ def prepare_auth_util(ctx):
 
 function renderCookie(spec: AuthSpec, head: string): string {
   return head + `from ${spec.pkg}.utility.voxgig_struct import voxgig_struct as vs
+from ${spec.pkg}.utility.prepare_headers import cookie_keep
 
 COOKIE_HEADER = "cookie"
 COOKIE_AUTH = ${pystr(spec.name)}
 OPTION_APIKEY = "apikey"
 NOT_FOUND = "__NOTFOUND__"
 
-
-def _cookies_without_cred(headers):
-    """The cookie header minus our own pair, every other cookie untouched."""
+` + authName('COOKIE_AUTH', false) + `
+def _cookies_without_cred(headers, name):
+    """The cookie header minus the named pair, every other cookie untouched."""
     existing = headers.get(COOKIE_HEADER)
     if not isinstance(existing, str) or existing == "":
         return ""
 
-    kept = []
-    for part in existing.split(";"):
-        piece = part.strip()
-        if piece == "" or piece == COOKIE_AUTH or piece.startswith(COOKIE_AUTH + "="):
-            continue
-        kept.append(piece)
-
-    return "; ".join(kept)
+    return "; ".join(cookie_keep(existing, [name]))
 
 
-def _apply_cookie(headers, value):
-    """Set (value) or remove (None) our pair, leaving the rest in place.
+def _apply_cookie(headers, name, value):
+    """Set (value) or remove (None) the named pair, leaving the rest in place.
 
     Splicing rather than assigning also makes this idempotent: a retried
     request cannot end up with the credential in the header twice.
     """
-    rest = _cookies_without_cred(headers)
+    rest = _cookies_without_cred(headers, name)
 
     if value is None:
         if rest == "":
@@ -264,7 +270,7 @@ def _apply_cookie(headers, value):
             headers[COOKIE_HEADER] = rest
         return
 
-    pair = COOKIE_AUTH + "=" + value
+    pair = name + "=" + value
     headers[COOKIE_HEADER] = rest + "; " + pair if rest else pair
 
 
@@ -279,8 +285,14 @@ def prepare_auth_util(ctx):
 
     # Public APIs that need no auth omit the options.auth block entirely.
     if options.get("auth") is None:
-        _apply_cookie(headers, None)
+        _apply_cookie(headers, COOKIE_AUTH, None)
         return spec, None
+
+    name = _auth_name(options)
+
+    # A credential left under the declared name would travel beside the renamed one.
+    if name != COOKIE_AUTH:
+        _apply_cookie(headers, COOKIE_AUTH, None)
 
     apikey = vs.getprop(options, OPTION_APIKEY, NOT_FOUND)
 
@@ -289,16 +301,30 @@ def prepare_auth_util(ctx):
         or apikey is None
         or apikey == ""
     ):
-        _apply_cookie(headers, None)
+        _apply_cookie(headers, name, None)
     else:
         apikey_val = ""
         if isinstance(apikey, str):
             apikey_val = apikey
         # NO PREFIX IN A COOKIE either - a cookie carries a bare
         # \`name=value\` pair, not a header's scheme-prefixed credential.
-        _apply_cookie(headers, apikey_val)
+        _apply_cookie(headers, name, apikey_val)
 
     return spec, None
+`
+}
+
+
+// The client's `auth.name` option, when set, replaces the declared name; a
+// header name travels lower-cased.
+function authName(declared: string, header: boolean): string {
+  return `
+def _auth_name(options):
+    name = vs.getpath(options, "auth.name")
+    if isinstance(name, str) and name != "":
+        return ${header ? 'name.lower()' : 'name'}
+    return ${declared}
+
 `
 }
 

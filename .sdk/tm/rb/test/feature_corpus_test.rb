@@ -25,11 +25,11 @@ class FeatureCorpusTest < Minitest::Test
   # generated without a listed feature still skips, not fails.
 
   # The standard operation names, in the order the runner prefers them.
-  FEATURE_CORPUS_OPS = %w[load list create update remove].freeze
+  FEATURE_CORPUS_OPS = %w[load list create update patch remove].freeze
 
   def corpus
     @corpus ||= JSON.parse(
-      File.read(File.join(__dir__, "..", "..", ".sdk", "test", "test.json")))
+      File.read(File.join(__dir__, "..", "..", ".sdk", "test", "test.json"), encoding: "UTF-8"))
   end
 
   # A scripted transport built from a case's `res` list. Responses are
@@ -218,6 +218,30 @@ class FeatureCorpusTest < Minitest::Test
     client.instance_variable_get(:"@_#{name}")
   end
 
+  # The first feature a case composes that this SDK does not generate,
+  # probed as a section's own feature is. Such a case is skipped rather than
+  # failed.
+  def missing_feature(kase, have)
+    spec = kase["feature"]
+    names = if spec.is_a?(Array)
+              spec.map { |f| f.is_a?(Hash) ? f["name"] : nil }
+            elsif spec.is_a?(Hash)
+              spec.keys.sort
+            else
+              []
+            end
+    names.each do |name|
+      next unless name.is_a?(String)
+
+      unless have.key?(name)
+        probe = build_client({ "feature" => [{ "name" => name, "active" => true }] })
+        have[name] = present?(probe, name)
+      end
+      return name unless have[name]
+    end
+    nil
+  end
+
   def test_corpus_carries_a_feature_section
     # A corpus with no `feature` section is a SKIP, not a failure. Each
     # project carries its OWN materialised copy of .sdk/test/test.json, so a
@@ -232,15 +256,16 @@ class FeatureCorpusTest < Minitest::Test
     end
   end
 
-  # At least one operation, or every case would skip and this suite would
-  # report green having run nothing.
+  # With every operation needing an argument there is nothing to drive:
+  # skip and say so, as the clean test does, rather than fail.
   def test_sdk_has_an_operation_the_corpus_can_drive
-    refute_empty usable_ops(2),
-                 "no declared operation completed against a plain 200 - the " \
-                 "corpus cannot exercise a feature without one"
+    skip("no declared operation completes against a plain 200 with no arguments (each needs a path parameter or a body); nothing for the corpus to drive") if usable_ops(2).empty?
+    refute_empty usable_ops(2)
   end
 
   def test_feature_corpus
+    failed = []
+    have = {}
     (corpus["feature"] || {}).keys.sort.each do |name|
       section = (corpus["feature"] || {})[name]
       next if section.nil?
@@ -265,49 +290,67 @@ class FeatureCorpusTest < Minitest::Test
       ran = 0
       cases.each do |raw|
         need = tokens_used(raw)
-        next if need > ops.length
+        if need > ops.length
+          puts "skip \"#{raw['name']}\": needs #{need} operations, this SDK offers #{ops.length}"
+          next
+        end
+
+        missing = missing_feature(raw, have)
+        unless missing.nil?
+          puts "skip \"#{raw['name']}\": needs the #{missing} feature, " \
+               "which this SDK does not generate"
+          next
+        end
 
         tokens = {}
         need.times { |i| tokens["#OP#{i + 1}"] = ops[i]["key"] }
         kase = resolve(raw, tokens)
+        label = kase["name"].to_s
+        ran += 1
 
-        client = build_client(kase)
-        label = kase["name"]
+        # Every failing case is reported, not only the first.
+        begin
+          client = build_client(kase)
 
-        (kase["op"] || []).each do |step|
-          op = by_key[step["op"]]
-          refute_nil op, "#{label}: no operation #{step['op']}"
-          ctrl = step["ctrl"] || {}
-          wanterr = step["err"]
+          (kase["op"] || []).each do |step|
+            op = by_key[step["op"]]
+            refute_nil op, "#{label}: no operation #{step['op']}"
+            ctrl = step["ctrl"] || {}
+            wanterr = step["err"]
 
-          begin
-            invoke(client, op, ctrl)
-            assert_nil wanterr, "#{label}: #{step['op']} was expected to fail, and did not"
-          rescue Minitest::Assertion
-            raise
-          rescue StandardError => e
-            refute_nil wanterr, "#{label}: #{step['op']} failed unexpectedly: #{e}"
-            if wanterr.is_a?(String)
-              # The CODE, not the message: make_error prefixes and humanises
-              # the text, so matching it would pass on any error that
-              # happened to mention the word.
-              code = e.respond_to?(:code) ? e.code : nil
-              assert_equal wanterr, code,
-                           "#{label}: wrong error code (#{e})"
+            begin
+              invoke(client, op, ctrl)
+              assert_nil wanterr, "#{label}: #{step['op']} was expected to fail, and did not"
+            rescue Minitest::Assertion
+              raise
+            rescue StandardError => e
+              refute_nil wanterr, "#{label}: #{step['op']} failed unexpectedly: #{e}"
+              if wanterr.is_a?(String)
+                # The CODE, not the message: make_error prefixes and humanises
+                # the text, so matching it would pass on any error that
+                # happened to mention the word.
+                code = e.respond_to?(:code) ? e.code : nil
+                assert_equal wanterr, code,
+                             "#{label}: wrong error code (#{e})"
+              end
             end
           end
-        end
 
-        subset(record(client, name), kase["out"], "#{label}: _#{name}")
-        ran += 1
+          subset(record(client, name), kase["out"], "#{label}: _#{name}")
+        rescue Minitest::Assertion, StandardError => e
+          failed << (e.message.start_with?(label) ? e.message : "#{label}: #{e.message}")
+        end
       end
 
-      assert ran > 0, "every feature.#{name} case was skipped"
       # Say how many ran. A partial run is legitimate (an SDK with one
       # operation skips the cases needing two) but it should be visible
       # rather than inferred from a green tick.
       puts "feature.#{name}: ran #{ran} of #{cases.length} case(s) " \
            "against #{ops.length} operation(s)"
+      failed << "every feature.#{name} case was skipped" if ran.zero?
     end
+
+    assert failed.empty?,
+           "#{failed.length} feature corpus case(s) failed:\n  #{failed.join("\n  ")}"
   end
 end

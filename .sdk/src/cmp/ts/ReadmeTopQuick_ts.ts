@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, isHttpBasicAuth, packageName, envName, entityIdField, entityOps, opRequestShape, safeVarName, exampleVarName, jsKey, matchArg, idLiteral , serverVariables} from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, isHttpBasicAuth, packageName, envName, entityIdField, entityOps, opRequestShape, safeVarName, exampleVarName, jsKey, serverVariables, listMatchArg, matchExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -8,12 +8,6 @@ import {
 } from '@voxgig/apidef'
 
 import { exampleValue } from './utility_ts'
-
-
-function listMatchArg(ent: any): string {
-  const idF = entityIdField(ent)
-  return matchArg('ts', ent, 'list', idF, idLiteral(ent, 'list', idF))
-}
 
 
 const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
@@ -57,10 +51,10 @@ const client = ${ctor}
     let hasCall = false
 
     if (opnames.includes('list')) {
-      Content(`// List all ${eName.toLowerCase()}s (returns ${eName}Entity[] — .data() for the record)
-const ${eVar}s = await client.${eName}().list(${listMatchArg(exampleEntity)})
+      Content(`// List all ${eName.toLowerCase()}s (returns ${eName}Entity[], one entity per record)
+const ${eVar}s = await client.${eName}().list(${listMatchArg('ts', exampleEntity)})
 for (const ${eVar} of ${eVar}s) {
-  console.log(${eVar})
+  console.log(${eVar}.data())
 }
 `)
       hasCall = true
@@ -83,8 +77,7 @@ for (const ${eVar} of ${eVar}s) {
       const loadOp = nestedEntity.op && nestedEntity.op.load
 
       const neIdF = entityIdField(nestedEntity)
-      const neMatchLines = opRequestShape(nestedEntity, 'load').items
-        .filter((it: any) => !it.optional || it.name === neIdF)
+      const neMatchLines = matchExampleItems(nestedEntity, 'load', neIdF)
         .sort((a: any, b: any) =>
           (a.name === neIdF ? 1 : 0) - (b.name === neIdF ? 1 : 0))
         .map((it: any) =>
@@ -92,19 +85,28 @@ for (const ${eVar} of ${eVar}s) {
             it.name === neIdF ? 'example_id' : 'example_' + it.name)},`)
 
       Content(`
-// Load a specific ${neName.toLowerCase()} (returns a ${neName})
+// Load a specific ${neName.toLowerCase()} (returns the entity, ${/^[aeiou]/i.test(neName) ? 'an' : 'a'} ${neName}Entity)
 const ${neVar} = await client.${neName}().load({
 ${neMatchLines.join('\n')}
 })
-console.log(${neVar})
+console.log(${neVar}.data())
 `)
       hasCall = true
     }
 
     if (!hasCall && opnames.includes('load')) {
-      Content(`// Load ${eName.toLowerCase()} data (returns a ${eName})
-const ${eVar} = await client.${eName}().load()
-console.log(${eVar})
+      // The id and every required parameter: a load without them has no route.
+      const idF = entityIdField(exampleEntity)
+      const loadItems = matchExampleItems(exampleEntity, 'load', idF)
+        .sort((a: any, b: any) =>
+          (a.name === idF ? 1 : 0) - (b.name === idF ? 1 : 0))
+        .map((it: any) =>
+          `  ${jsKey(it.name)}: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.load, it.name,
+            it.name === idF ? 'example_id' : 'example_' + it.name)},`)
+      const loadArg = 0 < loadItems.length ? `{\n${loadItems.join('\n')}\n}` : ''
+      Content(`// Load a specific ${eName.toLowerCase()} (returns the entity, ${/^[aeiou]/i.test(eName) ? 'an' : 'a'} ${eName}Entity)
+const ${eVar} = await client.${eName}().load(${loadArg})
+console.log(${eVar}.data())
 `)
       hasCall = true
     }

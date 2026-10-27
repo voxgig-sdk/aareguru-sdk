@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, phpEntityAccessor } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, phpEntityAccessor, listMatchArg, matchExampleItems, requiredItems, litString, requestExampleItems, sendsId } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -55,10 +55,11 @@ $client = ${ctor};
     // placeholder would not parse).
     const phpLit = (type: any, placeholder: string = 'example'): string => {
       const k = canonScalarKey(type)
+      if ('NULL' === k) return 'null'
       if ('INTEGER' === k || 'NUMBER' === k) return '1'
       if ('BOOLEAN' === k) return 'true'
       if ('ARRAY' === k || 'OBJECT' === k) return '[]'
-      return `"${placeholder}"`
+      return litString('php', placeholder)
     }
 
     // Model-driven display field: the entity's first non-id string field
@@ -79,7 +80,7 @@ $client = ${ctor};
 \`\`\`php
 try {
     // list() returns entity instances; data_get() reads each record.
-    $${eName.toLowerCase()}s = $client->${phpEntityAccessor(eName)}()->list();
+    $${eName.toLowerCase()}s = $client->${phpEntityAccessor(eName)}()->list(${listMatchArg('php', exampleEntity)});
     foreach ($${eName.toLowerCase()}s as $record) {
         $item = $record->data_get();
         echo ${itemPrint} . "\\n";
@@ -101,15 +102,14 @@ try {
       // the runtime resolves path params from, so the example always works.
       // Parent keys (e.g. page_id) first, the entity's own id last.
       const neIdF = entityIdField(nestedEntity)
-      const neRequired = opRequestShape(nestedEntity, 'load').items
-        .filter((it: any) => !it.optional)
+      const neRequired = requiredItems(nestedEntity, 'load')
         .sort((a: any, b: any) =>
           (a.name === neIdF ? 1 : 0) - (b.name === neIdF ? 1 : 0))
       const parentItem = neRequired.find((it: any) => it.name !== neIdF) as any
       const parentParam = parentItem && parentItem.name
       const parentName = parentParam ? parentParam.replace(/_id$/, '') : 'its parent'
       const neMatch = neRequired.map((it: any) =>
-        `"${it.name}" => ${phpLit(it.type,
+        `${litString('php', it.name)} => ${phpLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)}`)
 
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
@@ -129,13 +129,12 @@ try {
 `)
     }
     else if (opnames.includes('load')) {
-      const loadRequired = opRequestShape(exampleEntity, 'load').items
-        .filter((it: any) => !it.optional || it.name === idF)
+      const loadRequired = matchExampleItems(exampleEntity, 'load', idF)
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadRequired.length
         ? `[${loadRequired.map((it: any) =>
-          `"${it.name}" => ${phpLit(it.type,
+          `${litString('php', it.name)} => ${phpLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')}]`
         : ''
 
@@ -155,7 +154,7 @@ try {
     }
 
     const examplePairs = (opname: string): string[] => {
-      const items = opRequestShape(exampleEntity, opname).items
+      const items = requestExampleItems(exampleEntity, opname)
         .filter((it: any) => (it.name !== idF && it.name !== 'id') ||
           ('create' === opname && !it.optional))
       const required = items.filter((it: any) => !it.optional)
@@ -163,7 +162,7 @@ try {
       const chosen = 'create' === opname
         ? (required.length ? required : items.slice(0, 2))
         : required.concat(optional).slice(0, Math.max(2, required.length))
-      return chosen.map((it: any) => `"${it.name}" => ${phpLit(it.type, 'example_' + it.name)}`)
+      return chosen.map((it: any) => `${litString('php', it.name)} => ${phpLit(it.type, 'example_' + it.name)}`)
     }
 
     const idParamType = (opname: string): any => {
@@ -171,10 +170,11 @@ try {
       return it && it.type
     }
     const idValueFor = (opname: string): string => (null != dataIdF && opnames.includes('create'))
-      ? `$created->data_get()["${dataIdF}"]`
+      ? `$created->data_get()[${litString('php', dataIdF)}]`
       : phpLit(idParamType(opname), 'example_id')
 
-    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
+    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
+      opnames.includes('remove')) {
       Content(`### 4. Create, update, and remove
 
 \`\`\`php
@@ -186,21 +186,27 @@ $created = $client->${phpEntityAccessor(eName)}()->create([${examplePairs('creat
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`"${idF}" => ${idValueFor('update')}`] : []).concat(examplePairs('update'))
+        const updatePairs = (sendsId(exampleEntity, 'update', idF) ? [`${litString('php', idF)} => ${idValueFor('update')}`] : []).concat(examplePairs('update'))
         const fromCreated = null != dataIdF && opnames.includes('create')
-        Content(`// Update${fromCreated ? ` — index the record via data_get() ($created->data_get()["${dataIdF}"]).` : ''}
+        Content(`// Update${fromCreated ? ` — index the record via data_get() ($created->data_get()[${litString('php', dataIdF)}]).` : ''}
 $client->${phpEntityAccessor(eName)}()->update([${updatePairs.join(', ')}]);
 
 `)
       }
+      if (opnames.includes('patch')) {
+        const patchPairs = (sendsId(exampleEntity, 'patch', idF) ? [`${litString('php', idF)} => ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
+        Content(`// Patch — sends only the fields given
+$client->${phpEntityAccessor(eName)}()->patch([${patchPairs.join(', ')}]);
+
+`)
+      }
       if (opnames.includes('remove')) {
-        const removePairs = opRequestShape(exampleEntity, 'remove').items
-          .filter((it: any) => !it.optional || it.name === idF)
+        const removePairs = matchExampleItems(exampleEntity, 'remove', idF)
           .sort((a: any, b: any) =>
             (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
           .map((it: any) => it.name === idF
-            ? `"${it.name}" => ${idValueFor('remove')}`
-            : `"${it.name}" => ${phpLit(it.type, 'example_' + it.name)}`)
+            ? `${litString('php', it.name)} => ${idValueFor('remove')}`
+            : `${litString('php', it.name)} => ${phpLit(it.type, 'example_' + it.name)}`)
         Content(`// Remove
 $client->${phpEntityAccessor(eName)}()->remove(${removePairs.length ? `[${removePairs.join(', ')}]` : ''});
 `)

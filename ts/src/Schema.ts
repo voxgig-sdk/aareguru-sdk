@@ -6,7 +6,7 @@
 const OPTSPEC = {
   "allow": {
     "method": "GET,PUT,POST,PATCH,DELETE,OPTIONS",
-    "op": "create,update,load,list,remove,command,direct,graphql"
+    "op": "create,update,patch,load,list,remove,command,direct,graphql"
   },
   "apikey": "",
   "auth": {
@@ -172,6 +172,11 @@ const OPTSPEC = {
           "`$NIL`"
         ],
         "clearTimer": [
+          "`$ONE`",
+          "`$FUNCTION`",
+          "`$NIL`"
+        ],
+        "now": [
           "`$ONE`",
           "`$FUNCTION`",
           "`$NIL`"

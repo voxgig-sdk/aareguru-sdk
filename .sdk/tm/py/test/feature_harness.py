@@ -97,7 +97,7 @@ def recording_server(reply=None):
 def default_method(op):
     if op == "create":
         return "POST"
-    if op == "update":
+    if op == "update" or op == "patch":
         return "PATCH"
     if op == "remove":
         return "DELETE"

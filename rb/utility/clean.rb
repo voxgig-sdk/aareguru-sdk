@@ -83,19 +83,20 @@ module AareguruUtilities
       out
     end
 
+    # Requests on other threads clean while one registers, so a registration
+    # publishes a new list and never changes a published one.
+    REGISTERING = Mutex.new
+
     # Register a secret value. Idempotent; shorter than `min` is not a secret
     # the SDK can mask without blanking ordinary text.
     def self.add(ctx, value)
       cfg = config(ctx)
       return unless value.is_a?(String) && value.length >= cfg["min"]
-      values = cfg["values"]
-      changed = false
-      forms(value).each do |form|
-        next if form.length < cfg["min"] || values.include?(form)
-        values << form
-        changed = true
+      REGISTERING.synchronize do
+        values = cfg["values"]
+        added = forms(value).reject { |form| form.length < cfg["min"] || values.include?(form) }
+        cfg["values"] = (values + added).sort_by { |v| -v.length } unless added.empty?
       end
-      values.sort_by! { |v| -v.length } if changed
       nil
     end
 
@@ -289,18 +290,26 @@ module AareguruUtilities
 
     # A feature's name is not a field name: only the sensitive names inside
     # its settings count, so `secrets` does not make every setting a secret.
-    # Entity blocks (per-entity settings, seeded records) hold no credential.
+    # Entity blocks (per-entity settings, seeded records) hold no credential,
+    # and nor do rbac's rules, keyed by entity and operation names.
     def self.add_options(ctx, opts)
       top = opts.reject { |k, _| k == "feature" || k == "entity" }
-      top["test"] = no_entity(top["test"]) if top.key?("test")
+      top["test"] = plain_settings(top["test"], nil) if top.key?("test")
       add_sensitive(ctx, top)
       feature = opts["feature"]
-      blocks = feature.is_a?(Hash) ? feature.values : (feature.is_a?(Array) ? feature : [feature])
-      blocks.each { |fopts| add_sensitive(ctx, no_entity(fopts)) }
+      blocks = if feature.is_a?(Hash)
+                 feature.to_a
+               elsif feature.is_a?(Array)
+                 feature.map { |b| [b.is_a?(Hash) ? b["name"] : nil, b] }
+               else
+                 [[nil, feature]]
+               end
+      blocks.each { |name, fopts| add_sensitive(ctx, plain_settings(fopts, name)) }
     end
 
-    def self.no_entity(block)
-      block.is_a?(Hash) ? block.reject { |k, _| k == "entity" } : block
+    def self.plain_settings(block, name)
+      return block unless block.is_a?(Hash)
+      block.reject { |k, _| k == "entity" || (name == "rbac" && k == "rules") }
     end
 
     # Is this key name sensitive under the context's clean configuration?

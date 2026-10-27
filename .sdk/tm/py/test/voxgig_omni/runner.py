@@ -1,5 +1,5 @@
 # VENDORED: @voxgig/omni 0.1.0 (python/voxgig_omni/runner.py)
-# Source: https://github.com/voxgig/omni @ b909ff51fc644e4955c850e30cc65e74be076df2  [tag: sdk-20260925-1316-0]
+# Source: https://github.com/voxgig/omni @ e9cb45a308a4da47ffdbc1b3149b9c59199190b2  [tag: sdk-20261016-0845-0]
 # License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 """Omni: the shared multi-language test runner.
 
@@ -9,6 +9,7 @@ Port of the canonical TypeScript implementation
 
 import json
 import re
+from functools import partial
 from typing import Any, Callable, Optional
 
 from .util import (
@@ -36,14 +37,17 @@ SPECVERSION = 1
 # Capability strings this runner supports beyond the version baseline. A
 # spec's OMNI.requires list is checked against this: an unknown capability
 # refuses the spec loudly at load time, instead of a lagging port silently
-# mis-running it. (Empty today; future format features mint a string here.)
-CAPABILITIES: list = []
+# mis-running it. A spec turns each on only by requiring it.
+CAPABILITIES: list = ['ctxargs', 'fn', 'wait']
 
 # The complete set of fields an entry may carry. Under version 1 anything
 # else is an error: an unrecognised key is almost always a typo'd
 # assertion, and a typo'd assertion is a test that silently stopped
 # testing.
 ENTRYFIELDS = ['in', 'args', 'ctx', 'out', 'err', 'match', 'client', 'id', 'doc']
+
+# Entry fields a capability adds, permitted only in a spec that requires it.
+CAPFIELDS = {'fn': 'fn', 'wait': 'wait'}
 
 
 class OmniError(AssertionError):
@@ -94,7 +98,15 @@ def resolveversion(alltests: Any) -> int:
     return int(version)
 
 
-def checkentry(flags: dict, index: int, entry: Any) -> None:
+def resolverequires(alltests: Any) -> list:
+    """The capabilities a spec requires, which resolveversion has already
+    checked against CAPABILITIES.
+    """
+    meta = alltests.get('OMNI') if ismap(alltests) else None
+    return list(meta['requires']) if ismap(meta) and islist(meta.get('requires')) else []
+
+
+def checkentry(flags: dict, index: int, entry: Any, requires: list) -> None:
     """Strict entry validation, applied when the spec declares version 1
     or later. The lenient format converts each of these mistakes into a
     silent pass or a dead field; here they fail with the entry named.
@@ -103,15 +115,25 @@ def checkentry(flags: dict, index: int, entry: Any) -> None:
         raise fail(flags, index, entry, 'entry is not a map')
 
     for key in entry.keys():
-        if key not in ENTRYFIELDS:
+        if key not in ENTRYFIELDS and not (key in CAPFIELDS and CAPFIELDS[key] in requires):
             raise fail(flags, index, entry, 'unknown entry field: ' + str(key))
 
-    argsources = 0
-    for key in ('in', 'args', 'ctx'):
-        if key in entry:
-            argsources += 1
-    if argsources > 1:
-        raise fail(flags, index, entry, 'entry has more than one of in, args, ctx')
+    if 'ctxargs' in requires:
+        if 'in' in entry and ('args' in entry or 'ctx' in entry):
+            raise fail(flags, index, entry, 'entry has in beside args or ctx')
+    else:
+        argsources = 0
+        for key in ('in', 'args', 'ctx'):
+            if key in entry:
+                argsources += 1
+        if argsources > 1:
+            raise fail(flags, index, entry, 'entry has more than one of in, args, ctx')
+
+    if 'fn' in entry and (not isinstance(entry['fn'], str) or entry['fn'] == ''):
+        raise fail(flags, index, entry, 'entry fn is not a name')
+
+    if 'wait' in entry and not iswait(entry['wait']):
+        raise fail(flags, index, entry, 'entry wait has no cause')
 
     if entry.get('err') is not None and 'out' in entry:
         raise fail(flags, index, entry, 'entry has both err and out')
@@ -120,7 +142,7 @@ def checkentry(flags: dict, index: int, entry: Any) -> None:
         raise fail(flags, index, entry, 'entry id is not a string')
 
 
-def checkset(flags: dict, testspec: Any, normalset: list) -> None:
+def checkset(flags: dict, testspec: Any, normalset: list, requires: list) -> None:
     """Validate a version-1 group up front, against the AUTHORED entries -
     null-normalisation would otherwise rewrite an authored null (e.g.
     id: null) into a sentinel string and hide it from validation. A
@@ -133,7 +155,7 @@ def checkset(flags: dict, testspec: Any, normalset: list) -> None:
         raise OmniError('omni: empty test set: ' + str(flags['name']))
 
     for index, entry in enumerate(origset):
-        checkentry(flags, index, entry)
+        checkentry(flags, index, entry, requires)
 
 
 def resolvespec(name: Optional[str], alltests: Any) -> Any:
@@ -195,7 +217,7 @@ def resolveentry(entry: dict, flags: dict) -> dict:
     return entry
 
 
-def resolvetestpack(name, entry, subject, provider, clients) -> dict:
+def resolvetestpack(name, entry, subject, provider, clients, fnon: bool = False) -> dict:
     testpack = {'client': provider, 'subject': subject}
 
     if entry.get('client') is not None:
@@ -205,12 +227,23 @@ def resolvetestpack(name, entry, subject, provider, clients) -> dict:
         testpack['client'] = client
         testpack['subject'] = resolvesubject(name, client) or subject
 
+    if fnon and entry.get('fn') is not None:
+        fnsubject = resolvesubject(entry['fn'], testpack['client'])
+        if fnsubject is None:
+            raise OmniError('omni: unknown fn: ' + str(entry['fn']), entry)
+        testpack['subject'] = fnsubject
+
     return testpack
 
 
-def resolveargs(entry: dict, testpack: dict, provider: Any) -> list:
-    """Build the argument list: `ctx`, `args`, or `in`."""
-    if 'ctx' in entry:
+def resolveargs(entry: dict, testpack: dict, provider: Any, ctxargs: bool = False) -> list:
+    """Build the argument list: `ctx`, `args`, or `in`. Under `ctxargs` an
+    entry with both passes the context first, then each argument.
+    """
+    if ctxargs and 'ctx' in entry and 'args' in entry:
+        rawargs = entry['args']
+        args = [entry['ctx']] + (rawargs if islist(rawargs) else [rawargs])
+    elif 'ctx' in entry:
         args = [entry['ctx']]
     elif 'args' in entry:
         args = entry['args']
@@ -501,10 +534,51 @@ def nullmodifier(val, key, parent, *_rest) -> None:
         parent[key] = val.replace(NULLMARK, 'null')
 
 
+def iswait(wait: Any) -> bool:
+    return ismap(wait) and isinstance(wait.get('cause'), str) and wait['cause'] != ''
+
+
+def resolvewaits(flags: dict, origset: list) -> dict:
+    """The runner-side waits: entry id to its declaration. Each must name an
+    entry of the set, so a declaration cannot outlive the entry it held.
+    """
+    waits = flags.get('wait')
+    if waits is None:
+        return {}
+    if not ismap(waits):
+        raise OmniError('omni: ' + str(flags['name']) + ': wait flag is not a map')
+    ids = [entry.get('id') if ismap(entry) else None for entry in origset]
+    for key in waits.keys():
+        if key not in ids:
+            raise OmniError('omni: ' + str(flags['name']) + ': wait names no entry: ' + str(key))
+        if not iswait(waits[key]):
+            raise OmniError('omni: ' + str(flags['name']) + ': wait for ' + str(key) + ' has no cause')
+    return waits
+
+
+def runentry(flags: dict, index: int, entry: dict, testpack: dict, provider: Any, ctxargs: bool) -> None:
+    try:
+        args = resolveargs(entry, testpack, provider, ctxargs)
+        res = testpack['subject'](*args)
+        res = fixjson(res, flags)
+        entry['res'] = res
+
+        checkresult(flags, index, entry, args, res)
+
+    except OmniError:
+        raise
+    except Exception as err:  # noqa: BLE001 - subject errors are data
+        handleerror(flags, index, entry, err, provider)
+
+
 def makeRunner(specref: Any, provider: Any = None) -> Callable:
     """Make a runner for a spec file (or spec object) and a provider."""
     alltests = loadspec(specref)
     specversion = resolveversion(alltests)
+    requires = resolverequires(alltests)
+    ctxargs = 'ctxargs' in requires
+    fnon = 'fn' in requires
+    waiton = 'wait' in requires
     useprovider = provider or {}
 
     def runner(name: Optional[str] = None, store: Any = None) -> dict:
@@ -517,7 +591,7 @@ def makeRunner(specref: Any, provider: Any = None) -> Callable:
             useflags['name'] = useflags.get('name') or name or 'set'
 
             subject = testsubject or defsubject
-            if subject is None:
+            if subject is None and not fnon:
                 raise OmniError('omni: no test subject for: ' + str(useflags['name']))
 
             testspecmap = fixjson(testspec, useflags)
@@ -528,25 +602,57 @@ def makeRunner(specref: Any, provider: Any = None) -> Callable:
             testset = testspecmap['set']
 
             if specversion >= 1:
-                checkset(useflags, testspec, testset)
+                checkset(useflags, testspec, testset, requires)
+
+            origset = testspec['set'] if ismap(testspec) and islist(testspec.get('set')) else testset
+            waits = resolvewaits(useflags, origset)
+            failures = []
 
             for index, entry in enumerate(testset):
                 try:
-                    entry = resolveentry(entry, useflags)
+                    testpack = None
+                    prestart = None
 
-                    testpack = resolvetestpack(name, entry, subject, useprovider, clients)
-                    args = resolveargs(entry, testpack, useprovider)
+                    # A hook's raw error before the subject starts is still the entry's.
+                    try:
+                        entry = resolveentry(entry, useflags)
+                        testpack = resolvetestpack(name, entry, subject, useprovider, clients, fnon)
+                    except OmniError:
+                        raise
+                    except Exception as err:  # noqa: BLE001 - a hook's error is data
+                        prestart = err
 
-                    res = testpack['subject'](*args)
-                    res = fixjson(res, useflags)
-                    entry['res'] = res
+                    if prestart is None and testpack['subject'] is None:
+                        raise OmniError('omni: no test subject for: ' + str(useflags['name']))
 
-                    checkresult(useflags, index, entry, args, res)
+                    wait = None
+                    if ismap(entry):
+                        wait = entry['wait'] if waiton and 'wait' in entry else (
+                            waits.get(entry['id']) if entry.get('id') is not None else None)
 
-                except OmniError:
+                    if prestart is None:
+                        run = partial(runentry, useflags, index, entry, testpack, useprovider, ctxargs)
+                    else:
+                        run = partial(handleerror, useflags, index, entry, prestart, useprovider)
+
+                    if wait is None:
+                        run()
+                    else:
+                        try:
+                            run()
+                        except OmniError:
+                            continue
+                        raise fail(useflags, index, entry, 'stale wait: ' + str(wait['cause']))
+
+                except OmniError as err:
+                    if useflags.get('all') is True:
+                        failures.append(str(err))
+                        continue
                     raise
-                except Exception as err:  # noqa: BLE001 - subject errors are data
-                    handleerror(useflags, index, entry, err, useprovider)
+
+            if failures:
+                raise OmniError('omni: ' + str(useflags['name']) + ': ' + str(len(failures)) + ' of ' +
+                                str(len(testset)) + ' entries failed\n' + '\n'.join(failures))
 
         def runset(testspec: Any, testsubject: Callable = None) -> None:
             return runsetflags(testspec, {}, testsubject)

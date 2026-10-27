@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/omni 0.1.4 (typescript/src/index.ts)
-// Source: https://github.com/voxgig/omni @ b909ff51fc644e4955c850e30cc65e74be076df2  [tag: sdk-20260925-1316-0]
+// VENDORED: @voxgig/omni 0.1.5 (typescript/src/index.ts)
+// Source: https://github.com/voxgig/omni @ e9cb45a308a4da47ffdbc1b3149b9c59199190b2  [tag: sdk-20261016-0845-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // @voxgig/omni - shared multi-language test runner.
 

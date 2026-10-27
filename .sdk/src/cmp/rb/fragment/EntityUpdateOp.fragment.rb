@@ -7,7 +7,8 @@ require_relative '../core/helpers'
   #
   # @param reqdata [EntityNameUpdateData, Hash, nil] body data
   # @param ctrl [Object, nil] optional per-call control
-  # @return [EntityName, Hash] the updated EntityName; raises ProjectNameError on failure
+  # @return [EntyClass] the updated EntityName entity (data_get reads its record);
+  #   raises ProjectNameError on failure
   def update(reqdata, ctrl = nil)
     utility = @_utility
     ctx = utility.make_context.call({

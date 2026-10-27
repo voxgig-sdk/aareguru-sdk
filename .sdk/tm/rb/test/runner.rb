@@ -9,7 +9,7 @@ module AareguruTestRunner
     env_file = File.join(File.dirname(__FILE__), '..', '..', '.env.local')
     return unless File.exist?(env_file)
 
-    File.readlines(env_file).each do |line|
+    File.readlines(env_file, encoding: 'UTF-8').each do |line|
       line = line.strip
       next if line.empty? || line.start_with?('#')
       key, val = line.split('=', 2)
@@ -71,7 +71,7 @@ module AareguruTestRunner
     return @test_control unless @test_control.nil?
     ctrl_path = File.join(File.dirname(__FILE__), 'sdk-test-control.json')
     @test_control = begin
-      JSON.parse(File.read(ctrl_path))
+      JSON.parse(File.read(ctrl_path, encoding: 'UTF-8'))
     rescue StandardError
       {
         'version' => 1,
@@ -132,6 +132,58 @@ module AareguruTestRunner
     v = ctrl.dig('test', 'live', 'delayMs')
     return v if v.is_a?(Integer) && v >= 0
     500
+  end
+
+  # A live check that did not pass, as main.kit.test.live.strict decides:
+  # strict fails the test, lenient skips it with the same reason.
+  def self.live_miss(strict, reason)
+    raise Minitest::Assertion, reason if strict
+    raise Minitest::Skip, reason
+  end
+
+  # An account holding no record for the test to read skips either way.
+  def self.live_empty(reason)
+    raise Minitest::Skip, reason
+  end
+
+  # A live list response's records: the body, or the first list an
+  # envelope holds.
+  def self.live_list(data)
+    return data if data.is_a?(Array)
+    return data.values.find { |v| v.is_a?(Array) } if data.is_a?(Hash)
+    nil
+  end
+
+  # A live response for a message: the SDK's error, or else its status and
+  # content type, never its body.
+  def self.live_describe(result)
+    return "no response" unless result.is_a?(Hash)
+    err = result["err"]
+    return (err.respond_to?(:message) ? err.message : err.to_s) unless err.nil?
+    headers = result["headers"].is_a?(Hash) ? result["headers"] : {}
+    ctype = headers.find { |k, _v| k.to_s.downcase == "content-type" }&.last
+    "HTTP #{result["status"]}" + (ctype ? " #{ctype.to_s.split(";").first.strip}" : "")
+  end
+
+  # The record a create-less flow reads live: the first its list returns,
+  # put where the flow reads the fixture's existing records.
+  def self.live_existing(setup, strict, name)
+    found = begin
+      yield
+    rescue StandardError => e
+      live_miss(strict, "Live list discovery failed: #{e.message}")
+    end
+    live_miss(strict, "Live list discovery returned no list") unless found.is_a?(Array)
+    live_empty("The account has no #{name} record to load") if found.empty?
+    first = found[0]
+    record = first.respond_to?(:data_get) ? first.data_get : first
+    (setup[:data]["existing"] ||= {})[name] = { "live01" => record }
+  end
+
+  # In a lenient live run a failing check skips, observing the live API.
+  def self.live_observe(error, setup, strict)
+    raise error if strict || !setup.is_a?(Hash) || !setup[:live] || error.is_a?(Minitest::Skip)
+    raise Minitest::Skip, "live run, main.kit.test.live.strict is false: #{error.message}"
   end
 end
 

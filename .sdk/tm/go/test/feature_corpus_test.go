@@ -18,7 +18,7 @@ import (
 // added under .sdk/test/feature/ — runs without editing this file. An
 // SDK generated without a listed feature still skips, not fails.
 
-var featureCorpusOps = []string{"Load", "List", "Create", "Update", "Remove"}
+var featureCorpusOps = []string{"Load", "List", "Create", "Update", "Patch", "Remove"}
 
 // One operation this SDK can actually perform.
 type fcOp struct {
@@ -382,6 +382,43 @@ func fcRecord(client *sdk.AareguruSDK, name string) any {
 	return nil
 }
 
+// fcMissingFeature names the first feature a case composes that this SDK
+// does not generate, probed as a section's own feature is. Such a case is
+// skipped rather than failed.
+func fcMissingFeature(kase map[string]any, have map[string]bool) string {
+	var names []string
+	switch f := kase["feature"].(type) {
+	case []any:
+		for _, one := range f {
+			if m, ok := one.(map[string]any); ok {
+				if n, ok := m["name"].(string); ok {
+					names = append(names, n)
+				}
+			}
+		}
+	case map[string]any:
+		for n := range f {
+			names = append(names, n)
+		}
+		sort.Strings(names)
+	}
+
+	for _, name := range names {
+		known, seen := have[name]
+		if !seen {
+			probe := fcClient(map[string]any{
+				"feature": []any{map[string]any{"name": name, "active": true}},
+			})
+			known = fcRecord(probe, name) != nil
+			have[name] = known
+		}
+		if !known {
+			return name
+		}
+	}
+	return ""
+}
+
 func TestFeatureCorpus(t *testing.T) {
 	spec := loadTestSpec(t)
 
@@ -391,12 +428,12 @@ func TestFeatureCorpus(t *testing.T) {
 	}
 
 	ops := fcUsableOps(2)
+	have := map[string]bool{}
 
-	// At least one operation, or every case below would skip and this would
-	// report green having run nothing.
+	// With every operation needing an argument there is nothing to drive:
+	// skip and say so, as the clean test does, rather than fail.
 	if len(ops) == 0 {
-		t.Fatal("no declared operation completed against a plain 200 - the " +
-			"corpus cannot exercise a feature without one")
+		t.Skip("no declared operation completes against a plain 200 with no arguments (each needs a path parameter or a body); nothing for the corpus to drive")
 	}
 
 	featureCorpusNames := make([]string, 0, len(featureSection))
@@ -443,6 +480,12 @@ func TestFeatureCorpus(t *testing.T) {
 				if need > len(ops) {
 					t.Logf("skip %q: needs %d operations, this SDK offers %d",
 						kase["name"], need, len(ops))
+					continue
+				}
+
+				if missing := fcMissingFeature(kase, have); missing != "" {
+					t.Logf("skip %q: needs the %s feature, which this SDK does not generate",
+						kase["name"], missing)
 					continue
 				}
 

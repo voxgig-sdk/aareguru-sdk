@@ -379,6 +379,27 @@ class TestPrimaryUtility:
         assert err is not None
         assert "blocked" in str(err).lower()
 
+    # Nothing listens on port 9: a request the guard let through fails there.
+    def test_fetcher_getonly_guard(self, monkeypatch):
+        live_client = AareguruSDK({"base": "http://127.0.0.1:9"})
+        live_utility = live_client._utility
+        ctx = live_utility.make_context({
+            "opname": "create",
+            "client": live_client,
+            "utility": live_utility,
+        }, None)
+        url = "http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01"
+        monkeypatch.setenv("VOXGIG_GETONLY_GUARD", "TRUE")
+
+        _, err = live_utility.fetcher(ctx, url, {"method": "POST", "headers": {}})
+        assert isinstance(err, AareguruError)
+        assert err.code == "fetch_getonly_block"
+        assert "[GET-ONLY GUARD] blocked POST /planet/p1" in err.msg
+        assert "GUARDKEY01" not in err.msg
+
+        _, err = live_utility.fetcher(ctx, url, {"method": "GET", "headers": {}})
+        assert err is not None and not isinstance(err, AareguruError)
+
     def test_make_context_basic(self):
         def subject(vin):
             if not isinstance(vin, dict):

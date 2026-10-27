@@ -1,0 +1,129 @@
+type Context = any
+type Control = any
+
+class EntityOperation {
+
+  #match: any
+  #data: any
+  #utility: any
+
+
+  // EJECT-START
+
+  async patch(this: any, reqdata?: EntityNamePatchData, ctrl?: Control): Promise<EntyClass> {
+
+    const utility = this._utility
+
+    const {
+      makeContext,
+      done,
+      // The registry name is `makeError`; `error` is the local alias.
+      makeError: error,
+      featureHook,
+      makePoint,
+      makeRequest,
+      makeResponse,
+      makeResult,
+      makeSpec,
+    } = utility
+
+    let fres: Promise<any> | undefined = undefined
+
+    let ctx: Context = makeContext({
+      opname: 'patch',
+      ctrl,
+      match: this._match,
+      data: this._data,
+      reqdata
+    }, this._entctx)
+
+    try {
+
+      // #PrePoint-Hook
+
+      ctx.out.point = makePoint(ctx)
+      if (ctx.out.point instanceof Error) {
+        return error(ctx, ctx.out.point)
+      }
+
+
+      // #PreSpec-Hook
+
+      ctx.out.spec = makeSpec(ctx)
+      if (ctx.out.spec instanceof Error) {
+        return error(ctx, ctx.out.spec)
+      }
+
+
+      // #PreRequest-Hook
+
+      ctx.out.request = await makeRequest(ctx)
+      if (ctx.out.request instanceof Error) {
+        return error(ctx, ctx.out.request)
+      }
+
+
+      // #PreResponse-Hook
+
+      ctx.out.response = await makeResponse(ctx)
+      if (ctx.out.response instanceof Error) {
+        return error(ctx, ctx.out.response)
+      }
+
+
+      // #PreResult-Hook
+
+      ctx.out.result = await makeResult(ctx)
+      if (ctx.out.result instanceof Error) {
+        return error(ctx, ctx.out.result)
+      }
+
+
+      // #PreDone-Hook
+
+      if (null != ctx.result) {
+        if (null != ctx.result.resmatch) {
+          this._match = ctx.result.resmatch
+        }
+
+        if (null != ctx.result.resdata) {
+          this._data = ctx.result.resdata
+        }
+      }
+
+      const out = done(ctx)
+
+      return (ctx.result && ctx.result.ok) ? this : out
+    }
+    catch (err: any) {
+      // What a hook throws here must not escape the cleaning below.
+      try {
+        // Once per operation: makeError fires it for its own error.
+        if (!ctx.unexpectedFired) {
+          // #PreUnexpected-Hook
+        }
+      }
+      catch (hookerr: any) {
+        err = hookerr
+      }
+
+      err = this._unexpected(ctx, err)
+
+      if (err) {
+        throw err
+      }
+      else {
+        // Off-happy-path (throw disabled): typed as any so the method's
+        // Promise<EntyClass> return stays clean under strict null checks.
+        return undefined as any
+      }
+    }
+  }
+
+  // EJECT-END
+
+
+  #unexpected(this: any, ctx: Context, ctrl: any, err: any): any { return err }
+
+}
+

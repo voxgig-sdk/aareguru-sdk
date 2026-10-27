@@ -138,10 +138,10 @@ function synthesizeInput(schema, explicit, depth = 0) {
         }
         catch { }
     }
-    let value;
     if (schema.allOf)
-        value = Object.assign({}, ...schema.allOf.map((s) => synthesizeInput(s, undefined, depth + 1)));
-    else if (schema.type === 'object' || schema.properties) {
+        return allOfInput(schema, depth);
+    let value;
+    if (schema.type === 'object' || schema.properties) {
         value = {};
         for (const key of schema.required || [])
             if (!schema.properties?.[key]?.readOnly) {
@@ -167,6 +167,76 @@ function synthesizeInput(schema, explicit, depth = 0) {
         throw new live_runner_1.LiveBlocked('Required input needs a guide recipe or validated example');
     validateContract(schema, value);
     return value;
+}
+// An allOf's objects merged, else the first value its parts give that the whole schema
+// accepts: a declared value, then a synthesized one. A part that gives no value is left
+// to that validation, unless it carries a constraint the validator does not check.
+function allOfInput(schema, depth) {
+    let blocked;
+    const given = schema.allOf.map((part) => {
+        try {
+            return synthesizeInput(part, undefined, depth + 1);
+        }
+        catch (error) {
+            const unchecked = uncheckedConstraint(part);
+            if (unchecked)
+                throw new live_runner_1.LiveBlocked('Unsupported contract constraint: ' + unchecked);
+            blocked ??= error;
+        }
+    });
+    const objects = given.filter((v) => v !== null && typeof v === 'object' && !Array.isArray(v));
+    const candidates = [...(objects.length ? [Object.assign({}, ...objects)] : []),
+        ...declaredValues(schema.allOf), ...given.filter((v) => v !== undefined)];
+    let mismatch;
+    for (const value of candidates) {
+        try {
+            validateContract(schema, value);
+            return value;
+        }
+        catch (error) {
+            mismatch ??= error;
+        }
+    }
+    throw blocked ?? mismatch ?? new live_runner_1.LiveBlocked('Required input needs a guide recipe or validated example');
+}
+// What the parts declare, each kind in part order: every example, then every enum
+// value, then every default.
+function declaredValues(parts) {
+    const schemas = parts.filter(part => part !== null && typeof part === 'object');
+    const values = [];
+    const add = (value) => {
+        if (!values.some(v => JSON.stringify(v) === JSON.stringify(value)))
+            values.push(value);
+    };
+    for (const part of schemas) {
+        if (part.example !== undefined)
+            add(part.example);
+        for (const value of Array.isArray(part.examples) ? part.examples : [])
+            add(value);
+    }
+    for (const part of schemas)
+        for (const value of Array.isArray(part.enum) ? part.enum : [])
+            add(value);
+    for (const part of schemas)
+        if (part.default !== undefined)
+            add(part.default);
+    return values;
+}
+// The keywords validateContract reads, and those that only annotate; any other
+// keyword on a part is a constraint no validation of the whole schema can enforce.
+const CHECKED_KEYWORDS = new Set(['$ref', 'type', 'enum', 'const', 'format', 'pattern',
+    'minLength', 'maxLength', 'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum',
+    'multipleOf', 'items', 'prefixItems', 'minItems', 'maxItems', 'uniqueItems', 'properties',
+    'required', 'additionalProperties', 'allOf', 'oneOf', 'anyOf', 'not', 'if', 'then', 'else',
+    'dependentRequired', 'dependentSchemas', 'patternProperties', 'contains',
+    'unevaluatedProperties', 'unevaluatedItems']);
+const ANNOTATION_KEYWORDS = new Set(['description', 'title', 'example', 'examples', 'default',
+    'deprecated', 'readOnly', 'writeOnly', 'externalDocs', 'xml', 'nullable', 'discriminator',
+    '$comment', '$schema', '$id']);
+function uncheckedConstraint(part) {
+    if (part === null || typeof part !== 'object')
+        return undefined;
+    return Object.keys(part).find(key => !CHECKED_KEYWORDS.has(key) && !ANNOTATION_KEYWORDS.has(key) && !key.startsWith('x-'));
 }
 function requestContract(facts) {
     const body = facts?.requestBody;

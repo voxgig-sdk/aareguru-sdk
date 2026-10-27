@@ -67,6 +67,7 @@ local function make_config()
         },
         ["optspec"] = {
           ["clearTimer"] = "`$FUNCTION`",
+          ["now"] = "`$FUNCTION`",
           ["setTimer"] = "`$FUNCTION`",
         },
         ["strict"] = false,
@@ -128,12 +129,7 @@ local function make_config()
                     },
                   },
                 },
-                ["select"] = {
-                  ["exist"] = {
-                    "app",
-                    "version",
-                  },
-                },
+                ["select"] = {},
               },
               {
                 ["kind"] = "http",
@@ -170,12 +166,7 @@ local function make_config()
                     },
                   },
                 },
-                ["select"] = {
-                  ["exist"] = {
-                    "app",
-                    "version",
-                  },
-                },
+                ["select"] = {},
               },
               {
                 ["kind"] = "http",
@@ -212,12 +203,7 @@ local function make_config()
                     },
                   },
                 },
-                ["select"] = {
-                  ["exist"] = {
-                    "app",
-                    "version",
-                  },
-                },
+                ["select"] = {},
               },
             },
           },
@@ -286,10 +272,7 @@ local function make_config()
                 },
                 ["select"] = {
                   ["exist"] = {
-                    "app",
-                    "line",
                     "service",
-                    "version",
                   },
                 },
               },
@@ -338,9 +321,7 @@ local function make_config()
                 },
                 ["select"] = {
                   ["exist"] = {
-                    "app",
                     "service",
-                    "version",
                   },
                 },
               },
@@ -452,13 +433,60 @@ local function make_config()
                 ["select"] = {
                   ["$action"] = "history",
                   ["exist"] = {
-                    "app",
                     "city",
                     "end",
                     "start",
-                    "value",
-                    "version",
                   },
+                },
+              },
+              {
+                ["kind"] = "http",
+                ["method"] = "GET",
+                ["orig"] = "/v2018/cities",
+                ["segments"] = {
+                  {
+                    ["lit"] = "v2018",
+                  },
+                  {
+                    ["lit"] = "cities",
+                  },
+                },
+                ["parts"] = {
+                  "v2018",
+                  "cities",
+                },
+                ["rename"] = {},
+                ["transform"] = {
+                  ["req"] = "`reqdata`",
+                  ["res"] = "`body`",
+                },
+                ["args"] = {
+                  ["query"] = {
+                    {
+                      ["name"] = "app",
+                      ["orig"] = "app",
+                      ["type"] = "`$STRING`",
+                      ["kind"] = "query",
+                      ["example"] = "my.app.ch",
+                    },
+                    {
+                      ["name"] = "value",
+                      ["orig"] = "values",
+                      ["type"] = "`$STRING`",
+                      ["kind"] = "query",
+                      ["example"] = nil,
+                    },
+                    {
+                      ["name"] = "version",
+                      ["orig"] = "version",
+                      ["type"] = "`$STRING`",
+                      ["kind"] = "query",
+                      ["example"] = "1.0.42",
+                    },
+                  },
+                },
+                ["select"] = {
+                  ["$action"] = "city",
                 },
               },
               {
@@ -516,12 +544,6 @@ local function make_config()
                 },
                 ["select"] = {
                   ["$action"] = "current",
-                  ["exist"] = {
-                    "app",
-                    "city",
-                    "value",
-                    "version",
-                  },
                 },
               },
               {
@@ -579,67 +601,6 @@ local function make_config()
                 },
                 ["select"] = {
                   ["$action"] = "today",
-                  ["exist"] = {
-                    "app",
-                    "city",
-                    "value",
-                    "version",
-                  },
-                },
-              },
-              {
-                ["kind"] = "http",
-                ["method"] = "GET",
-                ["orig"] = "/v2018/cities",
-                ["segments"] = {
-                  {
-                    ["lit"] = "v2018",
-                  },
-                  {
-                    ["lit"] = "cities",
-                  },
-                },
-                ["parts"] = {
-                  "v2018",
-                  "cities",
-                },
-                ["rename"] = {},
-                ["transform"] = {
-                  ["req"] = "`reqdata`",
-                  ["res"] = "`body`",
-                },
-                ["args"] = {
-                  ["query"] = {
-                    {
-                      ["name"] = "app",
-                      ["orig"] = "app",
-                      ["type"] = "`$STRING`",
-                      ["kind"] = "query",
-                      ["example"] = "my.app.ch",
-                    },
-                    {
-                      ["name"] = "value",
-                      ["orig"] = "values",
-                      ["type"] = "`$STRING`",
-                      ["kind"] = "query",
-                      ["example"] = nil,
-                    },
-                    {
-                      ["name"] = "version",
-                      ["orig"] = "version",
-                      ["type"] = "`$STRING`",
-                      ["kind"] = "query",
-                      ["example"] = "1.0.42",
-                    },
-                  },
-                },
-                ["select"] = {
-                  ["$action"] = "city",
-                  ["exist"] = {
-                    "app",
-                    "value",
-                    "version",
-                  },
                 },
               },
               {
@@ -690,11 +651,6 @@ local function make_config()
                 },
                 ["select"] = {
                   ["$action"] = "widget",
-                  ["exist"] = {
-                    "app",
-                    "value",
-                    "version",
-                  },
                 },
               },
             },

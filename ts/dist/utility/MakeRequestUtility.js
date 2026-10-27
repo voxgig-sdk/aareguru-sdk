@@ -1,7 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.abortError = abortError;
 exports.makeRequest = makeRequest;
 const types_1 = require("../types");
+const MediaUtility_1 = require("./MediaUtility");
 async function makeRequest(ctx) {
     // PreRequest feature hook has already provided a result.
     if (ctx.out.request) {
@@ -22,6 +24,14 @@ async function makeRequest(ctx) {
         if (fetchdef instanceof Error) {
             throw fetchdef;
         }
+        if (true === fetchdef.signal?.aborted) {
+            throw fetchdef.signal.reason;
+        }
+        // A stream can be read once; read it now, so that a retry sends the same bytes.
+        if ((0, MediaUtility_1.isStream)(fetchdef.body)) {
+            fetchdef.body = await (0, MediaUtility_1.readStream)(fetchdef.body);
+            delete fetchdef.duplex;
+        }
         if (ctx.ctrl.explain) {
             ctx.ctrl.explain.fetchdef = fetchdef;
         }
@@ -31,17 +41,29 @@ async function makeRequest(ctx) {
             response = new types_1.Response({ err: ctx.error('request_no_response', 'response: undefined') });
         }
         else if (fetched instanceof Error) {
-            response = new types_1.Response({ err: fetched });
+            response = new types_1.Response({ err: abortError(ctx, fetched) });
         }
         else {
             response = new types_1.Response(fetched);
         }
     }
     catch (err) {
-        response.err = err;
+        response.err = abortError(ctx, err);
     }
     spec.step = 'postrequest';
     ctx.response = response;
     return response;
+}
+// A request that failed once its signal aborted failed because of it, whatever
+// the transport rejected with.
+function abortError(ctx, err) {
+    const signal = ctx.ctrl?.signal;
+    if (true !== signal?.aborted) {
+        return err;
+    }
+    const abort = ctx.error('request_aborted', 'request aborted');
+    // Not enumerable, as a native cause is: the reason is the caller's own value.
+    Object.defineProperty(abort, 'cause', { value: signal.reason, writable: true, configurable: true });
+    return abort;
 }
 //# sourceMappingURL=MakeRequestUtility.js.map

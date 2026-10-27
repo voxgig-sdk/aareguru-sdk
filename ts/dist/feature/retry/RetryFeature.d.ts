@@ -12,7 +12,7 @@ declare class RetryFeature extends BaseFeature {
     _retryable(this: any, res: any): boolean;
     _backoff(this: any, res: any, attempt: number, minDelay: number, maxDelay: number, factor: number): number;
     _retryAfter(this: any, res: any): number | null;
-    _sleep(this: any, ms: number): Promise<void>;
+    _sleep(this: any, ms: number, signal?: any): Promise<void>;
     _track(this: any, ctx: any, attempt: number, res: any, wait: number): void;
 }
 export { RetryFeature };

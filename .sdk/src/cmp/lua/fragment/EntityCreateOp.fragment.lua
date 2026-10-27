@@ -7,7 +7,7 @@ local entityCreateOp = {}
 
 ---@param reqdata EntityNameCreateData
 ---@param ctrl? table
----@return EntityName
+---@return EntyClass
 ---@return string? err
 function EntyClass:create(reqdata, ctrl)
   local utility = self._utility

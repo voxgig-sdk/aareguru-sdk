@@ -2,9 +2,11 @@
 import * as Path from 'node:path'
 
 import {
-  cmp, each, deriveEntityNames,
-  File, Content, Fragment, Slot, goModule, goVersion
+  cmp, each, deriveEntityNames, entityIdField, mcpTools, matchArg, dataArg, idLiteral,
+  File, Content, Fragment, Slot, goModule, goVersion, packageVersion, MCP_WRITE_OPS
 } from '@voxgig/sdkgen'
+
+import type { McpTool } from '@voxgig/sdkgen'
 
 import type {
   ModelEntity,
@@ -45,23 +47,97 @@ golang.org/x/tools v0.42.0/go.mod h1:Ma6lCIwGZvHK6XtgbswSoWroEkhugApmsXyrUmBhfr0
 `
 
 
+// What each tool takes and says. `field` is the argument the operation reads.
+const TOOL_SPEC: Record<string, {
+  type: string, field: string, key: string, optional: boolean, help: string,
+  summary: string, verb: string, returns: string, annotations: string,
+}> = {
+  list: {
+    type: 'ListArgs', field: 'Query', key: 'query', optional: true,
+    help: 'optional filter map; omit it for the first page',
+    summary: 'first page of records', verb: 'List records from',
+    returns: 'the first page of records', annotations: 'ReadOnlyHint: true',
+  },
+  load: {
+    type: 'LoadArgs', field: 'Query', key: 'query', optional: false,
+    help: 'match map naming the record, such as {"id":1}',
+    summary: 'one record', verb: 'Load one record from',
+    returns: 'the record', annotations: 'ReadOnlyHint: true',
+  },
+  create: {
+    type: 'CreateArgs', field: 'Data', key: 'data', optional: false,
+    help: "the new record's fields",
+    summary: 'a new record', verb: 'Create a record in',
+    returns: 'the created record', annotations: 'DestructiveHint: hint(false)',
+  },
+  update: {
+    type: 'UpdateArgs', field: 'Data', key: 'data', optional: false,
+    help: "the record's id and the fields to change",
+    summary: "change a record's fields", verb: 'Update a record in',
+    returns: 'the updated record', annotations: 'DestructiveHint: hint(true)',
+  },
+  patch: {
+    type: 'PatchArgs', field: 'Data', key: 'data', optional: false,
+    help: "the record's id and only the fields to change",
+    summary: "change some of a record's fields", verb: 'Patch a record in',
+    returns: 'the patched record', annotations: 'DestructiveHint: hint(true)',
+  },
+  remove: {
+    type: 'RemoveArgs', field: 'Query', key: 'query', optional: false,
+    help: 'match map naming the record, such as {"id":1}',
+    summary: 'delete a record', verb: 'Remove a record from',
+    returns: 'the removed record', annotations: 'DestructiveHint: hint(true)',
+  },
+}
+
+
+function entityNames(tool: McpTool): string[] {
+  return tool.entities.map((ent: any) => String(ent.name).toLowerCase())
+}
+
+
+// The arguments an agent sends to the tool, for its first entity. A list
+// sends a query only for a route parameter it must fill.
+function toolExample(tool: McpTool): string {
+  const ent: any = tool.entities[0]
+  const name = String(ent.name).toLowerCase()
+  const spec = TOOL_SPEC[tool.op]
+  const idF = entityIdField(ent)
+  const arg = 'Data' === spec.field ? dataArg('json', ent, tool.op, idF) :
+    matchArg('json', ent, tool.op, idF, idLiteral(ent, tool.op, idF))
+  return 'list' === tool.op && '{}' === arg ? `{ "entity": "${name}" }` :
+    `{ "entity": "${name}", "${spec.key}": ${arg} }`
+}
+
+
+function phrase(items: string[]): string {
+  return items.length < 2 ? items.join('') :
+    items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1]
+}
+
+
+// A Go struct tag value carries its quotes escaped.
+function tagText(text: string): string {
+  return text.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+}
+
+
 const Main = cmp(function Main(props: any) {
   const { target } = props
   const { model } = props.ctx$
 
-  const org = model.origin || 'voxgig-sdk'
   const sdkModule = goModule(model, 'go')
   const mcpModule = goModule(model, target.name)
 
   const entityMap: any = getModelPath(model, `main.${KIT}.entity`)
   deriveEntityNames(entityMap)
-  const entityNames = Object.keys(entityMap).map(n => n.toLowerCase())
-  const entityHelp = entityNames.length > 0 ? entityNames.join(' | ') : '(none)'
+  const entityCount = Object.keys(entityMap).length
 
-  // Slug-based tool name prefix. Goes into `<slug>_list` / `<slug>_load`
-  // tool names so an MCP host with multiple installed SDK servers
-  // sees unambiguous tool ids.
+  // The slug prefixes every tool name, so an MCP host with several SDK
+  // servers installed sees unambiguous tool ids.
   const slugLower = model.name.toLowerCase()
+  const tools = mcpTools(model, target.name)
+  const write = true === target.tool?.write
 
   const FRAGMENT = Path.normalize(__dirname + '/../../../src/cmp/go-mcp/fragment')
 
@@ -71,36 +147,129 @@ const Main = cmp(function Main(props: any) {
 `))
 
   const bin = `${model.name}-mcp`
-  const toolList = `${slugLower}_list`
-  const toolLoad = `${slugLower}_load`
-  const entityCount = entityNames.length
-  const entityNoun = entityCount === 1 ? 'entity' : 'entities'
-  const firstEntity = entityNames[0] || 'entity'
-
-  // Example entities chosen per-op so a doc example never shows an entity that
-  // doesn't support the op being demonstrated (both tools are always
-  // registered, but a given entity only responds to the ops it exposes).
-  const activeEntityObjs: any[] =
-    Object.values(entityMap).filter((e: any) => e && e.active !== false)
-  const entWithOp = (op: string) => {
-    const e = activeEntityObjs.find(
-      (x: any) => x.op && x.op[op] && x.op[op].active !== false)
-    return e ? String(e.name).toLowerCase() : firstEntity
-  }
-  const listEntity = entWithOp('list')
-  const loadEntity = entWithOp('load')
+  const toolNames = phrase(tools.map((tool) => '`' + tool.name + '`'))
+  const toolNoun = 1 === tools.length ? 'tool' : 'tools'
+  const first = tools[0]
 
   const projUpper = String(model.name).toUpperCase().replace(/[^A-Z0-9]/g, '_')
   const apiKeyEnv = projUpper + '_APIKEY'
   const baseEnv = projUpper + '_BASE'
 
+  const toggle = `\`main: kit: target: '${target.name}': tool: write: true\``
+  const writeOps = tools.map((tool) => tool.op).filter((op) => MCP_WRITE_OPS.includes(op))
+  const writeNames = phrase(writeOps)
+  const writeText = 0 < writeOps.length ?
+    `${writeNames.charAt(0).toUpperCase() + writeNames.slice(1)} ${1 < writeOps.length ? 'are' : 'is'} on, as the SDK's model sets
+${toggle}. Each tool carries the MCP hints an agent host reads before calling
+it, listed in the reference below.` : write ?
+      `The server only reads: the SDK's model sets ${toggle}, but no entity
+has a create, update, patch or remove a plain call runs.` :
+      `The server only reads. Create, update, patch and remove become tools too when the
+SDK's own model sets ${toggle}; they are off by default, as an agent calling
+them changes the API's data.`
+
+  const exampleCalls = tools.map((tool) =>
+    `// ${tool.name}: ${TOOL_SPEC[tool.op].summary}\n${toolExample(tool)}`).join('\n\n')
+
+  const howtoCalls = tools.map((tool) => {
+    const spec = TOOL_SPEC[tool.op]
+    return `### Call the \`${tool.name}\` tool
+
+Args: \`entity\` (required), \`${spec.key}\` (${spec.optional ? 'optional' : 'required'}: ${spec.help}).
+Returns ${spec.returns} as JSON:
+
+\`\`\`jsonc
+${toolExample(tool)}
+\`\`\`
+`
+  }).join('\n')
+
+  const toolRows = tools.map((tool) => {
+    const spec = TOOL_SPEC[tool.op]
+    const hints = 'ReadOnlyHint: true' === spec.annotations ? 'read-only' :
+      'DestructiveHint: hint(false)' === spec.annotations ? 'additive' : 'destructive'
+    return `| \`${tool.name}\` | \`entity\`, \`${spec.key}\` (${spec.optional ? 'optional' : 'required'} map) | ${spec.returns.charAt(0).toUpperCase() + spec.returns.slice(1)} as JSON | ${hints} |`
+  }).join('\n')
+
+  const entityRows = tools.map((tool) =>
+    `| \`${tool.name}\` | ${entityNames(tool).join(', ')} |`).join('\n')
+
+  // A server with no tool has nothing to call, list or look up.
+  const callText = null == first ? '' : `Tool-call arguments (what an agent sends):
+
+\`\`\`jsonc
+${exampleCalls}
+\`\`\`
+
+`
+
+  const restart = null == first ?
+    `4. **Restart Claude Code.** The server registers no tools for this SDK, so
+   none appear.` :
+    `4. **Restart Claude Code.** The ${toolNames} ${toolNoun} now appear in new
+   sessions. Ask the agent to *"${first.op} ${entityNames(first)[0]} using ${slugLower}"*
+   and it calls \`${first.name}\` with \`${toolExample(first).replace(/ /g, '')}\`.`
+
+  const toolRef = null == first ? `The server registers no tools for this SDK.
+
+` : `### Tools
+
+| Tool | Args | Returns | MCP hints |
+|------|------|---------|-----------|
+${toolRows}
+
+On error, a tool returns an MCP error result (\`isError: true\`) whose text is the
+failure message (e.g. unknown entity, or an API error).
+
+### Entities
+
+Each tool takes as its \`entity\` argument one of the entities that has its
+operation, of the ${entityCount} the SDK has:
+
+| Tool | Entities |
+|------|----------|
+${entityRows}
+
+JSON schemas are emitted by the SDK from each tool's argument struct's
+\`json\` / \`jsonschema\` tags — no schema is hand-written. Each tool's
+\`entity\` is an \`enum\` of the entities in its row, so the server refuses
+any other before it runs a call.
+
+`
+
+  const smoke = null == first ? '' : `
+### Smoke test via HTTP (raw JSON-RPC)
+
+\`\`\`sh
+./${bin} -transport http -addr :18080 &
+
+# initialize, grab the session id
+curl -sN -X POST http://localhost:18080 \\
+  -H 'Content-Type: application/json' \\
+  -H 'Accept: application/json, text/event-stream' \\
+  -D headers \\
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"smoke","version":"0"}}}'
+
+SESSION=$(awk '/Mcp-Session-Id/ {print $2}' headers | tr -d '\\r')
+
+curl -sN -X POST http://localhost:18080 \\
+  -H 'Content-Type: application/json' \\
+  -H 'Accept: application/json, text/event-stream' \\
+  -H "Mcp-Session-Id: $SESSION" \\
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"${first.name}","arguments":${JSON.stringify(JSON.parse(toolExample(first)))}}}'
+\`\`\`
+`
+
   File({ name: 'README.md' }, () => Content(`# ${model.name}-mcp
 
 [MCP](https://modelcontextprotocol.io) server exposing the ${model.Name} SDK as
-two agent tools — \`${toolList}\` and \`${toolLoad}\` — built on the
+${0 === tools.length ? 'no agent tools, as no entity has an operation a plain call runs,' :
+  tools.length + ' agent ' + toolNoun + ', ' + toolNames + ','} built on the
 [official Go MCP SDK](https://github.com/modelcontextprotocol/go-sdk) and the
 sibling Go SDK at \`../go\`. Runs over **stdio** (default, for spawnable installs)
 or **streamable HTTP** (one shared server for several agents).
+
+${writeText}
 
 ## Examples
 
@@ -119,18 +288,7 @@ claude mcp add --scope user ${slugLower} \\
 ./${bin} -transport http -addr :8080
 \`\`\`
 
-Tool-call arguments (what an agent sends):
-
-\`\`\`jsonc
-// ${toolList}: first page of records
-{ "entity": "${listEntity}" }
-{ "entity": "${listEntity}", "query": { } }
-
-// ${toolLoad}: one record by id
-{ "entity": "${loadEntity}", "query": { "id": 1 } }
-\`\`\`
-
-> The rest of this guide follows the [Diátaxis](https://diataxis.fr) framework:
+${callText}> The rest of this guide follows the [Diátaxis](https://diataxis.fr) framework:
 > a hands-on **Tutorial**, task-focused **How-to guides**, a factual
 > **Reference**, and background **Explanation**.
 
@@ -155,9 +313,7 @@ Tool-call arguments (what an agent sends):
      -- "$PWD"/dist/*/${bin} -transport stdio
    \`\`\`
 
-4. **Restart Claude Code.** The \`${toolList}\` and \`${toolLoad}\` tools now appear
-   in new sessions. Ask the agent to *"list ${listEntity} using ${slugLower}"*
-   and it calls \`${toolList}\` with \`{"entity":"${listEntity}"}\`.
+${restart}
 
 ## How-to guides
 
@@ -182,22 +338,13 @@ environment) so every tool call is authenticated.
 Streamable HTTP lets several agents share one running process; stdio (the
 default) spawns a fresh process per client.
 
-### Call the \`${toolList}\` tool
+${howtoCalls}
+### ${write ? 'Turn the write tools off' : 'Turn on the write tools'}
 
-Args: \`entity\` (required), \`query\` (optional filter map). Returns the first
-page of records as JSON:
+In the SDK's own model (\`.sdk/model/sdk.aontu\`), then regenerate:
 
-\`\`\`jsonc
-{ "entity": "${listEntity}" }
 \`\`\`
-
-### Call the \`${toolLoad}\` tool
-
-Args: \`entity\` (required), \`query\` = \`{"id":N}\` (required). Returns the single
-record as JSON:
-
-\`\`\`jsonc
-{ "entity": "${loadEntity}", "query": { "id": 1 } }
+main: kit: target: '${target.name}': tool: write: ${write ? 'false' : 'true'}
 \`\`\`
 
 ### Cross-compile release binaries
@@ -209,29 +356,7 @@ make build-all   # linux/darwin/windows x amd64/arm64, under dist/<os>-<arch>/
 
 ## Reference
 
-### Tools
-
-| Tool | Args | Returns |
-|------|------|---------|
-| \`${toolList}\` | \`entity\` (required), \`query\` (optional map) | First page of records as JSON |
-| \`${toolLoad}\` | \`entity\` (required), \`query\` = \`{id:N}\` | Single record as JSON |
-
-On error, a tool returns an MCP error result (\`isError: true\`) whose text is the
-failure message (e.g. unknown entity, or an API error).
-
-### \`Args\` schema
-
-Both tools take the same argument object:
-
-| Field | Type | Notes |
-|-------|------|-------|
-| \`entity\` | string | One of the ${entityCount} supported entities (see below). |
-| \`query\` | object | Optional match map. \`{"id":N}\` for load; omit or \`{}\` for list. |
-
-JSON schemas are emitted by the SDK from the \`Args\` struct's \`json\` /
-\`jsonschema\` tags — no schema is hand-written.
-
-### Transports & flags
+${toolRef}### Transports & flags
 
 | Flag | Default | Purpose |
 |------|---------|---------|
@@ -244,42 +369,16 @@ JSON schemas are emitted by the SDK from the \`Args\` struct's \`json\` /
 |----------|---------|
 | \`${apiKeyEnv}\` | API key sent with every request. |
 | \`${baseEnv}\` | Optional override of the API base URL. |
-
-### Entities
-
-The ${entityCount} ${entityNoun} valid as the \`entity\` argument:
-
-${entityHelp}
-
-### Smoke test via HTTP (raw JSON-RPC)
-
-\`\`\`sh
-./${bin} -transport http -addr :18080 &
-
-# initialize, grab the session id
-curl -sN -X POST http://localhost:18080 \\
-  -H 'Content-Type: application/json' \\
-  -H 'Accept: application/json, text/event-stream' \\
-  -D headers \\
-  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"smoke","version":"0"}}}'
-
-SESSION=$(awk '/Mcp-Session-Id/ {print $2}' headers | tr -d '\\r')
-
-curl -sN -X POST http://localhost:18080 \\
-  -H 'Content-Type: application/json' \\
-  -H 'Accept: application/json, text/event-stream' \\
-  -H "Mcp-Session-Id: $SESSION" \\
-  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"${toolLoad}","arguments":{"entity":"${loadEntity}","query":{"id":1}}}}'
-\`\`\`
-
+${smoke}
 ## Explanation
 
 ### How tools map to the SDK
 
 \`main.go\` builds the SDK client (configured from the environment) and registers
-two tools. Each dispatches on the \`entity\` argument to the matching entity in
-the sibling Go SDK at \`../go\`, calls \`List\` or \`Load\`, unwraps the \`Entity\`
-wrappers to plain data, and returns it as pretty-printed JSON.
+one tool per operation the SDK's entities have. Each dispatches on the
+\`entity\` argument to the matching entity in the sibling Go SDK at \`../go\`,
+calls its operation, unwraps the \`Entity\` wrappers to plain data, and returns
+it as pretty-printed JSON.
 
 ### Why two transports
 
@@ -289,9 +388,10 @@ that many agents can share — handy for a long-lived deployment.
 
 ### Schema generation
 
-The input schema is derived from the \`Args\` Go struct's \`json\` / \`jsonschema\`
-tags at registration time, so the advertised tool schema can never drift from
-the code that consumes it.
+The input schema is derived from each tool's argument struct's \`json\` /
+\`jsonschema\` tags at registration time, so the advertised tool schema can
+never drift from the code that consumes it. The \`entity\` enum comes from the
+same list the tool is registered for.
 
 ## Generated by
 
@@ -307,8 +407,9 @@ go ${goVersion(model, target.name, '1.25.0')}
 require ${sdkModule} v0.0.0
 require github.com/modelcontextprotocol/go-sdk ${MCP_GO_SDK_VERSION}
 
+require github.com/google/jsonschema-go v0.4.3
+
 require (
-	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/segmentio/asm v1.1.3 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
@@ -361,6 +462,8 @@ clean:
       },
       () => {
         Slot({ name: 'serverName' }, () => Content(slugLower))
+        // The version the deploy tags this port with.
+        Slot({ name: 'serverVersion' }, () => Content(packageVersion(model, target.name)))
       },
     )
   })
@@ -375,17 +478,33 @@ clean:
         },
       },
       () => {
-        Slot({ name: 'entityHelp' }, () => Content(entityHelp))
-        Slot({ name: 'toolPrefixList' }, () => Content(`${slugLower}_list`))
-        Slot({ name: 'toolPrefixLoad' }, () => Content(`${slugLower}_load`))
+        Slot({ name: 'toolArgs' }, () => Content(tools.map((tool) => {
+          const spec = TOOL_SPEC[tool.op]
+          const json = spec.key + (spec.optional ? ',omitempty' : '')
+          return `// ${spec.type} is what an agent sends to ${tool.name}.
+type ${spec.type} struct {
+	Entity string         \`json:"entity" jsonschema:"${tagText('one of: ' + entityNames(tool).join(' | '))}"\`
+	${spec.field.padEnd(6)} map[string]any \`json:"${json}" jsonschema:"${tagText(spec.help)}"\`
+}`
+        }).join('\n\n')))
+        Slot({ name: 'toolRegistrations' }, () => Content(tools.map((tool) => {
+          const spec = TOOL_SPEC[tool.op]
+          return `	mcp.AddTool(server, &mcp.Tool{
+		Name:        ${JSON.stringify(tool.name)},
+		Description: ${JSON.stringify(spec.verb + ' ' + model.Name + '. Args: entity, ' + spec.key + ' (' + spec.help + '). Returns ' + spec.returns + ' as JSON.')},
+		Annotations: &mcp.ToolAnnotations{${spec.annotations}},
+		InputSchema: entitySchema[${spec.type}](${entityNames(tool).map((name) => JSON.stringify(name)).join(', ')}),
+	}, func(ctx context.Context, req *mcp.CallToolRequest, args ${spec.type}) (*mcp.CallToolResult, any, error) {
+		return runOp(ctx, client, ${JSON.stringify(tool.op)}, args.Entity, args.${spec.field})
+	})`
+        }).join('\n')))
         Slot({ name: 'entityCases' }, () => {
+          const cases: string[] = []
           each(entityMap, (entity: ModelEntity) => {
-            const lower = entity.name.toLowerCase()
-            const pascal = (entity as any).Name
-            Content(`\tcase "${lower}":
-\t\treturn client.${pascal}(nil), nil
-`)
+            cases.push(`\tcase "${entity.name.toLowerCase()}":
+\t\treturn client.${(entity as any).Name}(nil), nil`)
           })
+          Content(cases.join('\n'))
         })
       },
     )

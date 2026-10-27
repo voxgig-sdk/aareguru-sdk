@@ -93,6 +93,7 @@ class AareguruConfig
           ],
           'optspec' => [
             'clearTimer' => '`$FUNCTION`',
+            'now' => '`$FUNCTION`',
             'setTimer' => '`$FUNCTION`',
           ],
           'strict' => false,
@@ -154,12 +155,7 @@ class AareguruConfig
                       ],
                     ],
                   ],
-                  'select' => [
-                    'exist' => [
-                      'app',
-                      'version',
-                    ],
-                  ],
+                  'select' => [],
                 ],
                 [
                   'kind' => 'http',
@@ -196,12 +192,7 @@ class AareguruConfig
                       ],
                     ],
                   ],
-                  'select' => [
-                    'exist' => [
-                      'app',
-                      'version',
-                    ],
-                  ],
+                  'select' => [],
                 ],
                 [
                   'kind' => 'http',
@@ -238,12 +229,7 @@ class AareguruConfig
                       ],
                     ],
                   ],
-                  'select' => [
-                    'exist' => [
-                      'app',
-                      'version',
-                    ],
-                  ],
+                  'select' => [],
                 ],
               ],
             ],
@@ -312,10 +298,7 @@ class AareguruConfig
                   ],
                   'select' => [
                     'exist' => [
-                      'app',
-                      'line',
                       'service',
-                      'version',
                     ],
                   ],
                 ],
@@ -364,9 +347,7 @@ class AareguruConfig
                   ],
                   'select' => [
                     'exist' => [
-                      'app',
                       'service',
-                      'version',
                     ],
                   ],
                 ],
@@ -478,13 +459,60 @@ class AareguruConfig
                   'select' => [
                     '$action' => 'history',
                     'exist' => [
-                      'app',
                       'city',
                       'end',
                       'start',
-                      'value',
-                      'version',
                     ],
+                  ],
+                ],
+                [
+                  'kind' => 'http',
+                  'method' => 'GET',
+                  'orig' => '/v2018/cities',
+                  'segments' => [
+                    [
+                      'lit' => 'v2018',
+                    ],
+                    [
+                      'lit' => 'cities',
+                    ],
+                  ],
+                  'parts' => [
+                    'v2018',
+                    'cities',
+                  ],
+                  'rename' => [],
+                  'transform' => [
+                    'req' => '`reqdata`',
+                    'res' => '`body`',
+                  ],
+                  'args' => [
+                    'query' => [
+                      [
+                        'name' => 'app',
+                        'orig' => 'app',
+                        'type' => '`$STRING`',
+                        'kind' => 'query',
+                        'example' => 'my.app.ch',
+                      ],
+                      [
+                        'name' => 'value',
+                        'orig' => 'values',
+                        'type' => '`$STRING`',
+                        'kind' => 'query',
+                        'example' => null,
+                      ],
+                      [
+                        'name' => 'version',
+                        'orig' => 'version',
+                        'type' => '`$STRING`',
+                        'kind' => 'query',
+                        'example' => '1.0.42',
+                      ],
+                    ],
+                  ],
+                  'select' => [
+                    '$action' => 'city',
                   ],
                 ],
                 [
@@ -542,12 +570,6 @@ class AareguruConfig
                   ],
                   'select' => [
                     '$action' => 'current',
-                    'exist' => [
-                      'app',
-                      'city',
-                      'value',
-                      'version',
-                    ],
                   ],
                 ],
                 [
@@ -605,67 +627,6 @@ class AareguruConfig
                   ],
                   'select' => [
                     '$action' => 'today',
-                    'exist' => [
-                      'app',
-                      'city',
-                      'value',
-                      'version',
-                    ],
-                  ],
-                ],
-                [
-                  'kind' => 'http',
-                  'method' => 'GET',
-                  'orig' => '/v2018/cities',
-                  'segments' => [
-                    [
-                      'lit' => 'v2018',
-                    ],
-                    [
-                      'lit' => 'cities',
-                    ],
-                  ],
-                  'parts' => [
-                    'v2018',
-                    'cities',
-                  ],
-                  'rename' => [],
-                  'transform' => [
-                    'req' => '`reqdata`',
-                    'res' => '`body`',
-                  ],
-                  'args' => [
-                    'query' => [
-                      [
-                        'name' => 'app',
-                        'orig' => 'app',
-                        'type' => '`$STRING`',
-                        'kind' => 'query',
-                        'example' => 'my.app.ch',
-                      ],
-                      [
-                        'name' => 'value',
-                        'orig' => 'values',
-                        'type' => '`$STRING`',
-                        'kind' => 'query',
-                        'example' => null,
-                      ],
-                      [
-                        'name' => 'version',
-                        'orig' => 'version',
-                        'type' => '`$STRING`',
-                        'kind' => 'query',
-                        'example' => '1.0.42',
-                      ],
-                    ],
-                  ],
-                  'select' => [
-                    '$action' => 'city',
-                    'exist' => [
-                      'app',
-                      'value',
-                      'version',
-                    ],
                   ],
                 ],
                 [
@@ -716,11 +677,6 @@ class AareguruConfig
                   ],
                   'select' => [
                     '$action' => 'widget',
-                    'exist' => [
-                      'app',
-                      'value',
-                      'version',
-                    ],
                   ],
                 ],
               ],

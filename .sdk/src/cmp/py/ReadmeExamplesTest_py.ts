@@ -224,6 +224,8 @@ def test_readme_python_blocks_typecheck():
         env["PYTHONDONTWRITEBYTECODE"] = "1"
         # Resolve "from _SDK_MODULE import _SDK_CLASS" against the package root.
         env["MYPYPATH"] = _PY_ROOT + os.pathsep + env.get("MYPYPATH", "")
+        # The child writes UTF-8 and the capture reads it, whatever the locale.
+        env["PYTHONIOENCODING"] = "utf-8"
 
         proc = subprocess.run(
             [
@@ -238,6 +240,7 @@ def test_readme_python_blocks_typecheck():
             env=env,
             capture_output=True,
             text=True,
+            encoding="utf-8",
         )
 
         base = os.path.basename(snippet_path)
@@ -263,10 +266,9 @@ def test_readme_python_blocks_typecheck():
 # ----------------------------------------------------------------------------
 
 def _uses_var(block, var):
-    # True if the block reads an attribute off the whole-word variable "var"
-    # (i.e. contains "var." with a non-identifier char, or nothing, before it).
-    # This distinguishes a client-driving "sdk." from the "_sdk." tail of an
-    # import module name.
+    # True if the block reads an attribute off the variable "var", not off a
+    # name that ends in it: "_sdk." in a module name, "-client." in a package
+    # name or a host, ".client." on another object.
     needle = var + "."
     start = 0
     while True:
@@ -276,7 +278,7 @@ def _uses_var(block, var):
         ok_before = True
         if j > 0:
             ch = block[j - 1]
-            if ch.isalnum() or ch == "_":
+            if ch.isalnum() or ch in "_-./\\"'":
                 ok_before = False
         if ok_before:
             return True
@@ -483,6 +485,8 @@ def _run_batch(items, label):
     env = dict(os.environ)
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     env["PYTHONPATH"] = _PY_ROOT + os.pathsep + env.get("PYTHONPATH", "")
+    # The child writes UTF-8 and the capture reads it, whatever the locale.
+    env["PYTHONIOENCODING"] = "utf-8"
 
     # A FILE, not "python -c". The driver embeds every runnable snippet's
     # source, and a large SDK documents hundreds of them: passing that on the
@@ -495,7 +499,7 @@ def _run_batch(items, label):
             fh.write(driver)
         proc = subprocess.run(
             [sys.executable, driver_path],
-            cwd=_PY_ROOT, env=env, capture_output=True, text=True,
+            cwd=_PY_ROOT, env=env, capture_output=True, text=True, encoding="utf-8",
         )
         return (proc.stdout or "") + (proc.stderr or "")
 
@@ -545,6 +549,7 @@ def _run_source(source, label, index):
     env = dict(os.environ)
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     env["PYTHONPATH"] = _PY_ROOT + os.pathsep + env.get("PYTHONPATH", "")
+    env["PYTHONIOENCODING"] = "utf-8"
 
     proc = subprocess.run(
         [sys.executable, "-c", source],
@@ -552,6 +557,7 @@ def _run_source(source, label, index):
         env=env,
         capture_output=True,
         text=True,
+        encoding="utf-8",
     )
     if proc.returncode == 0:
         return None

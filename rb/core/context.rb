@@ -10,15 +10,22 @@ require_relative 'error'
 require_relative 'helpers'
 
 class AareguruContext
+  # Every context of a client shares its root's operation cache. CRuby's GVL
+  # makes each Hash operation atomic; a Ruby without one needs this lock.
+  OPMAP_LOCK = Mutex.new
+
   attr_accessor :id, :out, :client, :utility, :ctrl, :meta, :config,
                 :entopts, :options, :entity, :shared, :opmap,
                 :data, :reqdata, :match, :reqmatch, :point,
-                :spec, :result, :response, :op
+                :spec, :result, :response, :op, :unexpected_fired
 
   def initialize(ctxmap = {}, basectx = nil)
     ctxmap ||= {}
     @id = "C#{rand(10000000..99999999)}"
     @out = {}
+    # Set by make_error as it fires PreUnexpected, which fires once per
+    # operation.
+    @unexpected_fired = false
 
     @client = AareguruHelpers.get_ctx_prop(ctxmap, "client") || basectx&.client
     @utility = AareguruHelpers.get_ctx_prop(ctxmap, "utility") || basectx&.utility
@@ -83,12 +90,13 @@ class AareguruContext
     # served to every subsequent entity's call.
     entname = @entity&.respond_to?(:get_name) ? @entity.get_name : "_"
     cache_key = "#{entname}:#{opname}"
-    return @opmap[cache_key] if @opmap[cache_key]
+    cached = OPMAP_LOCK.synchronize { @opmap[cache_key] }
+    return cached if cached
     return AareguruOperation.new({}) if opname.empty?
 
     opcfg = VoxgigStruct.getpath(@config, "entity.#{entname}.op.#{opname}")
 
-    input = (opname == "update" || opname == "create") ? "data" : "match"
+    input = (opname == "update" || opname == "create" || opname == "patch") ? "data" : "match"
 
     points = []
     if opcfg.is_a?(Hash)
@@ -102,12 +110,12 @@ class AareguruContext
       "input" => input,
       "points" => points,
     })
-    @opmap[cache_key] = op
-    op
+    # Racing requests get the Operation stored first.
+    OPMAP_LOCK.synchronize { @opmap[cache_key] ||= op }
   end
 
   def make_error(code, msg)
-    AareguruError.new(code, msg, self)
+    AareguruError.new(msg, code: code, ctx: self)
   end
 
   # The serialised context leaves the pipeline (a logger, an error dump), so

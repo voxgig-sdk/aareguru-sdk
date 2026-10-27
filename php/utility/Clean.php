@@ -99,26 +99,31 @@ class AareguruClean
 
     // A feature's name is not a field name: only the sensitive names inside
     // its settings count, so `secrets` does not make every setting a secret.
-    // Entity blocks (per-entity settings, seeded records) hold no credential.
+    // Entity blocks (per-entity settings, seeded records) hold no credential,
+    // and nor do rbac's rules, keyed by entity and operation names.
     public static function add_options(?AareguruContext $ctx, array $opts): void
     {
         $feature = $opts['feature'] ?? null;
         unset($opts['feature'], $opts['entity']);
         if (array_key_exists('test', $opts)) {
-            $opts['test'] = self::no_entity($opts['test']);
+            $opts['test'] = self::plain_settings($opts['test'], null);
         }
         self::add_sensitive($ctx, $opts);
         $feature = is_object($feature) ? get_object_vars($feature) : $feature;
-        foreach (is_array($feature) ? $feature : [$feature] as $fopts) {
-            self::add_sensitive($ctx, self::no_entity($fopts));
+        foreach (is_array($feature) ? $feature : [$feature] as $fname => $fopts) {
+            self::add_sensitive($ctx, self::plain_settings($fopts, is_string($fname) ? $fname : null));
         }
     }
 
-    private static function no_entity(mixed $block): mixed
+    private static function plain_settings(mixed $block, ?string $name): mixed
     {
         $block = is_object($block) ? get_object_vars($block) : $block;
         if (is_array($block)) {
+            $name ??= is_string($block['name'] ?? null) ? $block['name'] : null;
             unset($block['entity']);
+            if ('rbac' === $name) {
+                unset($block['rules']);
+            }
         }
         return $block;
     }

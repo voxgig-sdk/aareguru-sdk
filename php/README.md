@@ -12,7 +12,7 @@ The SDK exposes the API as capitalised, semantic **Entities** — for example `$
 
 ## Install
 This package is not yet published to Packagist. Install it from the
-GitHub release tag (`php/vX.Y.Z`, see [Releases](https://github.com/voxgig-sdk/aareguru-sdk/releases)), or
+GitHub release tag (`php/vX.Y.Z`, see [Tags](https://github.com/voxgig-sdk/aareguru-sdk/tags)), or
 from a clone as a Composer path repository:
 
 ```bash
@@ -56,7 +56,7 @@ Entity operations throw a `\Throwable` on failure, so wrap them in
 
 ```php
 try {
-    $stuff = $client->Stuff()->load(["service" => "example"]);
+    $legacy = $client->Legacy()->load();
 } catch (\Throwable $err) {
     echo "Error: " . $err->getMessage();
 }
@@ -130,8 +130,8 @@ $client = AareguruSDK::test();
 
 // Entity ops return the ENTITY (throws on error);
 // call data_get() for the mock record.
-$stuff = $client->Stuff()->load(["service" => "example"]);
-print_r($stuff->data_get());
+$legacy = $client->Legacy()->load();
+print_r($legacy->data_get());
 ```
 
 ### Use a custom fetch function
@@ -220,7 +220,7 @@ All entities share the same interface.
 
 | Method | Signature | Description |
 | --- | --- | --- |
-| `load` | `($reqmatch, $ctrl): array` | Load a single entity by match criteria. |
+| `load` | `($reqmatch, $ctrl): mixed` | Load a single entity by match criteria, and return it. |
 | `data_get` | `(): array` | Get entity data. |
 | `data_set` | `($data): void` | Set entity data. |
 | `match_get` | `(): array` | Get entity match criteria. |
@@ -230,9 +230,9 @@ All entities share the same interface.
 
 ### Result shape
 
-Entity operations return the ENTITY (call data_get() for the record) (an `array` for single-entity
-ops, a `list` for `list`) and throw on error. Wrap calls in
-`try`/`catch` to handle failures.
+Entity operations return the entity, and `list` an `array` of entities, one
+per record; an entity's `data_get()` reads its record (an `array`). They
+throw on error, so wrap calls in `try`/`catch` to handle failures.
 
 The `direct()` escape hatch never throws — it returns a result `array`
 you branch on via `$result["ok"]`:
@@ -325,13 +325,6 @@ Create an instance: `$v2018 = $client->V2018();`
 | Method | Description |
 | --- | --- |
 | `load(match)` | Load a single entity by match criteria. |
-
-#### Example: Load
-
-```php
-// load() returns the ENTITY — call data_get() for the V2018 record (throws on error).
-$v2018 = $client->V2018()->load(["city" => "city", "end" => "end", "start" => "start"]);
-```
 
 ## Features
 
@@ -495,11 +488,11 @@ Entity instances are stateful. After a successful `load`, the entity
 stores the returned data and match criteria internally.
 
 ```php
-$stuff = $client->Stuff();
-$stuff->load(["service" => "example"]);
+$legacy = $client->Legacy();
+$legacy->load();
 
-// $stuff->data_get() now returns the stuff data from the last load
-// $stuff->match_get() returns the last match criteria
+// $legacy->data_get() now returns the legacy data from the last load
+// $legacy->match_get() returns the last match criteria
 ```
 
 Call `make()` to create a fresh instance with the same configuration

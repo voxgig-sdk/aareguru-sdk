@@ -6,6 +6,15 @@ import {
   walk,
 } from '@voxgig/struct'
 
+import { listMatchArg } from '@voxgig/sdkgen'
+
+
+// A list's required route and query parameters, as its call's arguments.
+function rbListArgs(entity: any): string {
+  const arg = listMatchArg('rb', entity)
+  return '' === arg ? '' : `(${arg})`
+}
+
 
 function projectPath(suffix?: string): string {
   return Path.normalize(Path.join(__dirname, '../../..', suffix ?? ''))
@@ -112,4 +121,5 @@ export {
   formatRubyHash,
   formatRubyValue,
   projectPath,
+  rbListArgs,
 }

@@ -2,13 +2,21 @@
 // Execute every independent live step before deciding the suite's result.
 // Values never appear in reports: they can contain credentials or API data.
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LiveBlocked = void 0;
+exports.LiveEmpty = exports.LiveBlocked = void 0;
 exports.runLiveSteps = runLiveSteps;
 exports.assertLiveReport = assertLiveReport;
+exports.settleLiveReport = settleLiveReport;
+exports.liveSummary = liveSummary;
 exports.createLiveTransport = createLiveTransport;
 class LiveBlocked extends Error {
 }
 exports.LiveBlocked = LiveBlocked;
+// The SDK fetcher's code for a write a GET-only run refused unsent.
+const GETONLY_CODE = 'fetch_getonly_block';
+// The account answered, but holds no record the step could act on.
+class LiveEmpty extends Error {
+}
+exports.LiveEmpty = LiveEmpty;
 async function runLiveSteps(steps, options = {}) {
     const values = new Map();
     const results = [];
@@ -67,11 +75,12 @@ async function runLiveSteps(steps, options = {}) {
                     record({ id: step.id, state: 'passed', attempted, requests });
                 }
                 catch (error) {
-                    // Ordinary SDK errors can contain request headers, bodies, or an
-                    // issued token. Report the step's failure without serializing it.
-                    record({ id: step.id, state: error instanceof LiveBlocked ? 'blocked' : 'failed',
-                        attempted, requests,
-                        reason: error instanceof LiveBlocked ? error.message : 'Request or assertion failed' });
+                    const refused = GETONLY_CODE === error?.code;
+                    const state = error instanceof LiveEmpty ? 'empty'
+                        : error instanceof LiveBlocked || refused ? 'blocked' : 'failed';
+                    record({ id: step.id, state, attempted, requests,
+                        reason: refused ? 'Refused by the GET-only guard' :
+                            'failed' === state ? failureReason(error) : error.message });
                 }
                 if (attempted && (options.delayMs || 0) > 0) {
                     await new Promise(resolve => setTimeout(resolve, options.delayMs));
@@ -91,14 +100,52 @@ async function runLiveSteps(steps, options = {}) {
         passed: results.filter(result => result.state === 'passed').length,
         failed: results.filter(result => result.state === 'failed').length,
         blocked: results.filter(result => result.state === 'blocked').length,
+        empty: results.filter(result => result.state === 'empty').length,
         excluded: results.filter(result => result.state === 'excluded').length,
         results,
     };
 }
+// An SDK error's code and an assertion's own fixed message say what went
+// wrong without repeating a value; a message built from values could
+// carry a header, a body or a token, so it is not reported.
+function failureReason(error) {
+    if (null != error?.sdk && 'string' === typeof error.code) {
+        return 'Request failed: ' + error.code;
+    }
+    // Node appends the compared values to a custom assertion message.
+    if ('ERR_ASSERTION' === error?.code && false === error.generatedMessage) {
+        return 'Assertion failed: ' + String(error.message).split('\n')[0];
+    }
+    return 'Request or assertion failed';
+}
+function liveIncomplete(report) {
+    return 0 < report.failed || 0 < report.blocked || 0 === report.attempted;
+}
 function assertLiveReport(report) {
-    if (report.failed || report.blocked || !report.attempted) {
+    if (liveIncomplete(report)) {
         throw new Error('Live coverage incomplete: ' + JSON.stringify(report));
     }
+}
+// An account with no record for a step to read skips in either mode, as
+// does a run that leaves out every step.
+function settleLiveReport(report, settle = {}) {
+    if (0 < report.planned && report.excluded === report.planned && null != settle.t) {
+        return settle.t.skip('Live coverage incomplete: ' + liveSummary(report));
+    }
+    if (liveIncomplete(report)) {
+        if (false !== settle.strict || null == settle.t)
+            return assertLiveReport(report);
+        return settle.t.skip('Live coverage incomplete (main.kit.test.live.strict is false): ' +
+            liveSummary(report));
+    }
+    if (0 < report.empty)
+        settle.t?.skip('Live coverage incomplete: ' + liveSummary(report));
+}
+function liveSummary(report) {
+    const open = report.results.filter(result => 'passed' !== result.state);
+    return 0 === open.length ? 'no request attempted' :
+        open.map(result => result.id + ' ' + result.state +
+            (result.reason ? ' (' + result.reason + ')' : '')).join('; ');
 }
 function createLiveTransport(timeoutMs = 30000) {
     let context;
@@ -109,8 +156,15 @@ function createLiveTransport(timeoutMs = 30000) {
         enter(next) { context = next; },
         fetch: async (input, init) => {
             const url = new URL(String(input));
+            const method = String(init?.method || 'GET').toUpperCase();
+            if ('TRUE' === process.env.VOXGIG_GETONLY_GUARD && 'GET' !== method) {
+                throw Object.assign(new Error('[GET-ONLY GUARD] blocked ' + method + ' ' + url.pathname), { code: GETONLY_CODE });
+            }
+            // A credential can travel as the agent (auth.name), so only whether
+            // the request carried one is recorded, never its value.
             const request = {
                 method: init?.method || 'GET', path: url.origin + url.pathname,
+                agent: null == new Headers(init?.headers).get('user-agent') ? 'transport default' : 'configured',
             };
             requests.push(request);
             context?.requests.push(request);
@@ -121,6 +175,9 @@ function createLiveTransport(timeoutMs = 30000) {
             const signal = init?.signal ? AbortSignal.any([init.signal, timeout]) : timeout;
             const response = await nativeFetch(input, { ...init, signal });
             request.status = response.status;
+            const type = response.headers.get('content-type');
+            if (type)
+                request.type = type.split(';')[0].trim();
             if (!context)
                 console.log('LIVE RESPONSE ' + JSON.stringify(request));
             return response;

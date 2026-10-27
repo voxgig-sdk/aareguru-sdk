@@ -1,11 +1,12 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, phpEntityAccessor } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, phpEntityAccessor, seededList, litPair, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
 
 import { KIT, getModelPath, nom } from '@voxgig/apidef'
 
 
 function phpLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'null'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k || 'OBJECT' === k) return '[]'
@@ -27,29 +28,33 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { entity: exampleEntity, primaryOp } = pickExampleEntity(
     Object.keys(seedable).length ? seedable : entity)
   const eName = exampleEntity ? nom(exampleEntity, 'Name') : 'Entity'
-  // Model-driven id key: null when the entity has no id-like field.
+  // Model-driven id key (null when the entity has none); the seed is keyed by model name.
   const idF = exampleEntity ? entityIdField(exampleEntity) : null
   const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
+  const listed = exampleEntity && 'list' === primaryOp
+    ? seededList('php', exampleEntity, idF, 'test01') : null
   const seedSentence = idF
     ? '. Seed fixture\ndata via the `entity` option so offline calls resolve without a live server'
     : ''
+  const record = idF ? (listed ? listed.record : [litPair('php', idF, '"test01"')]).join(', ') : ''
   const testCtor = idF
-    ? `${model.const.Name}SDK::test([\n    "entity" => ["${eName.toLowerCase()}" => ["test01" => ["${idF}" => "test01"]]],\n])`
+    ? `${model.const.Name}SDK::test([\n    "entity" => ["${exampleEntity.name}" => ["test01" => [${record}]]],\n])`
     : `${model.const.Name}SDK::test()`
   let testCallArg = ''
-  if (exampleEntity && isMatchOp) {
-    const items = opRequestShape(exampleEntity, primaryOp).items
-      .filter((it: any) => !it.optional || it.name === idF)
+  if (listed) {
+    testCallArg = 0 < listed.call.length ? `[${listed.call.join(', ')}]` : ''
+  } else if (exampleEntity && isMatchOp) {
+    const items = matchExampleItems(exampleEntity, primaryOp, idF)
       .sort((a: any, b: any) => (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
     testCallArg = 0 < items.length
-      ? `[${items.map((it: any) => `"${it.name}" => ${it.name === idF ? '"test01"' : phpLit(it.type)}`).join(', ')}]`
+      ? `[${items.map((it: any) => litPair('php', it.name, it.name === idF ? '"test01"' : phpLit(it.type))).join(', ')}]`
       : ''
-  } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp)) {
-    const items = opRequestShape(exampleEntity, primaryOp).items
+  } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp)) {
+    const items = requestExampleItems(exampleEntity, primaryOp)
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)
     const chosen = required.length ? required : items.slice(0, 3)
-    testCallArg = `[${chosen.map((it: any) => `"${it.name}" => ${phpLit(it.type)}`).join(', ')}]`
+    testCallArg = `[${chosen.map((it: any) => litPair('php', it.name, phpLit(it.type))).join(', ')}]`
   }
 
   // The op-driven test-mode line, shown only when the SDK has an entity op.

@@ -11,6 +11,8 @@ class Context {
     out = {};
     // Store for the current operation.
     current = new WeakMap();
+    // Set by makeError as it fires PreUnexpected, which fires once per operation.
+    unexpectedFired = false;
     ctrl = {};
     meta = {};
     client;
@@ -65,7 +67,7 @@ class Context {
         if (null == op && null != opname) {
             const opcfg = (0, StructUtility_1.getpath)(this.config, ['entity', entname, 'op', opname]);
             let input = 'match';
-            if ('update' === opname || 'create' === opname) {
+            if ('update' === opname || 'create' === opname || 'patch' === opname) {
                 input = 'data';
             }
             op = new Operation_1.Operation({

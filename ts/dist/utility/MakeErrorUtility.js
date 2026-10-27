@@ -21,7 +21,7 @@ function makeError(ctx, err) {
         err = Object.assign(new Error(text), 'object' === typeof copy ? copy : {});
     }
     const errmsg = err.message || 'unknown error';
-    err.message = 'AareguruSDK: ' + op.name + ': ' + errmsg;
+    (0, CleanUtility_1.setMessage)(err, 'AareguruSDK: ' + op.name + ': ' + errmsg);
     // Reachable for a debugger, invisible to a serialiser.
     if (null != err.ctx) {
         Object.defineProperty(err, 'ctx', { value: err.ctx, enumerable: false, writable: true });
@@ -46,6 +46,7 @@ function makeError(ctx, err) {
     // Closes error paths that never reach PreDone (e.g. an rbac short-circuit).
     if (null != ctx.client && null != ctx.utility &&
         'function' === typeof ctx.utility.featureHook) {
+        ctx.unexpectedFired = true;
         ctx.utility.featureHook(ctx, 'PreUnexpected');
     }
     if (false === ctx.ctrl.throw) {

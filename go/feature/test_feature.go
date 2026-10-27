@@ -15,6 +15,23 @@ import (
 // payload in <key> so the transform can unwrap it again.
 var envelopeResRe = regexp.MustCompile("^`body\\.(.+)`$")
 
+// The key a list's response transform
+// ["`$EACH`", "body", {"`$MERGE`": "`.<key>`"}] reads each item's record under.
+var itemEnvelopeRe = regexp.MustCompile("^`\\.([^.`$]+)`$")
+
+func itemEnvelopeKey(restf any) string {
+	list, ok := restf.([]any)
+	if !ok || len(list) != 3 || list[0] != "`$EACH`" || list[1] != "body" {
+		return ""
+	}
+	child, _ := list[2].(map[string]any)
+	merge, _ := child["`$MERGE`"].(string)
+	if m := itemEnvelopeRe.FindStringSubmatch(merge); m != nil {
+		return m[1]
+	}
+	return ""
+}
+
 type TestFeature struct {
 	BaseFeature
 	client   *core.AareguruSDK
@@ -62,6 +79,15 @@ func (f *TestFeature) Init(ctx *core.Context, options map[string]any) {
 			tm, ok := ctx.Point["transform"].(map[string]any)
 			if !ok {
 				return data
+			}
+			if key := itemEnvelopeKey(tm["res"]); key != "" {
+				if items, isList := data.([]any); isList {
+					out := make([]any, len(items))
+					for i, item := range items {
+						out[i] = map[string]any{key: item}
+					}
+					return out
+				}
 			}
 			restf, ok := tm["res"].(string)
 			if !ok {
@@ -142,7 +168,7 @@ func (f *TestFeature) Init(ctx *core.Context, options map[string]any) {
 			}
 			out := vs.Clone(found)
 			return respond(200, out, nil), nil
-		} else if op.Name == "update" {
+		} else if op.Name == "update" || op.Name == "patch" {
 			updateMatch := map[string]any{}
 			if ctx.Reqdata != nil {
 				if v, has := ctx.Reqdata["id"]; has {
@@ -169,7 +195,7 @@ func (f *TestFeature) Init(ctx *core.Context, options map[string]any) {
 				return respond(404, nil, map[string]any{"statusText": "Not found"}), nil
 			}
 			if _, ok := ent.(map[string]any); ok && ctx.Reqdata != nil {
-				vs.Merge([]any{ent, ctx.Reqdata})
+				vs.Merge([]any{ent, testRecord(ctx.Reqdata)})
 			}
 			vs.DelProp(ent, "$KEY")
 			out := vs.Clone(ent)
@@ -194,7 +220,7 @@ func (f *TestFeature) Init(ctx *core.Context, options map[string]any) {
 					rand.Intn(0x10000), rand.Intn(0x10000))
 			}
 
-			ent := vs.Clone(ctx.Reqdata)
+			ent := vs.Clone(testRecord(ctx.Reqdata))
 			if entm, ok := ent.(map[string]any); ok {
 				entm["id"] = id
 				if idStr, ok := id.(string); ok {
@@ -285,6 +311,21 @@ func (f *TestFeature) makeNetsim(net map[string]any, inner core.FetcherFunc) cor
 		sleep(pickLatency())
 		return inner(ctx, url, fetchdef)
 	}
+}
+
+// The record the mock keeps: the request data without `$body`, which only the
+// wire carries.
+func testRecord(reqdata map[string]any) map[string]any {
+	if reqdata == nil {
+		return nil
+	}
+	out := make(map[string]any, len(reqdata))
+	for k, v := range reqdata {
+		if k != "$body" {
+			out[k] = v
+		}
+	}
+	return out
 }
 
 func (f *TestFeature) buildArgs(ctx *core.Context, op *core.Operation, args map[string]any) any {

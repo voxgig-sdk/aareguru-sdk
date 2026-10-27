@@ -71,6 +71,7 @@ def make_error_util(ctx, err):
     # error; features guard against double-recording when PreDone already fired.
     if getattr(ctx, "utility", None) is not None and \
             callable(getattr(ctx.utility, "feature_hook", None)):
+        ctx.unexpected_fired = True
         ctx.utility.feature_hook(ctx, "PreUnexpected")
 
     if ctx.ctrl.throw_err is False:

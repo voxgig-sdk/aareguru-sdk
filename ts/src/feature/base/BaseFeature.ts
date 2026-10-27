@@ -40,6 +40,34 @@ class BaseFeature implements Feature {
 
   PreUnexpected(this: any, _ctx: any) { }
 
+
+  // Settles as `wait` does unless the signal aborts first, which runs `stop`
+  // and rejects with the signal's reason.
+  _untilAbort(this: any, wait: Promise<any>, signal?: any, stop?: () => void): Promise<any> {
+    if (null == signal) {
+      return wait
+    }
+    return new Promise((resolve, reject) => {
+      const abort = () => {
+        if (null != stop) {
+          stop()
+        }
+        reject(signal.reason)
+      }
+      if (signal.aborted) {
+        return abort()
+      }
+      signal.addEventListener('abort', abort, { once: true })
+      wait.then((value) => {
+        signal.removeEventListener('abort', abort)
+        resolve(value)
+      }, (err) => {
+        signal.removeEventListener('abort', abort)
+        reject(err)
+      })
+    })
+  }
+
 }
 
 

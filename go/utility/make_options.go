@@ -252,29 +252,35 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 
 // A feature's name is not a field name: only the sensitive names inside its
 // settings count, so `secrets` does not make every setting a secret. Entity
-// blocks (per-entity settings, seeded records) hold no credential.
+// blocks (per-entity settings, seeded records) hold no credential, and nor do
+// rbac's rules, keyed by entity and operation names.
 func cleanAddOptions(ctx *core.Context, opts map[string]any) {
 	top := cleanOmit(opts, "feature", "entity")
 	if test, ok := top["test"]; ok {
-		top["test"] = cleanNoEntity(test)
+		top["test"] = cleanPlain(test, "")
 	}
 	cleanAddSensitive(ctx, top)
 	switch feature := opts["feature"].(type) {
 	case map[string]any:
-		for _, fopts := range feature {
-			cleanAddSensitive(ctx, cleanNoEntity(fopts))
+		for name, fopts := range feature {
+			cleanAddSensitive(ctx, cleanPlain(fopts, name))
 		}
 	case []any:
 		for _, entry := range feature {
-			cleanAddSensitive(ctx, cleanNoEntity(entry))
+			m, _ := entry.(map[string]any)
+			name, _ := m["name"].(string)
+			cleanAddSensitive(ctx, cleanPlain(entry, name))
 		}
 	default:
 		cleanAddSensitive(ctx, feature)
 	}
 }
 
-func cleanNoEntity(block any) any {
+func cleanPlain(block any, name string) any {
 	if m, ok := block.(map[string]any); ok {
+		if "rbac" == name {
+			return cleanOmit(m, "entity", "rules")
+		}
 		return cleanOmit(m, "entity")
 	}
 	return block

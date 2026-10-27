@@ -1,0 +1,16 @@
+# README wording — YOURS. The scaffold creates this file once and never
+# overwrites it.
+#
+# A slot set here words the generated README files over the same slot of
+# main.kit.info, where apidef puts the spec's metadata. A slot left out keeps
+# the spec's wording. Text edited into a generated README is lost on the next
+# generate; text here is not.
+#
+#   main: kit: text: {
+#     tagline: 'Payments, invoices and refunds from TypeScript, Go and Python.'
+#     summary: 'Acme Pay is a payments API for marketplaces.'
+#     entity_desc: { invoice: 'A bill sent to a customer.' }
+#   }
+#
+# The slots are title, summary, website, tagline, about_md, homepage,
+# docs_url, meta_source and entity_desc. Any other key fails the model build.

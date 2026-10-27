@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/omni sdk-20260925-1316-0 (go/omni.go)
-// Source: https://github.com/voxgig/omni @ b909ff51fc644e4955c850e30cc65e74be076df2  [tag: sdk-20260925-1316-0]
+// VENDORED: @voxgig/omni sdk-20261016-0845-0 (go/omni.go)
+// Source: https://github.com/voxgig/omni @ e9cb45a308a4da47ffdbc1b3149b9c59199190b2  [tag: sdk-20261016-0845-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 package omni
 
@@ -67,15 +67,19 @@ const SPECVERSION = 1
 // CAPABILITIES are the capability strings this runner supports beyond the
 // version baseline. A spec's OMNI.requires list is checked against this: an
 // unknown capability refuses the spec loudly at load time, instead of a
-// lagging port silently mis-running it. (Empty today; future format
-// features mint a string here.)
-var CAPABILITIES = []string{}
+// lagging port silently mis-running it. A spec turns each on only by
+// requiring it.
+var CAPABILITIES = []string{"ctxargs", "fn", "wait"}
 
 // ENTRYFIELDS is the complete set of fields an entry may carry. Under
 // version 1 anything else is an error: an unrecognised key is almost
 // always a typo'd assertion, and a typo'd assertion is a test that
 // silently stopped testing.
 var ENTRYFIELDS = []string{"in", "args", "ctx", "out", "err", "match", "client", "id", "doc"}
+
+// CAPFIELDS are the entry fields a capability adds, permitted only in a
+// spec that requires it.
+var CAPFIELDS = map[string]string{"fn": "fn", "wait": "wait"}
 
 // OmniError is a test failure (or a malformed spec). Distinct from errors
 // returned by the subject under test, which are candidates for an `err`
@@ -154,10 +158,25 @@ func resolveversion(alltests any) (int, error) {
 	return int(version), nil
 }
 
+// resolverequires lists the capabilities a spec requires, which
+// resolveversion has already checked against CAPABILITIES.
+func resolverequires(alltests any) []string {
+	out := []string{}
+	allmap, _ := alltests.(map[string]any)
+	meta, _ := allmap["OMNI"].(map[string]any)
+	list, _ := meta["requires"].([]any)
+	for _, cap := range list {
+		if capstr, is := cap.(string); is {
+			out = append(out, capstr)
+		}
+	}
+	return out
+}
+
 // checkentry is strict entry validation, applied when the spec declares
 // version 1 or later. The lenient format converts each of these mistakes
 // into a silent pass or a dead field; here they fail with the entry named.
-func checkentry(flags Flags, index int, entry map[string]any) error {
+func checkentry(flags Flags, index int, entry map[string]any, requires []string) error {
 	keys := make([]string, 0, len(entry))
 	for key := range entry {
 		keys = append(keys, key)
@@ -165,19 +184,39 @@ func checkentry(flags Flags, index int, entry map[string]any) error {
 	sort.Strings(keys)
 
 	for _, key := range keys {
-		if !slices.Contains(ENTRYFIELDS, key) {
+		capname, iscap := CAPFIELDS[key]
+		if !slices.Contains(ENTRYFIELDS, key) && !(iscap && slices.Contains(requires, capname)) {
 			return fail(flags, index, entry, "unknown entry field: "+key, nil, nil)
 		}
 	}
 
-	argsources := 0
-	for _, key := range []string{"in", "args", "ctx"} {
-		if _, has := entry[key]; has {
-			argsources++
+	_, hasin := entry["in"]
+	_, hasargs := entry["args"]
+	_, hasctx := entry["ctx"]
+	if slices.Contains(requires, "ctxargs") {
+		if hasin && (hasargs || hasctx) {
+			return fail(flags, index, entry, "entry has in beside args or ctx", nil, nil)
+		}
+	} else {
+		argsources := 0
+		for _, has := range []bool{hasin, hasargs, hasctx} {
+			if has {
+				argsources++
+			}
+		}
+		if 1 < argsources {
+			return fail(flags, index, entry, "entry has more than one of in, args, ctx", nil, nil)
 		}
 	}
-	if 1 < argsources {
-		return fail(flags, index, entry, "entry has more than one of in, args, ctx", nil, nil)
+
+	if fn, has := entry["fn"]; has {
+		if fnstr, is := fn.(string); !is || "" == fnstr {
+			return fail(flags, index, entry, "entry fn is not a name", nil, nil)
+		}
+	}
+
+	if wait, has := entry["wait"]; has && !iswait(wait) {
+		return fail(flags, index, entry, "entry wait has no cause", nil, nil)
 	}
 
 	if entryerr, has := entry["err"]; has && nil != entryerr {
@@ -200,7 +239,7 @@ func checkentry(flags Flags, index int, entry map[string]any) error {
 // (e.g. id: null) into a sentinel string and hide it from validation. A
 // malformed spec is a spec error, not a test result, so it fails before
 // any subject runs.
-func checkset(flags Flags, testspec any, normalset []any) error {
+func checkset(flags Flags, testspec any, normalset []any, requires []string) error {
 	origset := normalset
 	var origmap map[string]any
 	if tmap, is := testspec.(map[string]any); is {
@@ -222,7 +261,7 @@ func checkset(flags Flags, testspec any, normalset []any) error {
 		if !is {
 			return fail(flags, index, nil, "entry is not a map", nil, nil)
 		}
-		if err := checkentry(flags, index, entry); nil != err {
+		if err := checkentry(flags, index, entry, requires); nil != err {
 			return err
 		}
 	}
@@ -349,35 +388,49 @@ func resolvetestpack(
 	subject Subject,
 	provider *Provider,
 	clients map[string]*Provider,
+	fnon bool,
 ) (*testpack, error) {
 	pack := &testpack{client: provider, subject: subject}
 
-	clientname, has := entry["client"].(string)
-	if !has {
-		return pack, nil
+	if clientname, has := entry["client"].(string); has {
+		client, found := clients[clientname]
+		if !found {
+			return nil, &OmniError{Message: "omni: unknown client: " + clientname, Entry: entry}
+		}
+
+		pack.client = client
+		if clientsubject := resolvesubject(name, client); nil != clientsubject {
+			pack.subject = clientsubject
+		}
 	}
 
-	client, found := clients[clientname]
-	if !found {
-		return nil, &OmniError{Message: "omni: unknown client: " + clientname, Entry: entry}
-	}
-
-	pack.client = client
-	if clientsubject := resolvesubject(name, client); nil != clientsubject {
-		pack.subject = clientsubject
+	if fn, has := entry["fn"].(string); fnon && has {
+		fnsubject := resolvesubject(fn, pack.client)
+		if nil == fnsubject {
+			return nil, &OmniError{Message: "omni: unknown fn: " + fn, Entry: entry}
+		}
+		pack.subject = fnsubject
 	}
 
 	return pack, nil
 }
 
-// Build the argument list: `ctx`, `args`, or `in`.
-func resolveargs(entry map[string]any, pack *testpack, provider *Provider) []any {
+// Build the argument list: `ctx`, `args`, or `in`. Under `ctxargs` an
+// entry with both passes the context first, then each argument.
+func resolveargs(entry map[string]any, pack *testpack, provider *Provider, ctxargs bool) []any {
 	var args []any
 
 	ctx, hasctx := entry["ctx"]
 	rawargs, hasargs := entry["args"]
 
-	if hasctx {
+	if ctxargs && hasctx && hasargs {
+		args = []any{ctx}
+		if list, is := rawargs.([]any); is {
+			args = append(args, list...)
+		} else {
+			args = append(args, rawargs)
+		}
+	} else if hasctx {
 		args = []any{ctx}
 	} else if hasargs {
 		if list, is := rawargs.([]any); is {
@@ -755,6 +808,65 @@ func safecall(subject Subject, args []any) (res any, err error) {
 	return subject(args...)
 }
 
+func iswait(wait any) bool {
+	waitmap, is := wait.(map[string]any)
+	if !is {
+		return false
+	}
+	cause, is := waitmap["cause"].(string)
+	return is && "" != cause
+}
+
+// resolvewaits reads the runner-side waits: entry id to its declaration.
+// Each must name an entry of the set, so a declaration cannot outlive the
+// entry it held.
+func resolvewaits(flags Flags, origset []any) (map[string]any, error) {
+	raw, has := flags["wait"]
+	if !has || nil == raw {
+		return map[string]any{}, nil
+	}
+	waits, is := raw.(map[string]any)
+	if !is {
+		return nil, &OmniError{Message: "omni: " + Stringify(flags["name"]) + ": wait flag is not a map"}
+	}
+	ids := map[string]bool{}
+	for _, rawentry := range origset {
+		if entry, is := rawentry.(map[string]any); is {
+			if id, is := entry["id"].(string); is {
+				ids[id] = true
+			}
+		}
+	}
+	keys := make([]string, 0, len(waits))
+	for id := range waits {
+		keys = append(keys, id)
+	}
+	sort.Strings(keys)
+	for _, id := range keys {
+		if !ids[id] {
+			return nil, &OmniError{Message: "omni: " + Stringify(flags["name"]) + ": wait names no entry: " + id}
+		}
+		if !iswait(waits[id]) {
+			return nil, &OmniError{Message: "omni: " + Stringify(flags["name"]) + ": wait for " + id + " has no cause"}
+		}
+	}
+	return waits, nil
+}
+
+func runentry(flags Flags, index int, entry map[string]any, pack *testpack, provider *Provider, ctxargs bool) error {
+	args := resolveargs(entry, pack, provider, ctxargs)
+	res, subjecterr := safecall(pack.subject, args)
+
+	if nil != subjecterr {
+		return handleerror(flags, index, entry, subjecterr, provider)
+	}
+
+	res = FixJson(res, flags)
+	entry["res"] = res
+
+	return checkresult(flags, index, entry, args, res)
+}
+
 // MakeRunner makes a runner for a spec file (or spec value) and a provider.
 func MakeRunner(specref any, provider *Provider) (Runner, error) {
 	alltests, err := LoadSpec(specref)
@@ -766,6 +878,11 @@ func MakeRunner(specref any, provider *Provider) (Runner, error) {
 	if nil != err {
 		return nil, err
 	}
+
+	requires := resolverequires(alltests)
+	ctxargs := slices.Contains(requires, "ctxargs")
+	fnon := slices.Contains(requires, "fn")
+	waiton := slices.Contains(requires, "wait")
 
 	useprovider := provider
 	if nil == useprovider {
@@ -796,7 +913,7 @@ func MakeRunner(specref any, provider *Provider) (Runner, error) {
 			if nil == usesubject {
 				usesubject = defsubject
 			}
-			if nil == usesubject {
+			if nil == usesubject && !fnon {
 				return &OmniError{Message: "omni: no test subject for: " + Stringify(useflags["name"])}
 			}
 
@@ -811,43 +928,78 @@ func MakeRunner(specref any, provider *Provider) (Runner, error) {
 			}
 
 			if 1 <= specversion {
-				if err := checkset(useflags, testspec, testset); nil != err {
+				if err := checkset(useflags, testspec, testset, requires); nil != err {
 					return err
 				}
 			}
 
+			origset := testset
+			if tmap, is := testspec.(map[string]any); is {
+				if oset, is := tmap["set"].([]any); is {
+					origset = oset
+				}
+			}
+			waits, err := resolvewaits(useflags, origset)
+			if nil != err {
+				return err
+			}
+
+			all := flagbool(useflags, "all")
+			failures := []string{}
+
 			for index, rawentry := range testset {
-				entry, is := rawentry.(map[string]any)
-				if !is {
-					return &OmniError{
-						Message: fmt.Sprintf("omni: %s[%d]: entry is not a map", useflags["name"], index),
+				err := func() error {
+					entry, is := rawentry.(map[string]any)
+					if !is {
+						return &OmniError{
+							Message: fmt.Sprintf("omni: %s[%d]: entry is not a map", useflags["name"], index),
+						}
 					}
-				}
 
-				entry = resolveentry(entry, useflags)
+					entry = resolveentry(entry, useflags)
 
-				pack, err := resolvetestpack(name, entry, usesubject, useprovider, clients)
-				if nil != err {
-					return err
-				}
-
-				args := resolveargs(entry, pack, useprovider)
-
-				res, subjecterr := safecall(pack.subject, args)
-
-				if nil != subjecterr {
-					if err := handleerror(useflags, index, entry, subjecterr, useprovider); nil != err {
+					pack, err := resolvetestpack(name, entry, usesubject, useprovider, clients, fnon)
+					if nil != err {
 						return err
 					}
-					continue
-				}
+					if nil == pack.subject {
+						return &OmniError{Message: "omni: no test subject for: " + Stringify(useflags["name"])}
+					}
 
-				res = FixJson(res, useflags)
-				entry["res"] = res
+					wait, haswait := entry["wait"]
+					haswait = haswait && waiton
+					if !haswait {
+						if id, is := entry["id"].(string); is {
+							wait, haswait = waits[id]
+						}
+					}
 
-				if err := checkresult(useflags, index, entry, args, res); nil != err {
+					if !haswait {
+						return runentry(useflags, index, entry, pack, useprovider, ctxargs)
+					}
+
+					if err := runentry(useflags, index, entry, pack, useprovider, ctxargs); nil != err {
+						if IsOmniError(err) {
+							return nil
+						}
+						return err
+					}
+					cause, _ := wait.(map[string]any)["cause"].(string)
+					return fail(useflags, index, entry, "stale wait: "+cause, nil, nil)
+				}()
+
+				if nil != err {
+					if all && IsOmniError(err) {
+						failures = append(failures, err.Error())
+						continue
+					}
 					return err
 				}
+			}
+
+			if 0 < len(failures) {
+				return &OmniError{Message: fmt.Sprintf("omni: %s: %d of %d entries failed\n%s",
+					Stringify(useflags["name"]), len(failures), len(testset), strings.Join(failures, "\n"))}
 			}
 
 			return nil

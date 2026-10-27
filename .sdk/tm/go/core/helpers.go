@@ -1,6 +1,9 @@
 package core
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // UnsupportedOp is returned by entity stub methods for operations the
 // underlying API spec doesn't define. The static AareguruEntity interface
@@ -8,6 +11,21 @@ import "fmt"
 // callable — they error at runtime instead of failing to compile.
 func UnsupportedOp(opname, entityname string) (any, error) {
 	return nil, fmt.Errorf("operation '%s' not supported by entity '%s'", opname, entityname)
+}
+
+// Allowed reports whether a comma-separated allow option names the item:
+// whole names, any case.
+func Allowed(names any, item string) bool {
+	list, ok := names.(string)
+	if !ok || "" == item {
+		return false
+	}
+	for _, name := range strings.Split(list, ",") {
+		if strings.EqualFold(strings.TrimSpace(name), item) {
+			return true
+		}
+	}
+	return false
 }
 
 func ToMapAny(v any) map[string]any {

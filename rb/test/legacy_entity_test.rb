@@ -6,10 +6,28 @@ require_relative "../Aareguru_sdk"
 require_relative "runner"
 
 class LegacyEntityTest < Minitest::Test
+  # main.kit.test.live.strict is true (the default is true): a live
+  # request that fails, or a live test missing an input it needs,
+  # fails the test.
+  # An account with no record for a test to read skips it either way.
+  LIVE_STRICT = true
+
   def test_create_instance
     testsdk = AareguruSDK.test(nil, nil)
     ent = testsdk.Legacy(nil)
     assert !ent.nil?
+  end
+
+  def test_validate
+    cfg = AareguruConfig.shared_config
+    unless cfg["feature"].is_a?(Hash) && cfg["feature"].key?("validate")
+      skip("feature not present in this SDK: validate")
+    end
+    client = AareguruSDK.test(nil, { "feature" => { "validate" => { "active" => true } } })
+    err = assert_raises(StandardError) do
+      client.Legacy(nil).load({ "app" => 1 }, nil)
+    end
+    assert_equal "validate_failed", err.code
   end
 
   def test_basic_flow
@@ -22,12 +40,6 @@ class LegacyEntityTest < Minitest::Test
         skip(_reason || "skipped via sdk-test-control.json")
         return
       end
-    end
-    # The basic flow consumes synthetic IDs from the fixture. In live mode
-    # without an *_ENTID env override, those IDs hit the live API and 4xx.
-    if setup[:synthetic_only]
-      skip "live entity test uses synthetic IDs from fixture — set AAREGURU_TEST_LEGACY_ENTID JSON to run live"
-      return
     end
     client = setup[:client]
 
@@ -52,7 +64,7 @@ def legacy_basic_setup(extra)
   Runner.load_env_local
 
   entity_data_file = File.join(__dir__, "..", "..", ".sdk", "test", "entity", "legacy", "LegacyTestData.json")
-  entity_data_source = File.read(entity_data_file)
+  entity_data_source = File.read(entity_data_file, encoding: "UTF-8")
   entity_data = JSON.parse(entity_data_source)
 
   options = {}
@@ -71,9 +83,8 @@ def legacy_basic_setup(extra)
     }
   )
 
-  # Detect ENTID env override before envOverride consumes it. When live
-  # mode is on without a real override, the basic test runs against synthetic
-  # IDs from the fixture and 4xx's. Surface this so the test can skip.
+  # Whether *_ENTID supplied the idmap, read before env_override consumes
+  # it: without it, the ids a live flow binds are the fixture's synthetic ones.
   entid_env_raw = ENV["AAREGURU_TEST_LEGACY_ENTID"]
   idmap_overridden = !entid_env_raw.nil? && entid_env_raw.strip.start_with?("{")
 

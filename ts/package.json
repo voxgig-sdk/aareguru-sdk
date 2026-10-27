@@ -23,19 +23,22 @@
   "types": "dist/AareguruSDK.d.ts",
   "files": [
     "dist",
+    "!dist/**/*.tsbuildinfo",
     "src",
-    "README.md"
+    "README.md",
+    "REFERENCE.md"
   ],
   "scripts": {
     "pretest": "npm run build",
-    "test": "node --enable-source-maps --test-concurrency=1 --test 'dist-test/**/*.test.js'",
-    "test-some": "node --enable-source-maps --experimental-test-isolation=none --test-name-pattern=\"$TEST_PATTERN\" --test 'dist-test/**/*.test.js'",
-    "test-utility": "node --enable-source-maps --test test/utility/*.test.ts",
+    "test": "node --enable-source-maps --test-concurrency=1 --test \"dist-test/**/*.test.js\"",
+    "test-some": "node -e \"const p = process.env.npm_config_pattern || process.env.TEST_PATTERN; const r = require('child_process').spawnSync(process.execPath, ['--enable-source-maps', '--experimental-test-isolation=none', ...(p ? ['--test-name-pattern=' + p] : []), '--test', 'dist-test/**/*.test.js'], { stdio: 'inherit' }); process.exit(r.status ?? 1)\"",
+    "pretest-utility": "npm run build",
+    "test-utility": "node --enable-source-maps --test \"dist-test/utility/*.test.js\"",
     "pretest-coverage": "npm run build",
-    "test-coverage": "node --test-concurrency=1 --experimental-test-coverage --test-coverage-exclude='**/dist-test/**' --test-coverage-lines=85 --test-coverage-branches=68 --test-coverage-functions=88 --test 'dist-test/**/*.test.js'",
+    "test-coverage": "node --test-concurrency=1 --experimental-test-coverage --test-coverage-exclude=\"**/dist-test/**\" --test-coverage-lines=85 --test-coverage-branches=68 --test-coverage-functions=88 --test \"dist-test/**/*.test.js\"",
     "watch": "tsc --build src test -w",
-    "build": "rm -rf dist dist-test && tsc --build src test",
-    "clean": "rm -rf node_modules yarn.lock package-lock.json dist dist-test",
+    "build": "node -e \"for (const p of process.argv.slice(1)) require('fs').rmSync(p, { recursive: true, force: true })\" dist dist-test && tsc --build src test",
+    "clean": "node -e \"for (const p of process.argv.slice(1)) require('fs').rmSync(p, { recursive: true, force: true })\" node_modules yarn.lock package-lock.json dist dist-test",
     "reset": "npm run clean && npm i && npm run build && npm test"
   },
   "author": {
@@ -43,6 +46,9 @@
     "url": "https://voxgig.com"
   },
   "license": "MIT",
+  "engines": {
+    "node": ">=22.13"
+  },
   "dependencies": {},
   "peerDependencies": {},
   "devDependencies": {

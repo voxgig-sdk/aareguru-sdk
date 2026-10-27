@@ -9,8 +9,8 @@ require_once __DIR__ . '/../core/Helpers.php';
      * @param EntityNameRemoveMatch|array|null $reqmatch Match criteria (id/query
      *   fields) as an assoc-array; EntityNameRemoveMatch names the shape.
      * @param mixed $ctrl Optional per-call control overrides.
-     * @return EntityName|array The removed EntityName as an assoc-array at the
-     *   SDK boundary; throws ProjectNameError on failure (item-5 convention).
+     * @return EntyClass The removed EntityName entity, marked as deleted; throws
+     *   ProjectNameError on failure (item-5 convention).
      */
     public function remove(?array $reqmatch = null, $ctrl = null): mixed
     {

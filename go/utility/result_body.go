@@ -11,6 +11,14 @@ func resultBodyUtil(ctx *core.Context) *core.Result {
 			json := response.JsonFunc()
 			result.Body = json
 		}
+		if response != nil && response.Unreadable {
+			var sent any
+			if ctx.Spec != nil {
+				sent = ctx.Spec.Headers
+			}
+			result.Err = core.UnreadableBody(ctx, result.Status, result.Headers, response.Body,
+				sent, result.Err)
+		}
 	}
 
 	return result

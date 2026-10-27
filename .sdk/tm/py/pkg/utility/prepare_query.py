@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
+from projectname_sdk.utility.param import call_args
 
 
 def _contains_param(params, s):
@@ -29,14 +30,17 @@ def prepare_query_util(ctx):
                 name = vs.getprop(pd, "name")
                 if isinstance(name, str):
                     params.append(name)
-        # A header parameter travels in the headers, which prepare_headers
-        # fills.
-        hl = vs.getpath(point, "args.header")
-        if isinstance(hl, list):
-            for hd in hl:
-                name = vs.getprop(hd, "name")
-                if isinstance(name, str):
-                    params.append(name)
+        # A header or cookie parameter travels in the headers, which
+        # prepare_headers fills, unless a query parameter shares its name:
+        # then both are sent.
+        ql = vs.getpath(point, "args.query")
+        declared = [vs.getprop(qd, "name") for qd in ql] if isinstance(ql, list) else []
+        for located in (vs.getpath(point, "args.header"), vs.getpath(point, "args.cookie")):
+            if isinstance(located, list):
+                for hd in located:
+                    name = vs.getprop(hd, "name")
+                    if isinstance(name, str) and name not in declared:
+                        params.append(name)
 
     # A query parameter travels under the name the definition gives it, its
     # orig, which the model may have renamed for the caller.
@@ -59,5 +63,10 @@ def prepare_query_util(ctx):
             if val is not None and isinstance(key, str) and key != "$action" \
                     and not _contains_param(params, key):
                 out[wire.get(key, key)] = val
+
+    # A create or update passes its query arguments in its data.
+    for name, orig, val in call_args(ctx, "query"):
+        if val is not None and not _contains_param(params, name):
+            out[orig] = val
 
     return out

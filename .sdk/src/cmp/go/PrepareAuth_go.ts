@@ -79,26 +79,22 @@ func prepareAuthUtil(ctx *core.Context) (*core.Spec, error) {
   // HTTP Basic is header-only by definition: the scheme is
   // `Authorization: Basic base64(user:pass)`. It cannot be expressed as a
   // query parameter or a cookie, so the branch is emitted only where it can
-  // mean something — and base64 is imported only then.
+  // mean something.
   const withBasic = spec.basic && 'header' === spec.where
 
-  const head = `package utility
-
-import (
-${withBasic ? `	"encoding/base64"
-
-` : ''}${'cookie' === spec.where ? `	"strings"
-
-` : ''}	vs "${spec.gomodule}/utility/struct"
-
-	"${spec.gomodule}/core"
-)
-
-const credName = "${gostr(credLiteral(spec.where, spec.name))}"
+  const head = `const credName = "${gostr(credLiteral(spec.where, spec.name))}"
 ${'cookie' === spec.where ? `const cookieHeader = "cookie"
 ` : ''}const optionApikey = "apikey"
 ${withBasic ? `const optionSecret = "secret"
 ` : ''}const notFound = "__NOTFOUND__"
+
+// The client's auth.name option, when set, replaces the name the API declares.
+func authName(options map[string]any) string {
+	if name, ok := vs.GetPath(options, []any{"auth", "name"}).(string); ok && name != "" {
+		return ${caseFold(spec.where, 'name')}
+	}
+	return credName
+}
 
 ${cookieHelper(spec.where)}func prepareAuthUtil(ctx *core.Context) (*core.Spec, error) {
 	spec := ctx.Spec
@@ -112,8 +108,15 @@ ${cookieHelper(spec.where)}func prepareAuthUtil(ctx *core.Context) (*core.Spec, 
 
 	// Public APIs that need no auth omit the options.auth block entirely.
 	if options["auth"] == nil {
-		${clear(spec.where)}
+		${clear(spec.where, 'credName')}
 		return spec, nil
+	}
+
+	name := authName(options)
+
+	// A credential left under the declared name would travel beside the renamed one.
+	if name != credName {
+		${clear(spec.where, 'credName')}
 	}
 
 	apikey := vs.GetProp(options, optionApikey, notFound)
@@ -142,7 +145,7 @@ ${cookieHelper(spec.where)}func prepareAuthUtil(ctx *core.Context) (*core.Spec, 
 		}
 
 		if skip {
-			${clear(spec.where)}
+			${clear(spec.where, 'name')}
 		} else {
 			apikeyVal, _ := apikey.(string)
 			b64 := base64.StdEncoding.EncodeToString([]byte(apikeyVal + ":" + secretVal))
@@ -156,9 +159,9 @@ ${cookieHelper(spec.where)}func prepareAuthUtil(ctx *core.Context) (*core.Spec, 
 			}
 			// Empty prefix (raw apiKey credential) must not add a leading space.
 			if basicPrefix == "" {
-				${bagName(spec.where)}[credName] = b64
+				${bagName(spec.where)}[name] = b64
 			} else {
-				${bagName(spec.where)}[credName] = basicPrefix + " " + b64
+				${bagName(spec.where)}[name] = basicPrefix + " " + b64
 			}
 		}
 
@@ -166,16 +169,37 @@ ${cookieHelper(spec.where)}func prepareAuthUtil(ctx *core.Context) (*core.Spec, 
 	}
 `
 
-  return head + basicBlock + `
+  const body = head + basicBlock + `
 	if skip {
-		${clear(spec.where)}
+		${clear(spec.where, 'name')}
 	} else {
-${place(spec.where)}
+${place(spec.where, 'name')}
 	}
 
 	return spec, nil
 }
 `
+
+  return `package utility
+
+import (
+${stdImports(body)}	vs "${spec.gomodule}/utility/struct"
+
+	"${spec.gomodule}/core"
+)
+
+` + body
+}
+
+
+// Go rejects an unused import, and which of these the body calls varies by placement.
+const STD_IMPORTS = ['encoding/base64', 'strings']
+
+function stdImports(body: string): string {
+  return STD_IMPORTS
+    .filter((pkg) => new RegExp('\\b' + pkg.split('/').pop() + '\\.[A-Z]').test(body))
+    .map((pkg) => `\t"${pkg}"\n\n`)
+    .join('')
 }
 
 
@@ -196,14 +220,20 @@ function bagField(where: string): string {
 }
 
 
+// Header names travel lower-cased; query and cookie names are case-sensitive.
+function caseFold(where: string, expr: string): string {
+  return 'header' === where ? 'strings.ToLower(' + expr + ')' : expr
+}
+
+
 // A cookie has no header of its own: place() writes it into `cookie` as
-// `credName=value`, so clear() must free that slot, not credName.
-function clear(where: string): string {
+// `name=value`, so clear() frees that pair, not a header of that name.
+function clear(where: string, name: string): string {
   if ('cookie' === where) {
-    return `cookieSet(headers, nil)`
+    return `cookieSet(headers, ${name}, nil)`
   }
 
-  return `delete(${bagName(where)}, credName)`
+  return `delete(${bagName(where)}, ${name})`
 }
 
 
@@ -212,23 +242,16 @@ function cookieHelper(where: string): string {
     return ''
   }
 
-  return `func cookieSet(headers map[string]any, value any) {
+  return `func cookieSet(headers map[string]any, name string, value any) {
 	kept := []string{}
 
 	if existing, ok := headers[cookieHeader].(string); ok && existing != "" {
-		for _, part := range strings.Split(existing, ";") {
-			piece := strings.TrimSpace(part)
-			if piece == "" || piece == credName ||
-				strings.HasPrefix(piece, credName+"=") {
-				continue
-			}
-			kept = append(kept, piece)
-		}
+		kept = cookieKeep(existing, map[string]bool{name: true})
 	}
 
 	if value != nil {
 		valStr, _ := value.(string)
-		kept = append(kept, credName+"="+valStr)
+		kept = append(kept, name+"="+valStr)
 	}
 
 	if len(kept) == 0 {
@@ -242,13 +265,13 @@ function cookieHelper(where: string): string {
 }
 
 
-function place(where: string): string {
+function place(where: string, name: string): string {
   if ('query' === where) {
     return `		apikeyVal := ""
 		if av, ok := apikey.(string); ok {
 			apikeyVal = av
 		}
-		query[credName] = apikeyVal`
+		query[${name}] = apikeyVal`
   }
 
   if ('cookie' === where) {
@@ -256,7 +279,7 @@ function place(where: string): string {
 		if av, ok := apikey.(string); ok {
 			apikeyVal = av
 		}
-		cookieSet(headers, apikeyVal)`
+		cookieSet(headers, ${name}, apikeyVal)`
   }
 
   return `		authPrefix := ""
@@ -269,9 +292,9 @@ function place(where: string): string {
 		}
 		// Empty prefix (raw apiKey credential) must not add a leading space.
 		if authPrefix == "" {
-			headers[credName] = apikeyVal
+			headers[${name}] = apikeyVal
 		} else {
-			headers[credName] = authPrefix + " " + apikeyVal
+			headers[${name}] = authPrefix + " " + apikeyVal
 		}`
 }
 

@@ -6,6 +6,7 @@ import {
   collectDeps,
   each,
   pkgDescription,
+  luaString,
   keywords,
   repoInfo, packageName,
   packageVersion,
@@ -85,7 +86,7 @@ source = {
   dir = "${repo}/lua"
 }
 description = {
-  summary = "${pkgDescription(model, target.name)}",
+  summary = ${luaString(pkgDescription(model, target.name))},
   homepage = "${repoUrl}",
   issues_url = "${issuesUrl}",
   license = "MIT",

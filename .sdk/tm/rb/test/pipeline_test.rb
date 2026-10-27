@@ -268,13 +268,13 @@ class PipelineTest < Minitest::Test
     }, nil)
     ctx.spec = spec_of
     ctx.result = AareguruResult.new({
-      "ok" => true, "resdata" => [{ "a" => 1 }, { "a" => 2 }],
+      "ok" => true, "resdata" => [{ "a" => 1 }, "b.md"],
     })
     result, err = @utility.make_result.call(ctx)
     assert_nil err
     assert_equal 2, result.resdata.length
     assert_equal 2, made.length
-    assert_equal [{ "a" => 1 }, { "a" => 2 }], made
+    assert_equal [{ "a" => 1 }, "b.md"], made
   end
 
   def test_make_result_empty_list_yields_an_empty_resdata_array
@@ -316,7 +316,7 @@ class PipelineTest < Minitest::Test
   end
 
   def test_make_request_a_transport_error_tuple_lands_on_the_response
-    boom = AareguruError.new("boom", "boom")
+    boom = AareguruError.new("boom", code: "boom")
     u = util_with(->(_c, _u, _f) { [nil, boom] })
     ctx = make_ctx(utility: u)
     ctx.spec = request_spec
@@ -360,7 +360,7 @@ class PipelineTest < Minitest::Test
 
   def test_make_request_a_fetchdef_error_surfaces_as_a_response_error
     u = @client.get_utility
-    u.make_fetch_def = ->(ctx) { [nil, AareguruError.new("fetchdef_boom", "boom")] }
+    u.make_fetch_def = ->(ctx) { [nil, AareguruError.new("boom", code: "fetchdef_boom")] }
     ctx = make_ctx(utility: u)
     ctx.spec = request_spec
     response, err = u.make_request.call(ctx)
@@ -446,6 +446,23 @@ class PipelineTest < Minitest::Test
       @utility.make_error.call(ctx, ctx.make_error("rbac_denied", "denied"))
     }
     assert_equal "rbac_denied", err.code
+  end
+
+  # minitest reports an escaped error it cannot marshal as
+  # `e.class.new(e.message)`, so both forms must keep the message.
+  def test_make_error_survives_a_rebuild_and_a_marshal
+    ctx = make_ctx
+    ctx.result = AareguruResult.new({ "ok" => false, "status" => 429 })
+    err = assert_raises(AareguruError) {
+      @utility.make_error.call(ctx, ctx.make_error("request_status", "request: 429: Too Many Requests"))
+    }
+    refute_empty err.message
+    assert_equal err.message, err.class.new(err.message).message
+
+    copy = Marshal.load(Marshal.dump(err))
+    assert_equal [AareguruError, err.message, "request_status", 429, err.backtrace],
+      [copy.class, copy.message, copy.code, copy.status, copy.backtrace]
+    assert_nil copy.ctx
   end
 
 

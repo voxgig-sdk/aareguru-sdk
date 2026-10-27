@@ -150,7 +150,23 @@ SCENARIOS = [
 ]
 
 
-def _make_sdk(respond, sinks, cleanopts=None, extra=None):
+# Offline, as every generated suite is: the test OPTION resolves a required
+# server variable to test-<name>, and installs no transport.
+def _offline(opts):
+    return dict(opts, test={"active": True})
+
+
+# A client the sweep cannot build leaves nothing swept: a harness error, not a leak.
+def _construct(opts):
+    try:
+        return AareguruSDK(_offline(opts))
+    except Exception as e:
+        raise RuntimeError(
+            "clean harness: the client could not be constructed, so nothing was swept: "
+            + str(e)) from e
+
+
+def _make_sdk(respond, sinks, cleanopts=None, extra=None, auth=None):
     def capture(name):
         return lambda rec, *a: sinks.extend(_forms(name, rec))
 
@@ -176,7 +192,7 @@ def _make_sdk(respond, sinks, cleanopts=None, extra=None):
     clean = {"values": CANARY["value"]}
     clean.update(cleanopts or {})
 
-    return AareguruSDK({
+    opts = {
         "apikey": CANARY["apikey"],
         "secret": CANARY["secret"],
         "headers": {"X-Custom-Token": CANARY["header"]},
@@ -184,14 +200,17 @@ def _make_sdk(respond, sinks, cleanopts=None, extra=None):
         "feature": feature,
         "extend": [_CaptureFeature(sinks)] + list(extra or []),
         "utility": {"fetcher": lambda ctx, url, fetchdef: respond(url, fetchdef)},
-    })
+    }
+    if auth is not None:
+        opts["auth"] = auth
+    return _construct(opts)
 
 
 # The first operation that completes against a plain 200: with no
 # arguments, else with every path parameter its points declare filled in.
 def _usable_op():
     def plain():
-        return AareguruSDK({
+        return _construct({
             "apikey": CANARY["apikey"],
             "utility": {"fetcher": lambda ctx, url, fetchdef: (_response(200, {"id": "i1"}), None)},
         })
@@ -219,7 +238,7 @@ def _usable_op():
     safe = {"list": 0, "load": 1}
     for name in sorted(found):
         accessor, ent = found[name]
-        ops = [op for op in ["list", "load", "create", "update", "remove"]
+        ops = [op for op in ["list", "load", "create", "update", "patch", "remove"]
                if callable(getattr(ent, op, None))]
         ops.sort(key=lambda o: safe.get(o, 2))
         opdefs = (entities.get(name) or {}).get("op") or {}
@@ -300,16 +319,19 @@ class _StreamOkFeature(AareguruBaseFeature):
 def _drive(sdk, target, ctrl, sinks):
     # A caller may keep the record it passed rather than read ctrl["explain"].
     held = ctrl.get("explain")
+    entity = getattr(sdk, target[0])()
     out = None
     err = None
     try:
-        out = getattr(getattr(sdk, target[0])(), target[1])(dict(target[2]), ctrl)
+        out = getattr(entity, target[1])(dict(target[2]), ctrl)
     except Exception as e:
         err = e
     if err is not None:
         sinks.extend(_forms("error", err))
     if out is not None:
         sinks.extend(_forms("result", out))
+    # Raw, as a caller copying the match into another query reads it.
+    sinks.extend(_forms("match", entity.match_get()))
     if ctrl.get("explain") is not None:
         sinks.extend(_forms("explain", ctrl["explain"]))
     if held is not None and held is not ctrl.get("explain"):
@@ -345,11 +367,16 @@ class TestClean:
                 sinks.extend(_forms("sdk", sdk))
                 sinks.append(("sdk:vars", json.dumps(vars(sdk), default=repr)))
 
+        # A name given at run time replaces the declared one: the match
+        # leaves out whichever name prepare_auth placed.
+        _drive(_make_sdk(SCENARIOS[0][1], sinks, auth={"name": "zzcred"}), target, {}, sinks)
+
         # A credential mistyped as a map is rejected by validation, whose
         # message quotes the value it rejected.
         rejected = None
         try:
-            AareguruSDK({"apikey": {"value": CANARY["apikey"]}, "clean": {"values": CANARY["value"]}})
+            AareguruSDK(_offline(
+                {"apikey": {"value": CANARY["apikey"]}, "clean": {"values": CANARY["value"]}}))
         except Exception as e:
             rejected = e
         assert rejected is not None, "a credential mistyped as a map should be rejected"
@@ -415,7 +442,7 @@ class TestClean:
         assert cfgclean == {"keys": "zzsens", "values": CANARY["config"]}, cfgclean
 
         # With no clean option at all, the schema defaults still apply.
-        bare = AareguruSDK({
+        bare = _construct({
             "apikey": CANARY["apikey"],
             "secret": CANARY["secret"],
             "headers": {"X-Custom-Token": CANARY["header"]},
@@ -425,12 +452,14 @@ class TestClean:
 
         # A feature's name is not a field name: only the sensitive names
         # inside its settings register. An entity block, of per-entity
-        # settings or seeded records keyed by entity name and id, is not read.
-        featured = AareguruSDK({
+        # settings or seeded records keyed by entity name and id, is not read,
+        # and nor are rbac's rules, keyed by entity and operation names.
+        featured = _construct({
             "apikey": CANARY["apikey"],
             "feature": {
                 "zzsecrets": {"active": False, "kind": "PLAINSETTING-q8w2e4r6"},
                 "zzfeat": {"active": False, "apitoken": "FEATTOKEN-z9y8x7w6"},
+                "rbac": {"active": False, "rules": {"zztoken.load": "PLAINRULE-k7j5h3g1"}},
                 "test": {"active": False, "entity": {
                     "zztoken": {"ZZTOKEN01": {"note": "PLAINRECORD-t5r3e1w9"}}}},
             },
@@ -442,6 +471,7 @@ class TestClean:
         ftoken = fclean(froot, "token FEATTOKEN-z9y8x7w6")
         frecord = fclean(froot, "record PLAINRECORD-t5r3e1w9")
         falias = fclean(froot, "alias PLAINALIAS-m2n4b6v8")
+        frule = fclean(froot, "rule PLAINRULE-k7j5h3g1")
 
         leaked = [(name, _leaks(text)) for name, text in sinks]
         leaked = [(name, found) for name, found in leaked if 0 < len(found)]
@@ -475,6 +505,7 @@ class TestClean:
         assert ftoken == "token " + MASK, ftoken
         assert frecord == "record PLAINRECORD-t5r3e1w9", frecord
         assert falias == "alias PLAINALIAS-m2n4b6v8", falias
+        assert frule == "rule PLAINRULE-k7j5h3g1", frule
 
         explained = explains.get("ok/explain") or {}
         assert explained.get("result") is not None, "the explain record should carry the result"

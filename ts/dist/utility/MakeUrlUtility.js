@@ -18,28 +18,48 @@ function makeUrl(ctx) {
     }
     let url = join([spec.base, spec.prefix, spec.path, spec.suffix], '/', true);
     let resmatch = {};
-    // A route the definition ends with a slash keeps it: a server such as a
-    // Django REST one redirects or refuses the route without it.
+    // Sent with the request, never recorded as the entity's match.
+    const authquery = spec.authquery || [];
+    // A route the definition ends with a slash keeps it, for a Django REST server,
+    // and a host with no path takes /, or luasocket reads a query as the host.
     const orig = ctx.point?.orig;
     if ('string' === typeof orig && orig.endsWith('/') && !spec.suffix && !url.endsWith('/')) {
+        url += '/';
+    }
+    const authority = url.indexOf('://');
+    if (0 < authority && !/[/?#]/.test(url.slice(authority + 3))) {
         url += '/';
     }
     const params = spec.params;
     for (let [key, val] of items(params)) {
         if (null != val) {
+            // A whole . or .. is a dot segment, which moves the request to another route.
+            const text = String(val);
+            if ('.' === text || '..' === text) {
+                return ctx.error('url_param_invalid', 'URL path parameter ' + key + ' cannot be "' + text + '".');
+            }
             url = url.replace(RegExp('{' + escre(key) + '}'), escurl(val));
             resmatch[key] = val;
         }
     }
-    // Append query string from spec.query. Entity ops populate this via
-    // PrepareQueryUtility from the operation's reqmatch; direct() callers
-    // pass it as fetchargs.query.
+    // A placeholder left in the route would send the request to the wrong route.
+    // The base's own placeholders are server variables, resolved with the options.
+    const base = ('string' === typeof spec.base ? spec.base : '').replace(/\/+$/, '');
+    const route = url.startsWith(base) ? url.slice(base.length) : url;
+    const unfilled = route.match(/\{[^{}\/]+\}/g);
+    if (null != unfilled) {
+        return ctx.error('url_param_missing', 'URL path has no value for ' + unfilled.join(', ') + '.');
+    }
+    // Entity ops fill spec.query from their arguments (PrepareQueryUtility);
+    // direct() callers pass it as fetchargs.query.
     let qsep = '?';
     for (let [key, val] of items(spec.query)) {
         if (null != val) {
             url += qsep + escurl(key) + '=' + escurl(val);
             qsep = '&';
-            resmatch[key] = val;
+            if (!authquery.includes(key)) {
+                resmatch[key] = val;
+            }
         }
     }
     result.resmatch = resmatch;

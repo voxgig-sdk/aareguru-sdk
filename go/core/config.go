@@ -71,6 +71,7 @@ func MakeConfig() map[string]any {
 				},
 				"optspec": map[string]any{
 					"clearTimer": "`$FUNCTION`",
+					"now": "`$FUNCTION`",
 					"setTimer": "`$FUNCTION`",
 				},
 				"strict": false,
@@ -132,12 +133,7 @@ func MakeConfig() map[string]any {
 										},
 									},
 								},
-								"select": map[string]any{
-									"exist": []any{
-										"app",
-										"version",
-									},
-								},
+								"select": map[string]any{},
 							},
 							map[string]any{
 								"kind": "http",
@@ -174,12 +170,7 @@ func MakeConfig() map[string]any {
 										},
 									},
 								},
-								"select": map[string]any{
-									"exist": []any{
-										"app",
-										"version",
-									},
-								},
+								"select": map[string]any{},
 							},
 							map[string]any{
 								"kind": "http",
@@ -216,12 +207,7 @@ func MakeConfig() map[string]any {
 										},
 									},
 								},
-								"select": map[string]any{
-									"exist": []any{
-										"app",
-										"version",
-									},
-								},
+								"select": map[string]any{},
 							},
 						},
 					},
@@ -290,10 +276,7 @@ func MakeConfig() map[string]any {
 								},
 								"select": map[string]any{
 									"exist": []any{
-										"app",
-										"line",
 										"service",
-										"version",
 									},
 								},
 							},
@@ -342,9 +325,7 @@ func MakeConfig() map[string]any {
 								},
 								"select": map[string]any{
 									"exist": []any{
-										"app",
 										"service",
-										"version",
 									},
 								},
 							},
@@ -456,13 +437,60 @@ func MakeConfig() map[string]any {
 								"select": map[string]any{
 									"$action": "history",
 									"exist": []any{
-										"app",
 										"city",
 										"end",
 										"start",
-										"value",
-										"version",
 									},
+								},
+							},
+							map[string]any{
+								"kind": "http",
+								"method": "GET",
+								"orig": "/v2018/cities",
+								"segments": []any{
+									map[string]any{
+										"lit": "v2018",
+									},
+									map[string]any{
+										"lit": "cities",
+									},
+								},
+								"parts": []any{
+									"v2018",
+									"cities",
+								},
+								"rename": map[string]any{},
+								"transform": map[string]any{
+									"req": "`reqdata`",
+									"res": "`body`",
+								},
+								"args": map[string]any{
+									"query": []any{
+										map[string]any{
+											"name": "app",
+											"orig": "app",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": "my.app.ch",
+										},
+										map[string]any{
+											"name": "value",
+											"orig": "values",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": nil,
+										},
+										map[string]any{
+											"name": "version",
+											"orig": "version",
+											"type": "`$STRING`",
+											"kind": "query",
+											"example": "1.0.42",
+										},
+									},
+								},
+								"select": map[string]any{
+									"$action": "city",
 								},
 							},
 							map[string]any{
@@ -520,12 +548,6 @@ func MakeConfig() map[string]any {
 								},
 								"select": map[string]any{
 									"$action": "current",
-									"exist": []any{
-										"app",
-										"city",
-										"value",
-										"version",
-									},
 								},
 							},
 							map[string]any{
@@ -583,67 +605,6 @@ func MakeConfig() map[string]any {
 								},
 								"select": map[string]any{
 									"$action": "today",
-									"exist": []any{
-										"app",
-										"city",
-										"value",
-										"version",
-									},
-								},
-							},
-							map[string]any{
-								"kind": "http",
-								"method": "GET",
-								"orig": "/v2018/cities",
-								"segments": []any{
-									map[string]any{
-										"lit": "v2018",
-									},
-									map[string]any{
-										"lit": "cities",
-									},
-								},
-								"parts": []any{
-									"v2018",
-									"cities",
-								},
-								"rename": map[string]any{},
-								"transform": map[string]any{
-									"req": "`reqdata`",
-									"res": "`body`",
-								},
-								"args": map[string]any{
-									"query": []any{
-										map[string]any{
-											"name": "app",
-											"orig": "app",
-											"type": "`$STRING`",
-											"kind": "query",
-											"example": "my.app.ch",
-										},
-										map[string]any{
-											"name": "value",
-											"orig": "values",
-											"type": "`$STRING`",
-											"kind": "query",
-											"example": nil,
-										},
-										map[string]any{
-											"name": "version",
-											"orig": "version",
-											"type": "`$STRING`",
-											"kind": "query",
-											"example": "1.0.42",
-										},
-									},
-								},
-								"select": map[string]any{
-									"$action": "city",
-									"exist": []any{
-										"app",
-										"value",
-										"version",
-									},
 								},
 							},
 							map[string]any{
@@ -694,11 +655,6 @@ func MakeConfig() map[string]any {
 								},
 								"select": map[string]any{
 									"$action": "widget",
-									"exist": []any{
-										"app",
-										"value",
-										"version",
-									},
 								},
 							},
 						},

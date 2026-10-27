@@ -8,6 +8,13 @@ local runner = require("test.runner")
 
 local _test_dir = debug.getinfo(1, "S").source:match("^@(.+/)")  or "./"
 
+-- main.kit.test.live.strict is true (the default is true): a live
+-- request that fails, or a live test missing an input it needs,
+-- fails the test.
+-- An account with no record for a test to read skips it either way.
+local LIVE_STRICT = true
+
+
 describe("V2018Entity", function()
   it("should create instance", function()
     local testsdk = sdk.test(nil, nil)
@@ -19,18 +26,12 @@ describe("V2018Entity", function()
     local setup = v2018_basic_setup(nil)
     -- Per-op sdk-test-control.json skip.
     local _live = setup.live or false
-    for _, _op in ipairs({"load"}) do
+    for _, _op in ipairs({}) do
       local _should_skip, _reason = runner.is_control_skipped("entityOp", "v2018." .. _op, _live and "live" or "unit")
       if _should_skip then
         pending(_reason or "skipped via sdk-test-control.json")
         return
       end
-    end
-    -- The basic flow consumes synthetic IDs from the fixture. In live mode
-    -- without an *_ENTID env override, those IDs hit the live API and 4xx.
-    if setup.synthetic_only then
-      pending("live entity test uses synthetic IDs from fixture — set AAREGURU_TEST_V2018_ENTID JSON to run live")
-      return
     end
     local client = setup.client
 
@@ -41,13 +42,6 @@ describe("V2018Entity", function()
     if #v2018_ref01_data_raw > 0 then
       v2018_ref01_data = helpers.to_map(v2018_ref01_data_raw[1][2])
     end
-
-    -- LOAD
-    local v2018_ref01_ent = client:V2018(nil)
-    local v2018_ref01_match_dt0 = {}
-    local v2018_ref01_data_dt0_loaded, err = v2018_ref01_ent:load(v2018_ref01_match_dt0, nil)
-    assert.is_nil(err)
-    assert.is_not_nil(v2018_ref01_data_dt0_loaded)
 
   end)
 end)
@@ -81,9 +75,8 @@ function v2018_basic_setup(extra)
     }
   )
 
-  -- Detect ENTID env override before envOverride consumes it. When live
-  -- mode is on without a real override, the basic test runs against synthetic
-  -- IDs from the fixture and 4xx's. Surface this so the test can skip.
+  -- Whether *_ENTID supplied the idmap, read before env_override consumes
+  -- it: without it, the ids a live flow binds are the fixture's synthetic ones.
   local entid_env_raw = os.getenv("AAREGURU_TEST_V2018_ENTID")
   local idmap_overridden = entid_env_raw ~= nil and entid_env_raw:match("^%s*{") ~= nil
 

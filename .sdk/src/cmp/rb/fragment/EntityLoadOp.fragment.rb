@@ -9,7 +9,8 @@ require_relative '../core/helpers'
   #   optional — an entity with no id-like key loads with no match (nil is treated
   #   as an empty match, so client.EntityName.load works with no args).
   # @param ctrl [Object, nil] optional per-call control
-  # @return [EntityName, Hash] the loaded EntityName; raises ProjectNameError on failure
+  # @return [EntyClass] the loaded EntityName entity (data_get reads its record);
+  #   raises ProjectNameError on failure
   def load(reqmatch = nil, ctrl = nil)
     utility = @_utility
     ctx = utility.make_context.call({

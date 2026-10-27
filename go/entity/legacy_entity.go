@@ -14,7 +14,7 @@ type LegacyEntity struct {
 	client  *core.AareguruSDK
 	utility *core.Utility
 	entopts map[string]any
-	data    map[string]any
+	data    any
 	match   map[string]any
 	entctx  *core.Context
 	deleted bool
@@ -54,8 +54,7 @@ func NewLegacyEntity(client *core.AareguruSDK, entopts map[string]any) *LegacyEn
 func (e *LegacyEntity) GetName() string { return e.name }
 
 // An entity prints and serialises as its data, as ts's toString and toJSON
-// do: the match state can carry a query credential, and the client holds
-// the options.
+// do: the client it holds carries the options.
 func (e *LegacyEntity) String() string {
 	return "Legacy " + vs.Jsonify(e.data, map[string]any{"indent": 0})
 }
@@ -65,8 +64,12 @@ func (e *LegacyEntity) GoString() string {
 }
 
 func (e *LegacyEntity) MarshalJSON() ([]byte, error) {
+	data, ok := e.data.(map[string]any)
+	if !ok {
+		return json.Marshal(e.data)
+	}
 	out := map[string]any{}
-	for k, v := range e.data {
+	for k, v := range data {
 		out[k] = v
 	}
 	out["voxgig$entity"] = "Legacy"
@@ -94,10 +97,7 @@ func (e *LegacyEntity) Make() core.Entity {
 
 func (e *LegacyEntity) Data(args ...any) any {
 	if len(args) > 0 && args[0] != nil {
-		e.data = core.ToMapAny(vs.Clone(args[0]))
-		if e.data == nil {
-			e.data = map[string]any{}
-		}
+		e.data = vs.Clone(args[0])
 		e.utility.FeatureHook(e.entctx, "SetData")
 	}
 
@@ -141,8 +141,8 @@ func (e *LegacyEntity) MatchTyped(match ...Legacy) Legacy {
 	return typedFrom[Legacy](e.Match())
 }
 
-func (e *LegacyEntity) Stream(action string, args map[string]any, callopts map[string]any) <-chan any {
-	out := make(chan any)
+func (e *LegacyEntity) Stream(action string, args map[string]any, callopts map[string]any) <-chan core.StreamItem {
+	out := make(chan core.StreamItem)
 
 	if callopts == nil {
 		callopts = map[string]any{}
@@ -184,7 +184,7 @@ func (e *LegacyEntity) Stream(action string, args map[string]any, callopts map[s
 		ctx.Meta["stream_out"] = body
 	}
 
-	send := func(item any) bool {
+	send := func(item core.StreamItem) bool {
 		select {
 		case <-signal:
 			return false
@@ -193,54 +193,43 @@ func (e *LegacyEntity) Stream(action string, args map[string]any, callopts map[s
 		}
 	}
 
+	// What MakeError or Done hands back: the error, as the last value, or
+	// under `throw: false` the data there is.
+	sendData := func(data any, err error) {
+		if err != nil {
+			send(core.StreamItem{Err: err})
+			return
+		}
+		switch d := data.(type) {
+		case []any:
+			for _, item := range d {
+				if !send(core.StreamItem{Item: item}) {
+					return
+				}
+			}
+		case nil:
+			// nothing to yield
+		default:
+			send(core.StreamItem{Item: d})
+		}
+	}
+
 	go func() {
 		defer close(out)
 
-		// With no error channel, a panicking hook or stream function ends the
-		// stream as runOp's error would. A goroutine the stream function
-		// starts is out of reach of this recover.
+		// A panicking hook or stream function leaves through MakeError, as
+		// runOp's does. A goroutine the stream function starts is out of reach.
 		defer func() {
 			if r := recover(); r != nil {
-				e.recovered(ctx, r)
+				sendData(e.recovered(ctx, r))
 			}
 		}()
 
-		utility.FeatureHook(ctx, "PrePoint")
-		point, err := utility.MakePoint(ctx)
-		ctx.Out["point"] = point
-		if err != nil {
+		// A failed step leaves through MakeError, as an operation's does.
+		if err := e.streamSteps(ctx); err != nil {
+			sendData(utility.MakeError(ctx, err))
 			return
 		}
-
-		utility.FeatureHook(ctx, "PreSpec")
-		spec, err := utility.MakeSpec(ctx)
-		ctx.Out["spec"] = spec
-		if err != nil {
-			return
-		}
-
-		utility.FeatureHook(ctx, "PreRequest")
-		req, err := utility.MakeRequest(ctx)
-		ctx.Out["request"] = req
-		if err != nil {
-			return
-		}
-
-		utility.FeatureHook(ctx, "PreResponse")
-		resp, err := utility.MakeResponse(ctx)
-		ctx.Out["response"] = resp
-		if err != nil {
-			return
-		}
-
-		utility.FeatureHook(ctx, "PreResult")
-		result, err := utility.MakeResult(ctx)
-		ctx.Out["result"] = result
-		if err != nil {
-			return
-		}
-
-		utility.FeatureHook(ctx, "PreDone")
 
 		// Inbound: prefer the streaming feature's incremental iterator; else
 		// fall back to the materialised items so Stream always yields.
@@ -248,32 +237,61 @@ func (e *LegacyEntity) Stream(action string, args map[string]any, callopts map[s
 			// Done does not run on this path, so its record is cleaned here.
 			utility.CleanExplain(ctx)
 			for item := range ctx.Result.Stream() {
-				if !send(item) {
+				if !send(core.StreamItem{Item: item}) {
 					return
 				}
 			}
 			return
 		}
 
-		data, derr := utility.Done(ctx)
-		if derr != nil {
-			return
-		}
-		switch d := data.(type) {
-		case []any:
-			for _, item := range d {
-				if !send(item) {
-					return
-				}
-			}
-		case nil:
-			// nothing to yield
-		default:
-			send(d)
-		}
+		sendData(utility.Done(ctx))
 	}()
 
 	return out
+}
+
+// The steps an operation runs, with their hooks; the first that fails hands
+// back its error.
+func (e *LegacyEntity) streamSteps(ctx *core.Context) error {
+	utility := e.utility
+
+	utility.FeatureHook(ctx, "PrePoint")
+	point, err := utility.MakePoint(ctx)
+	ctx.Out["point"] = point
+	if err != nil {
+		return err
+	}
+
+	utility.FeatureHook(ctx, "PreSpec")
+	spec, err := utility.MakeSpec(ctx)
+	ctx.Out["spec"] = spec
+	if err != nil {
+		return err
+	}
+
+	utility.FeatureHook(ctx, "PreRequest")
+	req, err := utility.MakeRequest(ctx)
+	ctx.Out["request"] = req
+	if err != nil {
+		return err
+	}
+
+	utility.FeatureHook(ctx, "PreResponse")
+	resp, err := utility.MakeResponse(ctx)
+	ctx.Out["response"] = resp
+	if err != nil {
+		return err
+	}
+
+	utility.FeatureHook(ctx, "PreResult")
+	result, err := utility.MakeResult(ctx)
+	ctx.Out["result"] = result
+	if err != nil {
+		return err
+	}
+
+	utility.FeatureHook(ctx, "PreDone")
+	return nil
 }
 
 
@@ -293,9 +311,9 @@ func (e *LegacyEntity) Load(reqmatch map[string]any, ctrl map[string]any) (any, 
 				e.match = ctx.Result.Resmatch
 			}
 			if ctx.Result.Resdata != nil {
-				e.data = core.ToMapAny(vs.Clone(ctx.Result.Resdata))
-				if e.data == nil {
-					e.data = map[string]any{}
+				e.data = map[string]any{}
+				if data := core.ToMapAny(vs.Clone(ctx.Result.Resdata)); data != nil {
+					e.data = data
 				}
 			}
 		}
@@ -327,6 +345,11 @@ func (e *LegacyEntity) Create(_ map[string]any, _ map[string]any) (any, error) {
 
 func (e *LegacyEntity) Update(_ map[string]any, _ map[string]any) (any, error) {
 	return core.UnsupportedOp("update", e.name)
+}
+
+
+func (e *LegacyEntity) Patch(_ map[string]any, _ map[string]any) (any, error) {
+	return core.UnsupportedOp("patch", e.name)
 }
 
 

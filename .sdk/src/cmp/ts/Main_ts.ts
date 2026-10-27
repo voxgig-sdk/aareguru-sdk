@@ -4,6 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, each, names, cmap,
   List, File, Content, Copy, Folder, Fragment, Line, FeatureHook,
+  inactiveFeatureExcludes,
   entityClassName, entityCollection, srcFeatureExcludes, pluginExcludes,
   stationLibrary,
   targetFeatures,
@@ -55,11 +56,11 @@ const Main = cmp(async function Main(props: any) {
   Copy({
     from: 'tm/' + target.name,
     // Root copies src/feature/<name>/ per ACTIVE feature; keep this blanket
-    // copy from restoring one that was switched off after `target add`.
-    // A feature's inactive plugins go too - same rule, one level
-    // deeper. See helpers/featureSource.pluginExcludes.
+    // copy from restoring one that is off, its tests, or an inactive plugin
+    // group. See helpers/featureSource.
     exclude: [
       ...srcFeatureExcludes(model),
+      ...inactiveFeatureExcludes(props.ctx$, target),
       ...pluginExcludes(model),
       TEST_CONTROL_EXCLUDE,
     ],

@@ -4,6 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, each, names, cmap,
   List, File, Content, Copy, Folder, Fragment, Line, FeatureHook,
+  inactiveFeatureExcludes,
   targetFeatures, pluginExcludes,
   TEST_CONTROL_EXCLUDE
 } from '@voxgig/sdkgen'
@@ -58,7 +59,7 @@ const Main = cmp(async function Main(props: any) {
   Copy({
     from: 'tm/' + target.name,
     exclude: [/src\//, TEST_CONTROL_EXCLUDE,
-      ...containerExcludes, ...pluginExcludes(model)],
+      ...containerExcludes, ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model)],
     replace: {
       ...props.ctx$.stdrep,
     }

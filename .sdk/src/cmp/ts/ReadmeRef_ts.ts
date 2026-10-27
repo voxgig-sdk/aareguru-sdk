@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, isHttpBasicAuth, entityIdField, entityActions, opRequestShape, safeVarName, exampleVarName, jsKey, matchArg, idLiteral, targetFeatures } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, isHttpBasicAuth, entityIdField, entityActions, safeVarName, exampleVarName, jsKey, targetFeatures, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -10,37 +10,36 @@ import {
 import { exampleValue } from './utility_ts'
 
 
-function listMatchArg(ent: any): string {
-  const idF = entityIdField(ent)
-  return matchArg('ts', ent, 'list', idF, idLiteral(ent, 'list', idF))
-}
-
-
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
     sig: 'load(match: object, ctrl?: object)',
-    returns: 'Promise<object>',
-    desc: 'Load a single entity matching the given criteria.',
+    returns: 'Promise<Entity>',
+    desc: 'Load a single entity matching the given criteria. Resolves to the entity, whose record `data()` reads.',
   },
   list: {
     sig: 'list(match: object, ctrl?: object)',
-    returns: 'Promise<object[]>',
-    desc: 'List entities matching the given criteria. Returns an array.',
+    returns: 'Promise<Entity[]>',
+    desc: 'List entities matching the given criteria. Resolves to an array of entities, one per record.',
   },
   create: {
     sig: 'create(data: object, ctrl?: object)',
-    returns: 'Promise<object>',
-    desc: 'Create a new entity with the given data.',
+    returns: 'Promise<Entity>',
+    desc: 'Create a new entity with the given data. Resolves to the created entity.',
   },
   update: {
     sig: 'update(data: object, ctrl?: object)',
-    returns: 'Promise<object>',
-    desc: 'Update an existing entity. The data must include the entity `id`.',
+    returns: 'Promise<Entity>',
+    desc: 'Update an existing entity. The data must include the entity `id`. Resolves to the updated entity.',
+  },
+  patch: {
+    sig: 'patch(data: object, ctrl?: object)',
+    returns: 'Promise<Entity>',
+    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Resolves to the patched entity.',
   },
   remove: {
     sig: 'remove(match: object, ctrl?: object)',
-    returns: 'Promise<void>',
-    desc: 'Remove the entity matching the given criteria.',
+    returns: 'Promise<Entity>',
+    desc: 'Remove the entity matching the given criteria. Resolves to the entity, marked as deleted.',
   },
 }
 
@@ -165,8 +164,10 @@ Make a direct HTTP request to any API endpoint.
 | \`fetchargs.headers\` | \`object\` | Request headers (merged with defaults). |
 | \`fetchargs.body\` | \`any\` | Request body (objects are JSON-serialized). |
 | \`fetchargs.ctrl\` | \`object\` | Control options (e.g. \`{ explain: true }\`). |
+| \`fetchargs.ctrl.signal\` | \`AbortSignal\` | Aborts the request in flight: \`ok\` is then \`false\` and \`err.code\` is \`request_aborted\`. |
 
-**Returns:** \`Promise<{ ok, status, headers, data } | Error>\`
+**Returns:** \`Promise<{ ok, status, headers, data }>\`. On a failure
+\`ok\` is \`false\` and \`err\` holds the error.
 
 #### \`prepare(fetchargs?: object)\`
 
@@ -180,6 +181,15 @@ same parameters as \`direct()\`.
 Alias for \`${model.Name}SDK.test()\`.
 
 **Returns:** \`${model.Name}SDK\` instance in test mode.
+
+#### Cancelling a call
+
+Every entity operation takes an optional \`ctrl\` object after its match or
+data, and an \`AbortSignal\` in \`ctrl.signal\` cancels the request in flight.
+The operation then rejects with an error whose \`code\` is
+\`request_aborted\` and whose \`cause\` is the signal's reason. A request
+whose signal has already aborted is not sent. \`stream()\` takes the signal
+as \`callopts.signal\`, and ends when it aborts.
 
 `)
 
@@ -235,7 +245,7 @@ const ${eVar} = client.${ent.Name}()
         if (hasFieldOps) {
           // Only emit columns for operations this entity actually exposes —
           // never advertise a create/update/remove column the entity lacks.
-          const opcols = ['load', 'list', 'create', 'update', 'remove']
+          const opcols = ['load', 'list', 'create', 'update', 'patch', 'remove']
             .filter((op: string) => opnames.includes(op) && ent.op[op]?.active !== false)
           Content(`### Field Usage by Operation
 
@@ -306,13 +316,16 @@ ${info.desc}
 
 `)
 
+          if (opNeedsAction(ent.op[opname])) {
+            return
+          }
+
           // Show example
           if ('load' === opname || 'remove' === opname) {
             // The id key plus every REQUIRED match key (parent path params
             // like page_id) — the same shape that generates <Name><Op>Match,
             // so the example always type-checks.
-            const matchItems = opRequestShape(ent, opname).items
-              .filter((it: any) => !it.optional || it.name === idF)
+            const matchItems = matchExampleItems(ent, opname, idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const arg = 0 < matchItems.length
@@ -328,7 +341,7 @@ const result = await client.${ent.Name}().${opname}(${arg})
           }
           else if ('list' === opname) {
             Content(`\`\`\`ts
-const results = await client.${ent.Name}().${opname}(${listMatchArg(ent)})
+const results = await client.${ent.Name}().${opname}(${listMatchArg('ts', ent)})
 \`\`\`
 
 `)
@@ -338,7 +351,7 @@ const results = await client.${ent.Name}().${opname}(${listMatchArg(ent)})
             // <Name>CreateData (every required member appears), each with a
             // type-correct example VALUE via exampleValue — a `name: /* type */`
             // comment is not a value and yields invalid TS (TS1109).
-            const createItems = opRequestShape(ent, 'create').items
+            const createItems = requestExampleItems(ent, 'create')
               .filter((it: any) => !it.optional)
             Content(`\`\`\`ts
 const result = await client.${ent.Name}().create({
@@ -352,23 +365,31 @@ const result = await client.${ent.Name}().create({
 
 `)
           }
-          else if ('update' === opname) {
+          else if ('update' === opname || 'patch' === opname) {
             // The id key plus every REQUIRED data member — the same shape
             // that generates <Name>UpdateData — then the patch-fields note.
-            const updateItems = opRequestShape(ent, 'update').items
+            const updateItems = requestExampleItems(ent, opname)
               .filter((it: any) => !it.optional || it.name === idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const updateLines = updateItems.map((it: any) =>
-              `  ${jsKey(it.name)}: ${exampleValue(ent, ent.op && ent.op.update, it.name,
+              `  ${jsKey(it.name)}: ${exampleValue(ent, ent.op && ent.op[opname], it.name,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
             Content(`\`\`\`ts
-const result = await client.${ent.Name}().update({
-${updateLines}  // Fields to update
+const result = await client.${ent.Name}().${opname}({
+${updateLines}  // ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}
 })
 \`\`\`
 
 `)
+          }
+
+          if ('create' === opname || 'update' === opname || 'patch' === opname) {
+            const note = bodyNote(ent.op[opname], {
+              values: 'a `Buffer`, `Uint8Array`, `ArrayBuffer`, `Blob`, stream or string',
+              once: 'a stream',
+            })
+            if ('' !== note) Content(note)
           }
         })
       }
@@ -445,8 +466,6 @@ const client = new ${model.Name}SDK({
 
   })
 })
-
-
 
 
 export {
